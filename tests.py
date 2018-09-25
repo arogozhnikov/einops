@@ -1,18 +1,9 @@
-from einops import transpose as transpose_1, transpose_2
+from einops import transpose
 import numpy
 import torch
 import mxnet
 import cupy
 import chainer
-
-
-def transpose(*args, **kargs):
-    result1 = transpose_1(*args, **kargs)
-    if isinstance(result1, numpy.ndarray):
-        result2 = transpose_2(*args, **kargs)
-        assert (result1 - result2).max() < 1e-5 * result1.max()
-        assert (result2 - result1).max() < 1e-5 * result1.max()
-    return result1
 
 
 def simple_tests():
@@ -64,7 +55,7 @@ def simple_tests():
         assert result.shape == input.shape
         expected_result = numpy.zeros_like(input)
         for original_axis, result_axis in enumerate(permutation):
-            # TODO i don't quite get the ordering
+            # TODO i don't quite get the ordering here
             expected_result |= ((input >> original_axis) & 1) << result_axis
 
         assert numpy.allclose(result, expected_result)
@@ -149,7 +140,7 @@ def check_tf():
     test(make_array_numpy, tf_transpose)
 
 
-# check_tf()
+check_tf()
 
 
 def check_tf_eager():
@@ -162,4 +153,4 @@ def check_tf_eager():
     test(make_array_tf_eager, transpose)
 
 
-check_tf_eager()
+# check_tf_eager()

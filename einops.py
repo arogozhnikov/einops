@@ -3,13 +3,12 @@ from typing import Tuple, List, Set
 from collections import OrderedDict
 
 import numpy
-# TODO get rid of this
+# TODO get rid of these mandatory imports
 import torch
 import mxnet
 import tensorflow as tf
 import cupy
 import chainer
-
 
 CompositeAxis = List[str]
 
@@ -136,86 +135,6 @@ def get_axes_names(composite_axis_name: str):
             assert 'a' <= prev_letter <= 'z'
             elementary_axes.append(prev_letter + letter)
     return elementary_axes[::-1]
-
-
-def transpose_2(tensor, pattern, **axes_lengths):
-    left, right = pattern.split('->')
-    # checking that both have similar letters
-    identifiers_left, composite_axes_left = parse_expression(left)
-    identifiers_rght, composite_axes_rght = parse_expression(right)
-
-    # TODO add and delete dummy axes, add dots
-    difference = set.difference(identifiers_left, identifiers_rght)
-    if len(difference) > 0:
-        raise RuntimeError('Identifiers were only one side of expression: {}'.format(difference))
-
-    # parsing all dimensions to find out lengths
-    known_lengths = {}
-
-    def update_axis_length(axis_name, axis_length):
-        assert axis_length > 0
-        axis_length = int(axis_length)
-        if axis_name in known_lengths:
-            assert axis_length == known_lengths[axis_name]
-        else:
-            known_lengths[axis_name] = axis_length
-
-    # parsing explicitly passed sizes
-    for axis, axis_length in axes_lengths.items():
-        elementary_axes = get_axes_names(axis)
-        if len(elementary_axes) == 1 and isinstance(axis_length, int):
-            update_axis_length(elementary_axes[0], axis_length)
-        else:
-            assert len(elementary_axes) == len(axis_length), [elementary_axes, axis_length]
-            for c, v in zip(axis, axis_length):
-                if c != '_':
-                    update_axis_length(c, v)
-
-    # inferring rest of sizes from arguments
-    assert len(composite_axes_left) == len(tensor.shape)
-    for composite_axis, size in zip(composite_axes_left, tensor.shape):
-        not_found = {axis for axis in composite_axis if axis not in known_lengths}
-        found_product = 1
-        for axis in composite_axis:
-            if axis in known_lengths:
-                found_product *= known_lengths[axis]
-        if len(not_found) == 0:
-            assert found_product == size
-        else:
-            assert len(not_found) == 1
-            assert size % found_product == 0
-            axis, = not_found
-            known_lengths[axis] = size // found_product
-
-    def compute_sizes_and_groups(composite_axes, known_sizes):
-        axes_sizes = []
-        groups_sizes = []
-        for group in composite_axes:
-            product = 1
-            for name in group:
-                axes_sizes.append(known_sizes[name])
-                product *= known_sizes[name]
-            groups_sizes.append(product)
-        return axes_sizes, groups_sizes
-
-    axes_sizes_left, group_sizes_left = compute_sizes_and_groups(
-        composite_axes_left, known_sizes=known_lengths)
-    axes_sizes_rght, group_sizes_rght = compute_sizes_and_groups(
-        composite_axes_rght, known_sizes=known_lengths)
-
-    def compute_matching(composite_axes_left, composite_axes_right) -> List[int]:
-        # flatten dimensions and find out right ordering
-        l = list(itertools.chain(*composite_axes_left))
-        r = list(itertools.chain(*composite_axes_right))
-        return [l.index(x) for x in r]
-
-    matching = compute_matching(composite_axes_left, composite_axes_rght)
-    assert list(group_sizes_left) == list(tensor.shape)
-    # assert isinstance(tensor, torch.Tensor)
-    try:
-        return tensor.reshape(axes_sizes_left).transpose(matching).reshape(group_sizes_rght)
-    except:
-        return tensor.reshape(axes_sizes_left).permute(matching).reshape(group_sizes_rght)
 
 
 def transpose(tensor, pattern, **axes_lengths):
