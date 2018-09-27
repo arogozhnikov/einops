@@ -46,41 +46,40 @@ class TransformRecipe:
     def __init__(self,
                  elementary_axes_lengths: List,
                  # list of expressions (or just sizes) for elementary axes as they appear in left expression
-                 assignment_sequence: List[Tuple[int, List[int]]],
+                 input_composite_axes: List[Tuple[List[int], List[int]]],
                  # each dimension in input can help to reconstruct or verify one of dimensions
-                 result_axes_grouping: List[List[int]],  # ids of axes as they appear in result
+                 output_composite_axes: List[List[int]],  # ids of axes as they appear in result
                  reduction_type: str = 'none',
                  reduced_elementary_axes: List[int] = (),
                  ):
         self.axes_lengths = elementary_axes_lengths
-        self.assignment_sequence = assignment_sequence
-        self.final_axes_grouping = result_axes_grouping
-        self.final_axes_grouping_flat = list(itertools.chain(*result_axes_grouping))
+        self.input_composite_axes = input_composite_axes
+        self.output_composite_axes = output_composite_axes
+        self.final_axes_grouping_flat = list(itertools.chain(*output_composite_axes))
         self.reduction_type = reduction_type
         self.reduced_elementary_axes = reduced_elementary_axes
 
     def reconstruct_from_shape(self, shape):
         axes_lengths = list(self.axes_lengths)
-        for input_axis, (axis, denominator_axes) in enumerate(self.assignment_sequence):
+        for input_axis, (known_axes, unknown_axes) in enumerate(self.input_composite_axes):
             length = shape[input_axis]
-            for denominator_axis in denominator_axes:
-                if isinstance(length, int) and isinstance(axes_lengths[denominator_axis], int):
-                    # TODO check for static-graph frameworks
-                    assert length % axes_lengths[denominator_axis] == 0
-                length = length // axes_lengths[denominator_axis]
-            if axes_lengths[axis] is not None:
-                # checking dimension
-                if isinstance(axes_lengths[axis], int) and isinstance(length, int):
-                    print('checked dimension')
-                    # TODO check for static graphs
-                    assert axes_lengths[axis] == length
+            known_product = 1
+            for axis in known_axes:
+                known_product *= axes_lengths[axis]
+
+            if len(unknown_axes) == 0:
+                if isinstance(length, int) and isinstance(known_product, int):
+                    assert length == known_product
             else:
-                axes_lengths[axis] = length
+                if isinstance(length, int) and isinstance(known_product, int):
+                    assert length % known_product == 0
+                unknown_axis, = unknown_axes
+                axes_lengths[unknown_axis] = length // known_product
 
         init_shapes = axes_lengths
         reduced_axes_lengths = [dim for i, dim in enumerate(axes_lengths) if i not in self.reduced_elementary_axes]
         final_shapes = []
-        for grouping in self.final_axes_grouping:
+        for grouping in self.output_composite_axes:
             group_length = 1
             for elementary_axis in grouping:
                 group_length = group_length * reduced_axes_lengths[elementary_axis]
@@ -174,82 +173,22 @@ def get_axes_names(composite_axis_name: str):
     return axes_names
 
 
-def transpose(tensor, pattern, **axes_lengths):
-    left, right = pattern.split('->')
-    # checking that both have similar letters
-    identifiers_left, composite_axes_left = parse_expression(left)
-    identifiers_rght, composite_axes_rght = parse_expression(right)
-
-    # TODO add and delete dummy axes, add dots
-    difference = set.symmetric_difference(identifiers_left, identifiers_rght)
-    if len(difference) > 0:
-        raise RuntimeError('Identifiers were only one side of expression: {}'.format(difference))
-
-    # parsing all dimensions to find out lengths
-    known_lengths = OrderedDict()
-    for composite_axis in composite_axes_left:
-        for axis in composite_axis:
-            known_lengths[axis] = None
-
-    def update_axis_length(axis_name, axis_length):
-        if known_lengths[axis_name] is not None:
-            # TODO add check for static graphs?
-            if isinstance(axis_length, int) and isinstance(known_lengths[axis_name], int):
-                assert axis_length == known_lengths[axis_name]
-        else:
-            known_lengths[axis_name] = axis_length
-
-    for axis, axis_length in axes_lengths.items():
-        elementary_axes = get_axes_names(axis)
-        # TODO axis length is expression
-        assert len(elementary_axes) == 1
-        update_axis_length(elementary_axes[0], axis_length)
-        # else:
-        #     assert len(elementary_axes) == len(axis_length), [elementary_axes, axis_length]
-        #     for c, v in zip(elementary_axes, axis_length):
-        #         if c != '_':
-        #             update_axis_length(c, v)
-
-    denominator_indices = []
-    # inferring rest of sizes from arguments
-    for composite_axis in composite_axes_left:
-        found = {axis for axis in composite_axis if known_lengths[axis] is not None}
-        not_found = {axis for axis in composite_axis if known_lengths[axis] is None}
-        lookup = dict(zip(list(known_lengths), range(len(known_lengths))))
-        if len(not_found) == 0:
-            # imitating that size of the first one was not computed
-            not_found_axis = composite_axis[0]
-            found.remove(not_found_axis)
-            not_found.add(not_found_axis)
-
-        assert len(not_found) == 1
-        assert len(not_found) + len(found) == len(composite_axis)
-        axis, = not_found
-        computed_id = lookup[axis]
-        denominator_ids = [lookup[axis] for axis in found]
-        denominator_indices.append((computed_id, denominator_ids))
-
-    result_axes_grouping = [[lookup[axis] for axis in composite_axis] for composite_axis in composite_axes_rght]
-
-    recipe = TransformRecipe(elementary_axes_lengths=list(known_lengths.values()),
-                             assignment_sequence=denominator_indices,
-                             result_axes_grouping=result_axes_grouping,
-                             reduction_type='none',
-                             reduced_elementary_axes=[])
-
-    return recipe.apply(tensor=tensor)
-
-
 def reduce(tensor, pattern, operation, **axes_lengths):
+    assert operation in ['none', 'min', 'max', 'sum', 'mean', 'prod', 'logaddexp']
     left, right = pattern.split('->')
     # checking that both have similar letters
     identifiers_left, composite_axes_left = parse_expression(left)
     identifiers_rght, composite_axes_rght = parse_expression(right)
 
-    # TODO add and delete dummy axes, add dots
-    difference = set.difference(identifiers_rght, identifiers_left)
-    if len(difference) > 0:
-        raise RuntimeError('Unexpected identifiers appeared on the right side of expression: {}'.format(difference))
+    # TODO add dots
+    if operation == 'none':
+        difference = set.symmetric_difference(identifiers_left, identifiers_rght)
+        if len(difference) > 0:
+            raise RuntimeError('Identifiers were only one side of expression: {}'.format(difference))
+    else:
+        difference = set.difference(identifiers_rght, identifiers_left)
+        if len(difference) > 0:
+            raise RuntimeError('Unexpected identifiers appeared on the right side of expression: {}'.format(difference))
 
     # parsing all dimensions to find out lengths
     known_lengths = OrderedDict()
@@ -275,44 +214,35 @@ def reduce(tensor, pattern, operation, **axes_lengths):
 
     for axis, axis_length in axes_lengths.items():
         elementary_axes = get_axes_names(axis)
-        if len(elementary_axes) == 1 and isinstance(axis_length, int):
-            update_axis_length(elementary_axes[0], axis_length)
-        else:
-            assert len(elementary_axes) == len(axis_length), [elementary_axes, axis_length]
-            for c, v in zip(elementary_axes, axis_length):
-                if c != '_':
-                    update_axis_length(c, v)
+        # TODO better name validation
+        assert len(elementary_axes) == 1
+        update_axis_length(elementary_axes[0], axis_length)
 
-    denominator_indices = []
-    position_lookup = dict(zip(list(known_lengths), range(len(known_lengths))))
+    input_axes_known_unknown = []
     # inferring rest of sizes from arguments
     for composite_axis in composite_axes_left:
         found = {axis for axis in composite_axis if known_lengths[axis] is not None}
         not_found = {axis for axis in composite_axis if known_lengths[axis] is None}
-        if len(not_found) == 0:
-            # imitating that size of the first one was not computed
-            not_found_axis = composite_axis[0]
-            found.remove(not_found_axis)
-            not_found.add(not_found_axis)
-
-        assert len(not_found) == 1
+        lookup = dict(zip(list(known_lengths), range(len(known_lengths))))
+        assert len(not_found) <= 1
         assert len(not_found) + len(found) == len(composite_axis)
-        axis, = not_found
-        computed_id = position_lookup[axis]
-        denominator_ids = [position_lookup[axis] for axis in found]
-        denominator_indices.append((computed_id, denominator_ids))
+        input_axes_known_unknown.append(([lookup[axis] for axis in found], [lookup[axis] for axis in not_found]))
 
     result_axes_grouping = [[position_lookup_after_reduction[axis] for axis in composite_axis]
                             for composite_axis in composite_axes_rght]
 
     recipe = TransformRecipe(elementary_axes_lengths=list(known_lengths.values()),
-                             assignment_sequence=denominator_indices,
-                             result_axes_grouping=result_axes_grouping,
+                             input_composite_axes=input_axes_known_unknown,
+                             output_composite_axes=result_axes_grouping,
                              reduction_type=operation,
                              reduced_elementary_axes=reduced_axes
                              )
 
     return recipe.apply(tensor=tensor)
+
+
+def transpose(tensor, pattern, **axes_lengths):
+    return reduce(tensor, pattern, operation='none', **axes_lengths)
 
 
 def check_shapes(*shapes: List[dict], **lengths):
