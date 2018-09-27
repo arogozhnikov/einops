@@ -6,7 +6,7 @@ import cupy
 import chainer
 import tensorflow as tf
 
-use_tf_eager = True
+use_tf_eager = False
 if use_tf_eager:
     tf.enable_eager_execution()
 
@@ -19,6 +19,13 @@ def chainer_from_numpy(x):
     return chainer.Variable(cupy.asarray(x, dtype='float64'))
 
 
+def tf_wrap_and_compute(function):
+    def returned(x, *args, **kargs):
+        x_placeholder = tf.placeholder(dtype=x.dtype)
+        return tf.Session().run([function(x_placeholder, *args, **kargs)], {x_placeholder: x})[0]
+    return returned
+
+
 # from, to, transposition, reduction
 numpy_functions = (lambda x: x, lambda x: x, transpose, reduce)
 torch_functions = (lambda x: torch.from_numpy(x), lambda x: x.numpy(), transpose, reduce)
@@ -26,6 +33,7 @@ cupy_functions = (cupy.asarray, cupy.asnumpy, transpose, reduce)
 chainer_functions = (chainer_from_numpy, lambda x: cupy.asnumpy(x.data), transpose, reduce)
 mxnet_functions = (mxnet_from_numpy, lambda x: x.asnumpy(), transpose, reduce)
 tf_eager_functions = (lambda x: tf.contrib.eager.Variable(x), lambda x: x.numpy(), transpose, reduce)
+tf_static_functions = (lambda x: x, lambda x: x, tf_wrap_and_compute(transpose), tf_wrap_and_compute(reduce))
 
 framework_functions = dict(
     numpy=numpy_functions,
@@ -37,9 +45,11 @@ framework_functions = dict(
 
 if use_tf_eager:
     framework_functions['tf_eager'] = tf_eager_functions
+else:
+    framework_functions['tf_static'] = tf_static_functions
 
 
-def transpose_tests():
+def transpose_numpy_tests():
     shape = [1, 1, 2, 3, 5, 8]
     x = numpy.arange(numpy.prod(shape)).reshape(shape)
     for expression in [
@@ -70,9 +80,14 @@ def transpose_tests():
     assert numpy.allclose(x, result)
 
     sizes = dict(zip('abcdef', shape))
-    result = transpose(transpose(x, 'a b c d e f -> (f d) c (e b) a', **sizes),
-                       '(f d) c (e b) a -> a b c d e f', **sizes)
+    temp = transpose(x, 'a b c d e f -> (f d) c (e b) a', **sizes)
+    result = transpose(temp, '(f d) c (e b) a -> a b c d e f', **sizes)
     assert numpy.allclose(x, result)
+
+    x2 = numpy.arange(2 * 3 * 4).reshape([2, 3, 4])
+    result = transpose(x2, 'a b c -> b c a')
+    assert x2[1, 2, 3] == result[2, 3, 1]
+    assert x2[0, 1, 2] == result[1, 2, 0]
 
     for n_axes in range(1, 10):
         input = numpy.arange(2 ** n_axes).reshape([2] * n_axes)
@@ -95,14 +110,13 @@ def transpose_tests():
         assert result.shape == input.shape
         expected_result = numpy.zeros_like(input)
         for original_axis, result_axis in enumerate(permutation):
-            # TODO i don't quite get the ordering here
             expected_result |= ((input >> original_axis) & 1) << result_axis
 
         assert numpy.allclose(result, expected_result)
     print('simple tests passed')
 
 
-transpose_tests()
+transpose_numpy_tests()
 
 
 def reduction_tests(functions):
@@ -137,7 +151,7 @@ def reduction_tests(functions):
         result2 = getattr(x, reduction)()
         assert numpy.allclose(result1, result2)
 
-        # TODO checks for mean, prod and logaddexp (maybe also neeeded for any and all)
+        # TODO checks for mean, prod and logaddexp (maybe also needed for any and all)
 
 
 for name, functions in framework_functions.items():
@@ -146,8 +160,6 @@ for name, functions in framework_functions.items():
 
 
 def test_transpose_examples():
-    make_array = lambda *shape: numpy.arange(numpy.prod(shape)).reshape(shape)
-
     def test1(x):
         y = transpose(x, 'b h w c -> b c h w')
         assert y.shape == (10, 40, 20, 30)
@@ -180,7 +192,8 @@ def test_transpose_examples():
         return y
 
     def test7(x):
-        t = transpose(x, 'b c h w -> (b h w) c')  # @ это просто перемножение матриц
+        # TODO return matrix-by-matrix multiplication
+        t = transpose(x, 'b c h w -> (b h w) c')
         assert t.shape == (10 * 30 * 40, 20)
 
         # TODO this test specifically for TF with x.shape replaced by tf.shape for expression
