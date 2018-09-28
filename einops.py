@@ -51,6 +51,7 @@ class TransformRecipe:
                  output_composite_axes: List[List[int]],  # ids of axes as they appear in result
                  reduction_type: str = 'none',
                  reduced_elementary_axes: List[int] = (),
+                 ellipsis_positions: Tuple[int, int] = (1000, 1000),
                  ):
         self.axes_lengths = elementary_axes_lengths
         self.input_composite_axes = input_composite_axes
@@ -58,32 +59,51 @@ class TransformRecipe:
         self.final_axes_grouping_flat = list(itertools.chain(*output_composite_axes))
         self.reduction_type = reduction_type
         self.reduced_elementary_axes = reduced_elementary_axes
+        self.ellipsis_positions = ellipsis_positions
 
     def reconstruct_from_shape(self, shape):
         axes_lengths = list(self.axes_lengths)
+        if self.ellipsis_positions != (1000, 1000):
+            assert len(shape) >= len(self.input_composite_axes) - 1
+        else:
+            assert len(shape) == len(self.input_composite_axes)
         for input_axis, (known_axes, unknown_axes) in enumerate(self.input_composite_axes):
-            length = shape[input_axis]
-            known_product = 1
-            for axis in known_axes:
-                known_product *= axes_lengths[axis]
-
-            if len(unknown_axes) == 0:
-                if isinstance(length, int) and isinstance(known_product, int):
-                    assert length == known_product
-            else:
-                if isinstance(length, int) and isinstance(known_product, int):
-                    assert length % known_product == 0
+            before_ellipsis = input_axis
+            after_ellipsis = input_axis + len(shape) - len(self.input_composite_axes)
+            if input_axis == self.ellipsis_positions[0]:
+                assert len(known_axes) == 0
                 unknown_axis, = unknown_axes
-                axes_lengths[unknown_axis] = length // known_product
+                ellipsis_shape = shape[before_ellipsis:after_ellipsis + 1]
+                axes_lengths[unknown_axis] = numpy.prod(ellipsis_shape, dtype=int)
+            else:
+                if input_axis < self.ellipsis_positions[0]:
+                    length = shape[before_ellipsis]
+                else:
+                    length = shape[after_ellipsis]
+                known_product = 1
+                for axis in known_axes:
+                    known_product *= axes_lengths[axis]
+
+                if len(unknown_axes) == 0:
+                    if isinstance(length, int) and isinstance(known_product, int):
+                        assert length == known_product
+                else:
+                    if isinstance(length, int) and isinstance(known_product, int):
+                        assert length % known_product == 0
+                    unknown_axis, = unknown_axes
+                    axes_lengths[unknown_axis] = length // known_product
 
         init_shapes = axes_lengths
         reduced_axes_lengths = [dim for i, dim in enumerate(axes_lengths) if i not in self.reduced_elementary_axes]
         final_shapes = []
-        for grouping in self.output_composite_axes:
-            group_length = 1
-            for elementary_axis in grouping:
-                group_length = group_length * reduced_axes_lengths[elementary_axis]
-            final_shapes.append(group_length)
+        for output_axis, grouping in enumerate(self.output_composite_axes):
+            if output_axis == self.ellipsis_positions[1]:
+                final_shapes.extend(ellipsis_shape)
+            else:
+                group_length = 1
+                for elementary_axis in grouping:
+                    group_length = group_length * reduced_axes_lengths[elementary_axis]
+                final_shapes.append(group_length)
         return init_shapes, final_shapes
 
     def reduce(self, tensor):
@@ -99,7 +119,7 @@ class TransformRecipe:
             return self.reduce(tensor.reshape(init_shapes)) \
                 .permute(self.final_axes_grouping_flat).reshape(final_shapes)
         elif isinstance(tensor, (tf.Tensor, tf.Variable)):
-            init_shapes, final_shapes = self.reconstruct_from_shape(tf.shape(tensor))
+            init_shapes, final_shapes = self.reconstruct_from_shape(tf_get_shape(tensor))
             tensor = self.reduce(tf.reshape(tensor, init_shapes))
             tensor = tf.transpose(tensor, self.final_axes_grouping_flat)
             return tf.reshape(tensor, final_shapes)
@@ -116,7 +136,7 @@ def parse_expression(expression: str) -> Tuple[Set[str], List[CompositeAxis]]:
     identifiers = set()
     composite_axes = []
     if '.' in expression:
-        assert ('...' in expression) and (str.count(expression, '...') == 2) and (str.count(expression, '.') == 6)
+        assert ('...' in expression) and (str.count(expression, '...') == 1) and (str.count(expression, '.') == 3)
         expression = expression.replace('...', '.')
 
     bracket_group = None
@@ -137,7 +157,8 @@ def parse_expression(expression: str) -> Tuple[Set[str], List[CompositeAxis]]:
             add_axis_name(current_identifier)
             current_identifier = None
             if char == '.':
-                raise NotImplementedError()
+                assert bracket_group is None
+                add_axis_name('...')
             elif char == '(':
                 assert bracket_group is None
                 bracket_group = []
@@ -213,29 +234,33 @@ def reduce(tensor, pattern, operation, **axes_lengths):
             known_lengths[axis_name] = axis_length
 
     for axis, axis_length in axes_lengths.items():
-        elementary_axes = get_axes_names(axis)
         # TODO better name validation
+        elementary_axes = get_axes_names(axis)
         assert len(elementary_axes) == 1
         update_axis_length(elementary_axes[0], axis_length)
 
     input_axes_known_unknown = []
     # inferring rest of sizes from arguments
     for composite_axis in composite_axes_left:
-        found = {axis for axis in composite_axis if known_lengths[axis] is not None}
-        not_found = {axis for axis in composite_axis if known_lengths[axis] is None}
+        known = {axis for axis in composite_axis if known_lengths[axis] is not None}
+        unknown = {axis for axis in composite_axis if known_lengths[axis] is None}
         lookup = dict(zip(list(known_lengths), range(len(known_lengths))))
-        assert len(not_found) <= 1
-        assert len(not_found) + len(found) == len(composite_axis)
-        input_axes_known_unknown.append(([lookup[axis] for axis in found], [lookup[axis] for axis in not_found]))
+        assert len(unknown) <= 1
+        assert len(unknown) + len(known) == len(composite_axis)
+        input_axes_known_unknown.append(([lookup[axis] for axis in known], [lookup[axis] for axis in unknown]))
 
     result_axes_grouping = [[position_lookup_after_reduction[axis] for axis in composite_axis]
                             for composite_axis in composite_axes_rght]
+
+    ellipsis_left = 1000 if ['...'] not in composite_axes_left else composite_axes_left.index(['...'])
+    ellipsis_rght = 1000 if ['...'] not in composite_axes_rght else composite_axes_rght.index(['...'])
 
     recipe = TransformRecipe(elementary_axes_lengths=list(known_lengths.values()),
                              input_composite_axes=input_axes_known_unknown,
                              output_composite_axes=result_axes_grouping,
                              reduction_type=operation,
-                             reduced_elementary_axes=reduced_axes
+                             reduced_elementary_axes=reduced_axes,
+                             ellipsis_positions=(ellipsis_left, ellipsis_rght)
                              )
 
     return recipe.apply(tensor=tensor)
@@ -255,6 +280,13 @@ def check_shapes(*shapes: List[dict], **lengths):
                 assert lengths[axis_name] == axis_length
             else:
                 lengths[axis_name] = axis_length
+
+
+def tf_get_shape(x):
+    if not tf.executing_eagerly():
+        return tf.unstack(tf.shape(x))
+    else:
+        return x.shape
 
 
 def parse_shape(x, names: str):
