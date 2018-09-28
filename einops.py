@@ -259,10 +259,13 @@ def check_shapes(*shapes: List[dict], **lengths):
 
 def parse_shape(x, names: str):
     names = [elementary_axis for elementary_axis in names.split(' ') if len(elementary_axis) > 0]
-    assert len(x.shape) == len(names)
+    shape = x.shape
+    if isinstance(x, (tf.Variable, tf.Tensor)) and not tf.executing_eagerly():
+        shape = tf.unstack(tf.shape(x))
+    assert len(shape) == len(names)
     result = {}
     # TODO framework resolution?
-    for axis_name, axis_length in zip(names, x.shape):
+    for axis_name, axis_length in zip(names, shape):
         if axis_name != '_':
             result[axis_name] = axis_length
     return result

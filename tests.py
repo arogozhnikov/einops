@@ -6,7 +6,7 @@ import cupy
 import chainer
 import tensorflow as tf
 
-use_tf_eager = False
+use_tf_eager = True
 if use_tf_eager:
     tf.enable_eager_execution()
 
@@ -49,7 +49,7 @@ else:
     framework_functions['tf_static'] = tf_static_functions
 
 
-def transpose_numpy_tests():
+def test_transpose_with_numpy():
     shape = [1, 1, 2, 3, 5, 8]
     x = numpy.arange(numpy.prod(shape)).reshape(shape)
     for expression in [
@@ -116,11 +116,10 @@ def transpose_numpy_tests():
     print('simple tests passed')
 
 
-transpose_numpy_tests()
+test_transpose_with_numpy()
 
 
-def reduction_tests(functions):
-    from_numpy, to_numpy, _transpose, reduce_tensor = functions
+def test_reduction_for_framework(from_numpy, to_numpy, reduce_tensor):
     for reduction in ['min', 'max', 'sum']:
         for n_axes in range(7):
             shape = numpy.random.randint(2, 4, size=n_axes)
@@ -154,9 +153,9 @@ def reduction_tests(functions):
         # TODO checks for mean, prod and logaddexp (maybe also needed for any and all)
 
 
-for name, functions in framework_functions.items():
+for name, (_from_numpy, _to_numpy, _, _reduce) in framework_functions.items():
     print('Reduction tests for ', name)
-    reduction_tests(functions)
+    test_reduction_for_framework(_from_numpy, _to_numpy, _reduce)
 
 
 def test_transpose_examples():
@@ -236,3 +235,55 @@ def test_transpose_examples():
 
 
 test_transpose_examples()
+
+
+def test_parse_shape(from_numpy):
+    x = numpy.zeros([10, 20, 30, 40])
+    parsed1 = parse_shape(x, 'a b c d')
+    parsed2 = parse_shape(from_numpy(x), 'a b c d')
+    print(parsed2)
+    assert parsed1 == parsed2 == dict(a=10, b=20, c=30, d=40)
+    assert parsed1 != dict(a=1, b=20, c=30, d=40) != parsed2
+
+    parsed1 = parse_shape(x, '_ _ _ _')
+    parsed2 = parse_shape(from_numpy(x), '_ _ _ _')
+    assert parsed1 == parsed2 == dict()
+
+    parsed1 = parse_shape(x, '_ _ _ hello')
+    parsed2 = parse_shape(from_numpy(x), '_ _ _ hello')
+    assert parsed1 == parsed2 == dict(hello=40)
+
+    parsed1 = parse_shape(x, '_ _ a1 a1a111a')
+    parsed2 = parse_shape(from_numpy(x), '_ _ a1 a1a111a')
+    assert parsed1 == parsed2 == dict(a1=30, a1a111a=40)
+
+
+def test_parse_shape_tf_static():
+    print('special shape parsing for tf_static')
+    placeholders = [
+        tf.placeholder('float32', [10, 20, 30, 40]),
+        tf.placeholder('float32', [10, 20, None, None]),
+        tf.placeholder('float32', [None, None, None, None]),
+    ]
+    for placeholder in placeholders:
+        shape_placeholder = parse_shape(placeholder, 'a b c d')
+        shape = tf.Session().run(shape_placeholder, {placeholder: numpy.zeros([10, 20, 30, 40])})
+        print(shape)
+
+        result_placeholder = transpose(placeholder, 'a b (c1 c2) (d1 d2) -> (a b d1) c1 (c2 d2)',
+                                       **parse_shape(placeholder, 'a b c1 _'), d2=2)
+        result = tf.Session().run(result_placeholder, {placeholder: numpy.zeros([10, 20, 30, 40])})
+        print(result.shape)
+        assert result.shape == (10 * 20 * 20, 30, 1 * 2)
+        assert numpy.allclose(result, 0)
+
+
+for framework_name, (_from_numpy, _to_numpy, _, _) in framework_functions.items():
+    if framework_name == 'tf_static':
+        print(framework_name, 'skipped')
+        continue
+    print('shape parsing for ', framework_name)
+    test_parse_shape(_from_numpy)
+
+if not use_tf_eager:
+    test_parse_shape_tf_static()
