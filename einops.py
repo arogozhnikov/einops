@@ -1,14 +1,10 @@
 import itertools
-from typing import Tuple, List, Set
 from collections import OrderedDict
+from typing import Tuple, List, Set
 
 import numpy
-# TODO get rid of these mandatory imports
-import torch
-import mxnet
-import tensorflow as tf
-import cupy
-import chainer
+
+from backends import get_backend
 
 CompositeAxis = List[str]
 
@@ -21,25 +17,7 @@ def reduce_axes(tensor, reduction_type, reduced_axes):
     if reduction_type == 'mean':
         # TODO check that dtype is float or double.
         raise NotImplementedError()
-    if isinstance(tensor, (numpy.ndarray, mxnet.ndarray.ndarray.NDArray, cupy.ndarray)):
-        return getattr(tensor, reduction_type)(axis=reduced_axes)
-    elif isinstance(tensor, tf.Tensor):
-        return getattr(tf, 'reduce_' + reduction_type)(tensor, axis=reduced_axes)
-    elif isinstance(tensor, chainer.Variable):
-        return getattr(chainer.functions, reduction_type)(tensor, axis=reduced_axes)
-    elif isinstance(tensor, torch.Tensor):
-        for axis in sorted(reduced_axes, reverse=True):
-            if reduction_type == 'min':
-                tensor, _ = tensor.min(dim=axis)
-            elif reduction_type == 'max':
-                tensor, _ = tensor.max(dim=axis)
-            elif reduction_type == 'sum':
-                tensor = tensor.sum(dim=axis)
-            else:
-                raise NotImplementedError()
-        return tensor
-    else:
-        raise NotImplementedError()
+    return get_backend(tensor).reduce(tensor, reduction_type, reduced_axes)
 
 
 class TransformRecipe:
@@ -110,21 +88,11 @@ class TransformRecipe:
         return reduce_axes(tensor, reduction_type=self.reduction_type, reduced_axes=self.reduced_elementary_axes)
 
     def apply(self, tensor):
-        if isinstance(tensor, (numpy.ndarray, mxnet.ndarray.ndarray.NDArray, cupy.ndarray, chainer.Variable)):
-            init_shapes, final_shapes = self.reconstruct_from_shape(tensor.shape)
-            return self.reduce(tensor.reshape(init_shapes)) \
-                .transpose(self.final_axes_grouping_flat).reshape(final_shapes)
-        elif isinstance(tensor, torch.Tensor):
-            init_shapes, final_shapes = self.reconstruct_from_shape(tensor.shape)
-            return self.reduce(tensor.reshape(init_shapes)) \
-                .permute(self.final_axes_grouping_flat).reshape(final_shapes)
-        elif isinstance(tensor, (tf.Tensor, tf.Variable)):
-            init_shapes, final_shapes = self.reconstruct_from_shape(tf_get_shape(tensor))
-            tensor = self.reduce(tf.reshape(tensor, init_shapes))
-            tensor = tf.transpose(tensor, self.final_axes_grouping_flat)
-            return tf.reshape(tensor, final_shapes)
-        else:
-            raise NotImplementedError('Type of tensor was not recognized')
+        backend = get_backend(tensor)
+        init_shapes, final_shapes = self.reconstruct_from_shape(backend.shape(tensor))
+        tensor = self.reduce(backend.reshape(tensor, init_shapes))
+        tensor = backend.transpose(tensor, self.final_axes_grouping_flat)
+        return backend.reshape(tensor, final_shapes)
 
 
 def parse_expression(expression: str) -> Tuple[Set[str], List[CompositeAxis]]:
@@ -194,6 +162,7 @@ def get_axes_names(composite_axis_name: str):
     return axes_names
 
 
+# TODO parenthesis within brackets?
 def reduce(tensor, pattern, operation, **axes_lengths):
     assert operation in ['none', 'min', 'max', 'sum', 'mean', 'prod', 'logaddexp']
     left, right = pattern.split('->')
@@ -201,7 +170,6 @@ def reduce(tensor, pattern, operation, **axes_lengths):
     identifiers_left, composite_axes_left = parse_expression(left)
     identifiers_rght, composite_axes_rght = parse_expression(right)
 
-    # TODO add dots
     if operation == 'none':
         difference = set.symmetric_difference(identifiers_left, identifiers_rght)
         if len(difference) > 0:
@@ -282,22 +250,23 @@ def check_shapes(*shapes: List[dict], **lengths):
                 lengths[axis_name] = axis_length
 
 
-def tf_get_shape(x):
-    if not tf.executing_eagerly():
-        return tf.unstack(tf.shape(x))
-    else:
-        return x.shape
-
-
 def parse_shape(x, names: str):
     names = [elementary_axis for elementary_axis in names.split(' ') if len(elementary_axis) > 0]
-    shape = x.shape
-    if isinstance(x, (tf.Variable, tf.Tensor)) and not tf.executing_eagerly():
-        shape = tf.unstack(tf.shape(x))
+    shape = get_backend(x).shape(x)
     assert len(shape) == len(names)
     result = {}
-    # TODO framework resolution?
     for axis_name, axis_length in zip(names, shape):
         if axis_name != '_':
             result[axis_name] = axis_length
+    return result
+
+
+def enumerate_directions(x):
+    backend = get_backend(x)
+    shape = backend.shape(x)
+    result = []
+    for axis_id, axis_length in enumerate(shape):
+        shape = [1] * len(shape)
+        shape[axis_id] = axis_length
+        result.append(backend.reshape(backend.arange(0, axis_length), shape))
     return result

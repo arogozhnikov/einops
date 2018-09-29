@@ -1,54 +1,13 @@
-from einops import transpose, reduce, parse_shape
+from einops import transpose, reduce, parse_shape, enumerate_directions
 import numpy
-import torch
-import mxnet
-import cupy
-import chainer
 import tensorflow as tf
+import backends
 
 use_tf_eager = True
 if use_tf_eager:
     tf.enable_eager_execution()
 
-
-def mxnet_from_numpy(x):
-    return mxnet.ndarray.array([x])[0] if x.shape == () else mxnet.ndarray.array(x)
-
-
-def chainer_from_numpy(x):
-    return chainer.Variable(cupy.asarray(x, dtype='float64'))
-
-
-def tf_wrap_and_compute(function):
-    def returned(x, *args, **kargs):
-        x_placeholder = tf.placeholder(dtype=x.dtype)
-        return tf.Session().run([function(x_placeholder, *args, **kargs)], {x_placeholder: x})[0]
-
-    return returned
-
-
-def framework_functions():
-    # from, to, transposition, reduction
-    numpy_functions = (lambda x: x, lambda x: x, transpose, reduce)
-    torch_functions = (lambda x: torch.from_numpy(x), lambda x: x.numpy(), transpose, reduce)
-    cupy_functions = (cupy.asarray, cupy.asnumpy, transpose, reduce)
-    chainer_functions = (chainer_from_numpy, lambda x: cupy.asnumpy(x.data), transpose, reduce)
-    mxnet_functions = (mxnet_from_numpy, lambda x: x.asnumpy(), transpose, reduce)
-    tf_eager_functions = (lambda x: tf.contrib.eager.Variable(x), lambda x: x.numpy(), transpose, reduce)
-    tf_static_functions = (lambda x: x, lambda x: x, tf_wrap_and_compute(transpose), tf_wrap_and_compute(reduce))
-
-    result = dict(
-        numpy=numpy_functions,
-        cupy=cupy_functions,
-        # mxnet=mxnet_functions, TODO return
-        torch=torch_functions,
-        chainer=chainer_functions,
-    )
-    if use_tf_eager:
-        result['tf_eager'] = tf_eager_functions
-    else:
-        result['tf_static'] = tf_static_functions
-    return result
+all_backends = [c() for c in backends.AbstractBackend.__subclasses__()]
 
 
 def test_transpose_ellipsis_numpy():
@@ -68,9 +27,16 @@ def test_transpose_ellipsis_numpy():
                            transpose(x, '... c d e -> ... (c d) e')))
     assert (numpy.allclose(transpose(x, 'a b c d e -> a b c d e'),
                            transpose(x, '... -> ... ')))
+    for reduction in ['min', 'max', 'sum']:
+        assert (numpy.allclose(reduce(x, 'a b c d e -> ', operation=reduction),
+                               reduce(x, '... -> ', operation=reduction)))
+        assert (numpy.allclose(reduce(x, 'a b c d e -> (e a)', operation=reduction),
+                               reduce(x, 'a ... e -> (e a)', operation=reduction)))
+        assert (numpy.allclose(reduce(x, 'a b c d e -> d (a e)', operation=reduction),
+                               reduce(x, 'a b c d e ... -> d (a e)', operation=reduction)))
+    # TODO ellipsis inside parentheses on the right side
     # assert (numpy.allclose(transpose(x, 'a b c d e -> (a b c d e)'),
     #                        transpose(x, '... -> (...) ')))
-    # TODO ellipsis inside parentheses on the right side
 
 
 test_transpose_ellipsis_numpy()
@@ -147,8 +113,13 @@ test_transpose_with_numpy()
 
 
 def test_reduction():
-    for name, (from_numpy, to_numpy, _, reduce_tensor) in framework_functions().items():
-        print('Reduction tests for ', name)
+    for backend in all_backends:
+        if 'mxnet' in backend.framework_name:
+            print('skipped testing for', backend.framework_name)
+            continue
+        # TODO fix after reduction
+        reduce_tensor = reduce
+        print('Reduction tests for ', backend.framework_name)
         # TODO checks for mean, prod and logaddexp (maybe also needed for any and all)
         for reduction in ['min', 'max', 'sum']:
             for n_axes in range(7):
@@ -160,7 +131,8 @@ def test_reduction():
                 x = numpy.arange(numpy.prod(shape)).reshape(shape)
                 result1 = reduce(x, left + '->' + right, operation=reduction)
                 result2 = getattr(x.transpose(permutation), reduction)(axis=tuple(range(skipped)))
-                result3 = to_numpy(reduce_tensor(from_numpy(x), left + '->' + right, operation=reduction))
+                result3 = backend.to_numpy(
+                    reduce_tensor(backend.from_numpy(x), left + '->' + right, operation=reduction))
                 assert numpy.allclose(result1, result2)
                 assert numpy.allclose(result1, result3)
 
@@ -228,12 +200,12 @@ def test_transpose_examples():
 
     tests = [test1, test2, test3, test4, test5, test6, test7]
 
-    for framework_name, (from_numpy, to_numpy, _transpose, _) in framework_functions().items():
-        print('testing examples for ', framework_name)
+    for backend in all_backends:
+        print('testing examples for ', backend.framework_name)
         for test in tests:
             x = numpy.arange(10 * 20 * 30 * 40).reshape([10, 20, 30, 40])
             result1 = test(x)
-            result2 = to_numpy(test(from_numpy(x)))
+            result2 = backend.to_numpy(test(backend.from_numpy(x)))
             assert numpy.allclose(result1, result2)
             print(result1.shape)
 
@@ -264,28 +236,26 @@ test_transpose_examples()
 
 
 def test_parse_shape():
-    for framework_name, (from_numpy, _, _, _) in framework_functions().items():
-        if framework_name == 'tf_static':
-            print(framework_name, 'skipped')
-            continue
-        print('Shape parsing for ', framework_name)
+    for backend in all_backends:
+        # TODO skip static tensorflow
+        print('Shape parsing for ', backend.framework_name)
         x = numpy.zeros([10, 20, 30, 40])
         parsed1 = parse_shape(x, 'a b c d')
-        parsed2 = parse_shape(from_numpy(x), 'a b c d')
+        parsed2 = parse_shape(backend.from_numpy(x), 'a b c d')
         print(parsed2)
         assert parsed1 == parsed2 == dict(a=10, b=20, c=30, d=40)
         assert parsed1 != dict(a=1, b=20, c=30, d=40) != parsed2
 
         parsed1 = parse_shape(x, '_ _ _ _')
-        parsed2 = parse_shape(from_numpy(x), '_ _ _ _')
+        parsed2 = parse_shape(backend.from_numpy(x), '_ _ _ _')
         assert parsed1 == parsed2 == dict()
 
         parsed1 = parse_shape(x, '_ _ _ hello')
-        parsed2 = parse_shape(from_numpy(x), '_ _ _ hello')
+        parsed2 = parse_shape(backend.from_numpy(x), '_ _ _ hello')
         assert parsed1 == parsed2 == dict(hello=40)
 
         parsed1 = parse_shape(x, '_ _ a1 a1a111a')
-        parsed2 = parse_shape(from_numpy(x), '_ _ a1 a1a111a')
+        parsed2 = parse_shape(backend.from_numpy(x), '_ _ a1 a1a111a')
         assert parsed1 == parsed2 == dict(a1=30, a1a111a=40)
 
 
@@ -312,3 +282,22 @@ def test_parse_shape_tf_static():
 test_parse_shape()
 if not use_tf_eager:
     test_parse_shape_tf_static()
+
+
+def test_enumerating_directions():
+    for backend in all_backends:
+        print('testing directions for', backend.framework_name)
+        for shape in [[], [1], [1, 1, 1], [2, 3, 5, 7]]:
+            if backend.framework_name == 'mxnet.ndarray' and len(shape) == 0:
+                # known bug of ndarray
+                continue
+            x = numpy.arange(numpy.prod(shape)).reshape(shape)
+            axes1 = enumerate_directions(x)
+            axes2 = enumerate_directions(backend.from_numpy(x))
+            for axe1, axe2 in zip(axes1, axes2):
+                axe2 = backend.to_numpy(axe2)
+                assert axe1.shape == axe2.shape
+                assert numpy.allclose(axe1, axe2)
+
+
+test_enumerating_directions()
