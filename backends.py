@@ -1,5 +1,6 @@
 import sys
 
+__all__ = ['get_backend']
 __author__ = 'Alex Rogozhnikov'
 
 _backends = {}
@@ -53,6 +54,9 @@ class AbstractBackend:
     def stack_on_zeroth_dimension(self, tensors: list):
         raise NotImplementedError()
 
+    def is_float_type(self, x):
+        raise NotImplementedError()
+
 
 class NumpyBackend(AbstractBackend):
     framework_name = 'numpy'
@@ -76,6 +80,9 @@ class NumpyBackend(AbstractBackend):
     def stack_on_zeroth_dimension(self, tensors: list):
         return self.np.stack(tensors)
 
+    def is_float_type(self, x):
+        return x.dtype in ('float16', 'float32', 'float64', 'float128')
+
 
 class MXNetNdarrayBackend(AbstractBackend):
     framework_name = 'mxnet.ndarray'
@@ -98,6 +105,9 @@ class MXNetNdarrayBackend(AbstractBackend):
 
     def stack_on_zeroth_dimension(self, tensors: list):
         return self.mx.nd.stack(*tensors)
+
+    def is_float_type(self, x):
+        return 'float' in str(x.dtype)
 
 
 class TorchBackend(AbstractBackend):
@@ -125,8 +135,8 @@ class TorchBackend(AbstractBackend):
                 x, _ = x.min(dim=axis)
             elif operation == 'max':
                 x, _ = x.max(dim=axis)
-            elif operation == 'sum':
-                x = x.sum(dim=axis)
+            elif operation in ['sum', 'mean', 'prod']:
+                x = getattr(x, operation)(dim=axis)
             else:
                 raise NotImplementedError('Unknown reduction ', operation)
         return x
@@ -136,6 +146,9 @@ class TorchBackend(AbstractBackend):
 
     def stack_on_zeroth_dimension(self, tensors: list):
         return self.torch.stack(tensors)
+
+    def is_float_type(self, x):
+        return x.dtype in [self.torch.float16, self.torch.float32, self.torch.float64]
 
 
 class CupyBackend(AbstractBackend):
@@ -159,6 +172,9 @@ class CupyBackend(AbstractBackend):
 
     def stack_on_zeroth_dimension(self, tensors: list):
         return self.cupy.stack(tensors)
+
+    def is_float_type(self, x):
+        return x.dtype in ('float16', 'float32', 'float64', 'float128')
 
 
 class ChainerBackend(AbstractBackend):
@@ -189,6 +205,9 @@ class ChainerBackend(AbstractBackend):
 
     def stack_on_zeroth_dimension(self, tensors: list):
         return self.chainer.functions.stack(tensors)
+
+    def is_float_type(self, x):
+        return x.dtype in ('float16', 'float32', 'float64', 'float128')
 
 
 class TensorflowBackend(AbstractBackend):
@@ -227,6 +246,9 @@ class TensorflowBackend(AbstractBackend):
 
     def stack_on_zeroth_dimension(self, tensors: list):
         return self.tf.stack(tensors)
+
+    def is_float_type(self, x):
+        return x.dtype in ('float16', 'float32', 'float64', 'float128')
 
 # this one is for static tensorflow
 # def tf_wrap_and_compute(function):
