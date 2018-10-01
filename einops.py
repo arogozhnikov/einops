@@ -15,8 +15,8 @@ def reduce_axes(tensor, reduction_type, reduced_axes):
         return tensor
     assert reduction_type in ['min', 'max', 'sum', 'mean', 'logaddexp', 'prod']
     if reduction_type == 'mean':
-        # TODO check that dtype is float or double.
-        raise NotImplementedError()
+        if not get_backend(tensor).is_float_type(tensor):
+            raise NotImplementedError('reduce_mean is not available for non-floating tensors')
     return get_backend(tensor).reduce(tensor, reduction_type, reduced_axes)
 
 

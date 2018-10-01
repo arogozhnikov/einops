@@ -114,46 +114,68 @@ test_transpose_with_numpy()
 
 def test_reduction():
     for backend in all_backends:
-        if 'mxnet' in backend.framework_name:
-            print('skipped testing for', backend.framework_name)
-            continue
-        # TODO fix after reduction
-        reduce_tensor = reduce
         print('Reduction tests for ', backend.framework_name)
-        # TODO checks for mean, prod and logaddexp (maybe also needed for any and all)
-        for reduction in ['min', 'max', 'sum']:
+        # TODO checks for logaddexp (maybe also needed for any and all)
+        for reduction in ['min', 'max', 'sum', 'mean', 'prod']:
+            dtype = 'float64' if reduction == 'mean' else 'int64'
+            # composite axes
+            x = numpy.arange(2 * 3 * 4 * 5 * 6, dtype=dtype).reshape(2, 3, 4, 5, 6)
+            result1 = reduce(x, 'a b c d e -> (e c) a', operation=reduction)
+            result2 = getattr(x, reduction)(axis=(1, 3)).transpose(2, 1, 0).reshape(-1, 2)
+            assert numpy.allclose(result1, result2)
+
+            x = numpy.arange(2 * 3 * 4 * 5 * 6, dtype=dtype).reshape(2, 3, 4, 5, 6)
+            result1 = reduce(x, 'a b c d e -> (e c a)', operation=reduction)
+            result2 = getattr(x, reduction)(axis=(1, 3)).transpose(2, 1, 0).reshape(-1)
+            assert numpy.allclose(result1, result2)
+
+            x = numpy.arange(2 * 3 * 4 * 5 * 6, dtype=dtype).reshape(2, 3, 4, 5, 6)
+            result1 = reduce(x, 'a b c d e -> ', operation=reduction)
+            result2 = getattr(x, reduction)()
+            assert numpy.allclose(result1, result2)
+
+            x = numpy.arange(2 * 3 * 4 * 5 * 6, dtype=dtype).reshape(2, 3, 4, 5, 6)
+            result1 = reduce(x, '... -> ', operation=reduction)
+            result2 = getattr(x, reduction)()
+            assert numpy.allclose(result1, result2)
+
+            x = numpy.arange(2 * 3 * 4 * 5 * 6, dtype=dtype).reshape(2, 3, 4, 5, 6)
+            result1 = reduce(x, '(a1 a2) ... (e1 e2) -> ', operation=reduction, a1=2, e1=2)
+            result2 = getattr(x, reduction)()
+            assert numpy.allclose(result1, result2)
+
+
+test_reduction()
+
+
+def test_reduction_stress():
+    for backend in all_backends:
+        print('Stress-testing reduction for ', backend.framework_name)
+        if 'mxnet' in backend.framework_name:
+            print('skipped testing for mxnet, not working yet with scalar tensors')
+            continue
+        print('Reduction tests for ', backend.framework_name)
+        for reduction in ['min', 'max', 'sum', 'mean', 'prod']:
+            dtype = 'int64'
+            if reduction in ['mean', 'prod']:
+                dtype = 'float64'
             for n_axes in range(7):
                 shape = numpy.random.randint(2, 4, size=n_axes)
                 permutation = numpy.random.permutation(n_axes)
                 skipped = numpy.random.randint(n_axes + 1)
                 left = ' '.join(f'x{i}' for i in range(n_axes))
                 right = ' '.join(f'x{i}' for i in permutation[skipped:])
-                x = numpy.arange(numpy.prod(shape)).reshape(shape)
+                x = numpy.arange(numpy.prod(shape), dtype=dtype).reshape(shape)
+                if reduction == 'prod' and x.shape != ():
+                    x /= x.mean()
                 result1 = reduce(x, left + '->' + right, operation=reduction)
                 result2 = getattr(x.transpose(permutation), reduction)(axis=tuple(range(skipped)))
-                result3 = backend.to_numpy(
-                    reduce_tensor(backend.from_numpy(x), left + '->' + right, operation=reduction))
+                result3 = backend.to_numpy(reduce(backend.from_numpy(x), left + '->' + right, operation=reduction))
                 assert numpy.allclose(result1, result2)
                 assert numpy.allclose(result1, result3)
 
-            # composite axes
-            x = numpy.arange(2 * 3 * 4 * 5 * 6).reshape(2, 3, 4, 5, 6)
-            result1 = reduce(x, 'a b c d e -> (e c) a', operation=reduction)
-            result2 = getattr(x, reduction)(axis=(1, 3)).transpose(2, 1, 0).reshape(-1, 2)
-            assert numpy.allclose(result1, result2)
 
-            x = numpy.arange(2 * 3 * 4 * 5 * 6).reshape(2, 3, 4, 5, 6)
-            result1 = reduce(x, 'a b c d e -> (e c a)', operation=reduction)
-            result2 = getattr(x, reduction)(axis=(1, 3)).transpose(2, 1, 0).reshape(-1)
-            assert numpy.allclose(result1, result2)
-
-            x = numpy.arange(2 * 3 * 4 * 5 * 6).reshape(2, 3, 4, 5, 6)
-            result1 = reduce(x, 'a b c d e -> ', operation=reduction)
-            result2 = getattr(x, reduction)()
-            assert numpy.allclose(result1, result2)
-
-
-test_reduction()
+test_reduction_stress()
 
 
 def test_transpose_examples():
@@ -301,3 +323,20 @@ def test_enumerating_directions():
 
 
 test_enumerating_directions()
+
+
+def test_concatenations():
+    for backend in all_backends:
+        print('testing shapes for ', backend.framework_name)
+        for n_arrays in [1, 2, 5]:
+            for shape in [[], [1], [1, 1], [2, 3, 5, 7], [1] * 6]:
+                if shape == [] and backend.framework_name == 'mxnet.ndarray':
+                    continue
+                arrays1 = [numpy.arange(i, i + numpy.prod(shape)).reshape(shape) for i in range(n_arrays)]
+                arrays2 = [backend.from_numpy(array) for array in arrays1]
+                result1 = transpose(arrays1, '...->...')
+                result2 = transpose(arrays2, '...->...')
+                assert numpy.allclose(result1, backend.to_numpy(result2))
+
+
+test_concatenations()
