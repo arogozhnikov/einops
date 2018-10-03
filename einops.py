@@ -340,3 +340,10 @@ def _enumerate_directions(x):
         shape[axis_id] = axis_length
         result.append(backend.reshape(backend.arange(0, axis_length), shape))
     return result
+
+
+def asnumpy(tensor):
+    """
+    Convert tensor of imperative frameworks (numpy/cupy/torch/gluon/etc.) to numpy
+    """
+    return get_backend(tensor).to_numpy(tensor)
