@@ -127,7 +127,9 @@ def parse_expression(expression: str) -> Tuple[Set[str], List[CompositeAxis]]:
             current_identifier = None
             if char == '.':
                 assert bracket_group is None
-                add_axis_name('...')
+                # TODO replace with unicode ellipsis
+                composite_axes.append('.')
+                identifiers.add('.')
             elif char == '(':
                 assert bracket_group is None
                 bracket_group = []
@@ -213,7 +215,9 @@ def reduce(tensor, pattern, operation, **axes_lengths):
         if known_lengths[axis_name] is not None:
             # TODO add check for static graphs?
             if isinstance(axis_length, int) and isinstance(known_lengths[axis_name], int):
-                assert axis_length == known_lengths[axis_name]
+                if axis_length != known_lengths[axis_name]:
+                    raise RuntimeError('Value for {} was inferred to be {} not {}'.format(
+                        axis_name, axis_length, known_lengths[axis_name]))
         else:
             known_lengths[axis_name] = axis_length
 
@@ -228,15 +232,16 @@ def reduce(tensor, pattern, operation, **axes_lengths):
         known = {axis for axis in composite_axis if known_lengths[axis] is not None}
         unknown = {axis for axis in composite_axis if known_lengths[axis] is None}
         lookup = dict(zip(list(known_lengths), range(len(known_lengths))))
-        assert len(unknown) <= 1
+        if len(unknown) > 1:
+            raise RuntimeError('', )
         assert len(unknown) + len(known) == len(composite_axis)
         input_axes_known_unknown.append(([lookup[axis] for axis in known], [lookup[axis] for axis in unknown]))
 
     result_axes_grouping = [[position_lookup_after_reduction[axis] for axis in composite_axis]
                             for composite_axis in composite_axes_rght]
 
-    ellipsis_left = 1000 if ['...'] not in composite_axes_left else composite_axes_left.index(['...'])
-    ellipsis_rght = 1000 if ['...'] not in composite_axes_rght else composite_axes_rght.index(['...'])
+    ellipsis_left = 1000 if '.' not in composite_axes_left else composite_axes_left.index('.')
+    ellipsis_rght = 1000 if '.' not in composite_axes_rght else composite_axes_rght.index('.')
 
     recipe = TransformRecipe(elementary_axes_lengths=list(known_lengths.values()),
                              input_composite_axes=input_axes_known_unknown,
@@ -264,23 +269,25 @@ def transpose(tensor, pattern, **axes_lengths):
     Examples:
     >>> # suppose we have a set of images in "h w c" format (height-width-channel)
     >>> images = [numpy.random.randn(30, 40, 3) for _ in range(32)]
-    >>> transpose(images, 'b h w c -> b h w c').shape # stacked along zeroth axis
+    >>> transpose(images, 'b h w c -> b h w c').shape # stacked along first (batch) axis
     (32, 30, 40, 3)
     >>> transpose(images, 'b h w c -> (b h) w c').shape # concatenated images along height (vertical axis)
-    (32 * 30, 40, 3)
+    (960, 40, 3)      # 960 = 32 * 30
     >>> transpose(images, 'b h w c -> h (b w) c').shape # concatenated images along horizontal axis
-    (30, 32 * 40, 3)
-    >>> transpose(images, 'b h w c -> b c h w').shape # reordered axes to follow bchw for deep learning
+    (30, 1280, 3)     # 1280 = 32 * 40
+    >>> transpose(images, 'b h w c -> b c h w').shape # reordered axes to "b c h w" format for deep learning
     (32, 3, 30, 40)
     >>> transpose(images, 'b h w c -> b (c h w)').shape # flattened each image into a vector
-    (32, 3 * 30 * 40)
+    (32, 3600)        # 3600 = 30 * 40 * 3
     >>> transpose(images, 'b (h1 h) (w1 w) c -> (b h1 w1) h w c', h1=2, w1=2).shape # split each image into 4 smaller
-    (32 * 4, 15, 20, 3)
+    (128, 15, 20, 3)  # 128 = 32 * 2 * 2
 
+    When composing axes, C-order enumeration used (consecutive elements have different last axis)
     More examples and explanations can be found in the einops guide.
     """
     if isinstance(tensor, list):
-        assert len(tensor) > 0
+        if len(tensor) == 0:
+            raise TypeError("Transposition can't be applied to an empty list")
         tensor = get_backend(tensor[0]).stack_on_zeroth_dimension(tensor)
     return reduce(tensor, pattern, operation='none', **axes_lengths)
 
@@ -322,7 +329,8 @@ def _enumerate_directions(x):
     For an n-dimensional tensor, returns tensors to enumerate each axis.
     >>> i, j, k = _enumerate_directions(numpy.zeros([2, 3, 4]))
     >>> result = i + 2 * j + 3 * k
-    Result[i, j, k] = i + 2 * j + 3 * k
+
+    result[i, j, k] = i + 2 * j + 3 * k, and also ot has the same shape
     """
     backend = get_backend(x)
     shape = backend.shape(x)

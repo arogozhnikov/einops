@@ -201,13 +201,13 @@ def test_transpose_examples():
     # squeeze, unsqueeze
     # depth-to-space and space-to-depth
     # splitting of dimension into groups
+    # stack and concat
 
     # ну и всевозможные редукции
 
     # shufflenet
     # max-pooling
     # strided convolutions
-    #
 
     def test1(x):
         y = transpose(x, 'b h w c -> b c h w')
@@ -311,6 +311,9 @@ def test_parse_shape():
         assert parsed1 == parsed2 == dict(a1=30, a1a111a=40)
 
 
+test_parse_shape()
+
+
 def test_parse_shape_tf_static():
     print('special shape parsing for tf_static')
     placeholders = [
@@ -331,7 +334,6 @@ def test_parse_shape_tf_static():
         assert numpy.allclose(result, 0)
 
 
-test_parse_shape()
 if not use_tf_eager:
     test_parse_shape_tf_static()
 
