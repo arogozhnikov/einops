@@ -103,5 +103,8 @@ venv.bak/
 # mypy
 .mypy_cache/
 
+# pycharm
+.idea
+
 # design-document
 design-einops.txt
