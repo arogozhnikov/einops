@@ -250,6 +250,46 @@ class TensorflowBackend(AbstractBackend):
     def is_float_type(self, x):
         return x.dtype in ('float16', 'float32', 'float64', 'float128')
 
+
+# class KerasBackend(AbstractBackend):
+class KerasBackend:
+    framework_name = 'keras'
+
+    def __init__(self):
+        import keras
+        self.K = keras.backend
+
+    def tensor_types(self):
+        # здесь методы проверки на самом деле
+        raise NotImplementedError
+
+    def from_numpy(self, x):
+        return self.K.variable(x, name='einkeras-test')
+
+    def to_numpy(self, x):
+        raise NotImplementedError()
+
+    def arange(self, start, stop):
+        return self.K.arange(start, stop)
+
+    def shape(self, x):
+        return self.K.shape(x)
+
+    def reduce(self, x, operation, axes):
+        return getattr(self.K, operation)(x, axis=axes)
+
+    def reshape(self, x, shape):
+        return self.K.reshape(x, shape)
+
+    def transpose(self, x, axes):
+        return self.K.permute_dimensions(x, axes)
+
+    def stack_on_zeroth_dimension(self, tensors: list):
+        return self.K.stack(tensors)
+
+    def is_float_type(self, x):
+        return 'float'in self.K.dtype(x)
+
 # this one is for static tensorflow
 # def tf_wrap_and_compute(function):
 #     def returned(x, *args, **kargs):
