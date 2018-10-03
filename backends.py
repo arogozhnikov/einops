@@ -4,6 +4,7 @@ __all__ = ['get_backend']
 __author__ = 'Alex Rogozhnikov'
 
 _backends = {}
+_debugging = False
 
 
 def get_backend(tensor):
@@ -12,10 +13,12 @@ def get_backend(tensor):
             return backend
 
     for BackendSubclass in AbstractBackend.__subclasses__():
-        print('Testing subclass ', BackendSubclass)
+        if _debugging:
+            print('Testing subclass ', BackendSubclass)
         if BackendSubclass.framework_name in sys.modules:
             if BackendSubclass.framework_name not in _backends:
-                print('imported ', BackendSubclass.framework_name)
+                if _debugging:
+                    print('imported ', BackendSubclass.framework_name)
                 backend = BackendSubclass()
                 _backends[backend.framework_name] = backend.tensor_types(), backend
                 if isinstance(tensor, backend.tensor_types()):
@@ -288,7 +291,7 @@ class KerasBackend:
         return self.K.stack(tensors)
 
     def is_float_type(self, x):
-        return 'float'in self.K.dtype(x)
+        return 'float' in self.K.dtype(x)
 
 # this one is for static tensorflow
 # def tf_wrap_and_compute(function):
