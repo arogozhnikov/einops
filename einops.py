@@ -7,13 +7,14 @@ import numpy
 from backends import get_backend
 
 CompositeAxis = List[str]
+_reductions = ('min', 'max', 'sum', 'mean', 'prod')
 
 
-def reduce_axes(tensor, reduction_type, reduced_axes):
+def reduce_axes(tensor, reduction_type, reduced_axes: Tuple[int]):
     reduced_axes = tuple(reduced_axes)
-    if reduction_type == 'none' or len(reduced_axes) == 0:
+    if len(reduced_axes) == 0:
         return tensor
-    assert reduction_type in ['min', 'max', 'sum', 'mean', 'logaddexp', 'prod']
+    assert reduction_type in _reductions
     if reduction_type == 'mean':
         if not get_backend(tensor).is_float_type(tensor):
             raise NotImplementedError('reduce_mean is not available for non-floating tensors')
@@ -28,7 +29,7 @@ class TransformRecipe:
                  # each dimension in input can help to reconstruct or verify one of dimensions
                  output_composite_axes: List[List[int]],  # ids of axes as they appear in result
                  reduction_type: str = 'none',
-                 reduced_elementary_axes: List[int] = (),
+                 reduced_elementary_axes: Tuple[int] = (),
                  ellipsis_positions: Tuple[int, int] = (1000, 1000),
                  ):
         self.axes_lengths = elementary_axes_lengths
@@ -151,7 +152,7 @@ def parse_expression(expression: str) -> Tuple[Set[str], List[CompositeAxis]]:
     return identifiers, composite_axes
 
 
-def get_axes_names(composite_axis_name: str):
+def _parse_composite_axis(composite_axis_name: str):
     axes_names = [axis for axis in composite_axis_name.split(' ') if len(axis) > 0]
     for axis in axes_names:
         if axis == '_':
@@ -162,9 +163,24 @@ def get_axes_names(composite_axis_name: str):
     return axes_names
 
 
-# TODO parenthesis within brackets?
+def _check_elementary_axis_name(name: str) -> bool:
+    """
+    Valid elementary axes contain only lower latin letters and digits and start with a letter.
+    """
+    if len(name) == 0:
+        return False
+    if not 'a' <= name[0] <= 'z':
+        return False
+    for letter in name:
+        if (not letter.isdigit()) and not ('a' <= letter <= 'z'):
+            return False
+    return True
+
+
+# TODO parenthesis within brackets
+# TODO add logaddexp
 def reduce(tensor, pattern, operation, **axes_lengths):
-    assert operation in ['none', 'min', 'max', 'sum', 'mean', 'prod', 'logaddexp']
+    assert operation in ['none', 'min', 'max', 'sum', 'mean', 'prod']
     left, right = pattern.split('->')
     # checking that both have similar letters
     identifiers_left, composite_axes_left = parse_expression(left)
@@ -201,11 +217,10 @@ def reduce(tensor, pattern, operation, **axes_lengths):
         else:
             known_lengths[axis_name] = axis_length
 
-    for axis, axis_length in axes_lengths.items():
-        # TODO better name validation
-        elementary_axes = get_axes_names(axis)
-        assert len(elementary_axes) == 1
-        update_axis_length(elementary_axes[0], axis_length)
+    for elementary_axis, axis_length in axes_lengths.items():
+        if not _check_elementary_axis_name(elementary_axis):
+            raise RuntimeError('Invalid name for an axis', elementary_axis)
+        update_axis_length(elementary_axis, axis_length)
 
     input_axes_known_unknown = []
     # inferring rest of sizes from arguments
@@ -227,7 +242,7 @@ def reduce(tensor, pattern, operation, **axes_lengths):
                              input_composite_axes=input_axes_known_unknown,
                              output_composite_axes=result_axes_grouping,
                              reduction_type=operation,
-                             reduced_elementary_axes=reduced_axes,
+                             reduced_elementary_axes=tuple(reduced_axes),
                              ellipsis_positions=(ellipsis_left, ellipsis_rght)
                              )
 

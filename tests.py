@@ -1,4 +1,4 @@
-from einops import transpose, reduce, parse_shape, enumerate_directions
+from einops import transpose, reduce, parse_shape, _enumerate_directions
 import numpy
 import tensorflow as tf
 import backends
@@ -8,6 +8,17 @@ if use_tf_eager:
     tf.enable_eager_execution()
 
 all_backends = [c() for c in backends.AbstractBackend.__subclasses__()]
+
+
+def test_check_elementary_axis_name():
+    from einops import _check_elementary_axis_name
+    for name in ['a', 'b', 'h', 'dx', 'h1', 'zz', 'i9123', 'somelongname']:
+        assert _check_elementary_axis_name(name)
+    for name in ['', '2b', 'Alex', 'camelCase', 'under_score', '12']:
+        assert not _check_elementary_axis_name(name)
+
+
+test_check_elementary_axis_name()
 
 
 def test_transpose_ellipsis_numpy():
@@ -144,6 +155,11 @@ def test_reduction():
             result2 = getattr(x, reduction)()
             assert numpy.allclose(result1, result2)
 
+            x = numpy.arange(3 * 3 * 3, dtype=dtype).reshape(3, 3, 3)
+            result1 = reduce(x, 'a b c -> ', operation=reduction)
+            result2 = getattr(x, reduction)()
+            assert numpy.allclose(result1, result2)
+
 
 test_reduction()
 
@@ -179,6 +195,20 @@ test_reduction_stress()
 
 
 def test_transpose_examples():
+    # TODO order
+    # transposition = permute_dimensions
+    # reshape = view
+    # squeeze, unsqueeze
+    # depth-to-space and space-to-depth
+    # splitting of dimension into groups
+
+    # ну и всевозможные редукции
+
+    # shufflenet
+    # max-pooling
+    # strided convolutions
+    #
+
     def test1(x):
         y = transpose(x, 'b h w c -> b c h w')
         assert y.shape == (10, 40, 20, 30)
@@ -248,9 +278,9 @@ def test_transpose_examples():
         result = usual_conv(x_reshaped)
         return transpose(result, '(h1 w1 b) c h w) -> b c (h h1) (w w1)')
 
-    # TODO add example for detection module
+    # TODO add example for detection module?
 
-    # tensor train
+    # TODO example for tensor train?
     # einsum(  G[i, j, alpha0, alpha1] X[...,  i, alpha0] -> [i, ...,  alpha1]  )
 
 
@@ -314,8 +344,8 @@ def test_enumerating_directions():
                 # known bug of ndarray
                 continue
             x = numpy.arange(numpy.prod(shape)).reshape(shape)
-            axes1 = enumerate_directions(x)
-            axes2 = enumerate_directions(backend.from_numpy(x))
+            axes1 = _enumerate_directions(x)
+            axes2 = _enumerate_directions(backend.from_numpy(x))
             for axe1, axe2 in zip(axes1, axes2):
                 axe2 = backend.to_numpy(axe2)
                 assert axe1.shape == axe2.shape
@@ -325,7 +355,7 @@ def test_enumerating_directions():
 test_enumerating_directions()
 
 
-def test_concatenations():
+def test_concatenations_and_stacking():
     for backend in all_backends:
         print('testing shapes for ', backend.framework_name)
         for n_arrays in [1, 2, 5]:
@@ -334,9 +364,11 @@ def test_concatenations():
                     continue
                 arrays1 = [numpy.arange(i, i + numpy.prod(shape)).reshape(shape) for i in range(n_arrays)]
                 arrays2 = [backend.from_numpy(array) for array in arrays1]
+                result0 = numpy.asarray(arrays1)
                 result1 = transpose(arrays1, '...->...')
                 result2 = transpose(arrays2, '...->...')
+                assert numpy.allclose(result0, result1)
                 assert numpy.allclose(result1, backend.to_numpy(result2))
 
 
-test_concatenations()
+test_concatenations_and_stacking()
