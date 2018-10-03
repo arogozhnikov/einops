@@ -250,6 +250,38 @@ def reduce(tensor, pattern, operation, **axes_lengths):
 
 
 def transpose(tensor, pattern, **axes_lengths):
+    """
+    einops.transpose is a reader-friendly smart element reordering for multidimensional tensors.
+    This operation replaces usual transpose (axes permutation), reshape (view), squeeze, unsqueeze, and
+    other operations.
+
+    :param tensor: tensor of any supported library (e.g. numpy.ndarray).
+            list of tensors is also accepted, those should be of the same type and shape
+    :param pattern: string, transposition pattern
+    :param axes_lengths: any additional specifications fpr dimensions
+    :return: tensor of the same type as input. If possible, a view to the original tensor is returned.
+
+    Examples:
+    >>> # suppose we have a set of images in "h w c" format (height-width-channel)
+    >>> images = [numpy.random.randn(30, 40, 3) for _ in range(32)]
+    >>> transpose(images, 'b h w c -> b h w c').shape # stacked along zeroth axis
+    (32, 30, 40, 3)
+    >>> transpose(images, 'b h w c -> (b h) w c').shape # concatenated images along height (vertical axis)
+    (32 * 30, 40, 3)
+    >>> transpose(images, 'b h w c -> h (b w) c').shape # concatenated images along horizontal axis
+    (30, 32 * 40, 3)
+    >>> transpose(images, 'b h w c -> b c h w').shape # reordered axes to follow bchw for deep learning
+    (32, 3, 30, 40)
+    >>> transpose(images, 'b h w c -> b (c h w)').shape # flattened each image into a vector
+    (32, 3 * 30 * 40)
+    >>> transpose(images, 'b (h1 h) (w1 w) c -> (b h1 w1) h w c', h1=2, w1=2).shape # split each image into 4 smaller
+    (32 * 4, 15, 20, 3)
+
+    More examples and explanations can be found in the einops guide.
+    """
+    if isinstance(tensor, list):
+        assert len(tensor) > 0
+        tensor = get_backend(tensor[0]).stack_on_zeroth_dimension(tensor)
     return reduce(tensor, pattern, operation='none', **axes_lengths)
 
 
@@ -266,6 +298,15 @@ def check_shapes(*shapes: List[dict], **lengths):
 
 
 def parse_shape(x, names: str):
+    """
+    Parse a tensor shape to dictionary mapping axes names to their lengths.
+    Underscores are for
+
+    >>> x = numpy.zeros([2, 3, 5, 7])
+    >>> parse_shape(x, 'batch _ h w')
+    {'batch': 2, 'h': 5, 'w': 7}
+
+    """
     names = [elementary_axis for elementary_axis in names.split(' ') if len(elementary_axis) > 0]
     shape = get_backend(x).shape(x)
     assert len(shape) == len(names)
@@ -276,7 +317,13 @@ def parse_shape(x, names: str):
     return result
 
 
-def enumerate_directions(x):
+def _enumerate_directions(x):
+    """
+    For an n-dimensional tensor, returns tensors to enumerate each axis.
+    >>> i, j, k = _enumerate_directions(numpy.zeros([2, 3, 4]))
+    >>> result = i + 2 * j + 3 * k
+    Result[i, j, k] = i + 2 * j + 3 * k
+    """
     backend = get_backend(x)
     shape = backend.shape(x)
     result = []
