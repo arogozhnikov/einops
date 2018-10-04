@@ -1,4 +1,5 @@
-from einops import transpose, reduce as reduce, parse_shape, _enumerate_directions
+from einops import transpose, reduce, parse_shape, _enumerate_directions, _prepare_transformation_recipe, \
+    _optimize_transformation
 import numpy
 import tensorflow as tf
 import backends
@@ -23,31 +24,31 @@ test_check_elementary_axis_name()
 
 def test_transpose_ellipsis_numpy():
     x = numpy.arange(2 * 3 * 4 * 5 * 6).reshape([2, 3, 4, 5, 6])
-    assert (numpy.allclose(x, transpose(x, '...->...')))
-    assert (numpy.allclose(x, transpose(x, 'a b c d e-> a b c d e')))
-    assert (numpy.allclose(x, transpose(x, 'a b c d e ...-> ... a b c d e')))
-    assert (numpy.allclose(x, transpose(x, 'a b c d e ...-> a ... b c d e')))
-    assert (numpy.allclose(x, transpose(x, '... a b c d e -> ... a b c d e')))
-    assert (numpy.allclose(x, transpose(x, 'a ... e-> a ... e')))
-    assert (numpy.allclose(x, transpose(x, 'a ... -> a ... ')))
-    assert (numpy.allclose(x, transpose(x, 'a ... -> a ... ')))
+    assert (numpy.array_equal(x, transpose(x, '...->...')))
+    assert (numpy.array_equal(x, transpose(x, 'a b c d e-> a b c d e')))
+    assert (numpy.array_equal(x, transpose(x, 'a b c d e ...-> ... a b c d e')))
+    assert (numpy.array_equal(x, transpose(x, 'a b c d e ...-> a ... b c d e')))
+    assert (numpy.array_equal(x, transpose(x, '... a b c d e -> ... a b c d e')))
+    assert (numpy.array_equal(x, transpose(x, 'a ... e-> a ... e')))
+    assert (numpy.array_equal(x, transpose(x, 'a ... -> a ... ')))
+    assert (numpy.array_equal(x, transpose(x, 'a ... -> a ... ')))
 
-    assert (numpy.allclose(transpose(x, 'a b c d e -> (a b) c d e'),
-                           transpose(x, 'a b ... -> (a b ) ... ')))
-    assert (numpy.allclose(transpose(x, 'a b c d e -> a b (c d) e'),
-                           transpose(x, '... c d e -> ... (c d) e')))
-    assert (numpy.allclose(transpose(x, 'a b c d e -> a b c d e'),
-                           transpose(x, '... -> ... ')))
+    assert (numpy.array_equal(transpose(x, 'a b c d e -> (a b) c d e'),
+                              transpose(x, 'a b ... -> (a b ) ... ')))
+    assert (numpy.array_equal(transpose(x, 'a b c d e -> a b (c d) e'),
+                              transpose(x, '... c d e -> ... (c d) e')))
+    assert (numpy.array_equal(transpose(x, 'a b c d e -> a b c d e'),
+                              transpose(x, '... -> ... ')))
     for reduction in ['min', 'max', 'sum']:
-        assert (numpy.allclose(reduce(x, 'a b c d e -> ', reduction=reduction),
-                               reduce(x, '... -> ', reduction=reduction)))
-        assert (numpy.allclose(reduce(x, 'a b c d e -> (e a)', reduction=reduction),
-                               reduce(x, 'a ... e -> (e a)', reduction=reduction)))
-        assert (numpy.allclose(reduce(x, 'a b c d e -> d (a e)', reduction=reduction),
-                               reduce(x, 'a b c d e ... -> d (a e)', reduction=reduction)))
-    # TODO ellipsis inside parentheses on the right side
-    # assert (numpy.allclose(transpose(x, 'a b c d e -> (a b c d e)'),
-    #                        transpose(x, '... -> (...) ')))
+        assert (numpy.array_equal(reduce(x, 'a b c d e -> ', reduction=reduction),
+                                  reduce(x, '... -> ', reduction=reduction)))
+        assert (numpy.array_equal(reduce(x, 'a b c d e -> (e a)', reduction=reduction),
+                                  reduce(x, 'a ... e -> (e a)', reduction=reduction)))
+        assert (numpy.array_equal(reduce(x, 'a b c d e -> d (a e)', reduction=reduction),
+                                  reduce(x, 'a b c d e ... -> d (a e)', reduction=reduction)))
+        # TODO ellipsis inside parentheses on the right side
+        # assert (numpy.array_equal(transpose(x, 'a b c d e -> (a b c d e)'),
+        #                        transpose(x, '... -> (...) ')))
 
 
 test_transpose_ellipsis_numpy()
@@ -68,25 +69,25 @@ def test_transpose_with_numpy():
         assert result.dtype == x.dtype
 
     result = transpose(x, 'a b c d e f -> a b c d e f')
-    assert numpy.allclose(x, result)
+    assert numpy.array_equal(x, result)
 
     result = transpose(x, 'a b c d e f -> a (b) (c d e) f')
-    assert numpy.allclose(x.flatten(), result.flatten())
+    assert numpy.array_equal(x.flatten(), result.flatten())
 
     result = transpose(x, 'a aa aa1 a1a1 aaaa a11 -> a aa aa1 a1a1 aaaa a11')
-    assert numpy.allclose(x, result)
+    assert numpy.array_equal(x, result)
 
     result1 = transpose(x, 'a b c d e f -> f e d c b a')
     result2 = transpose(x, 'f e d c b a -> a b c d e f')
-    assert numpy.allclose(result1, result2)
+    assert numpy.array_equal(result1, result2)
 
     result = transpose(transpose(x, 'a b c d e f -> (f d) c (e b) a'), '(f d) c (e b) a -> a b c d e f', b=1, d=3)
-    assert numpy.allclose(x, result)
+    assert numpy.array_equal(x, result)
 
     sizes = dict(zip('abcdef', shape))
     temp = transpose(x, 'a b c d e f -> (f d) c (e b) a', **sizes)
     result = transpose(temp, '(f d) c (e b) a -> a b c d e f', **sizes)
-    assert numpy.allclose(x, result)
+    assert numpy.array_equal(x, result)
 
     x2 = numpy.arange(2 * 3 * 4).reshape([2, 3, 4])
     result = transpose(x2, 'a b c -> b c a')
@@ -116,7 +117,7 @@ def test_transpose_with_numpy():
         for original_axis, result_axis in enumerate(permutation):
             expected_result |= ((input >> original_axis) & 1) << result_axis
 
-        assert numpy.allclose(result, expected_result)
+        assert numpy.array_equal(result, expected_result)
     print('simple tests passed')
 
 
@@ -173,8 +174,10 @@ def test_reduction_stress():
         print('Reduction tests for ', backend.framework_name)
         for reduction in ['min', 'max', 'sum', 'mean', 'prod']:
             dtype = 'int64'
+            coincide = numpy.array_equal
             if reduction in ['mean', 'prod']:
                 dtype = 'float64'
+                coincide = numpy.allclose
             for n_axes in range(7):
                 shape = numpy.random.randint(2, 4, size=n_axes)
                 permutation = numpy.random.permutation(n_axes)
@@ -187,8 +190,8 @@ def test_reduction_stress():
                 result1 = reduce(x, left + '->' + right, reduction=reduction)
                 result2 = getattr(x.transpose(permutation), reduction)(axis=tuple(range(skipped)))
                 result3 = backend.to_numpy(reduce(backend.from_numpy(x), left + '->' + right, reduction=reduction))
-                assert numpy.allclose(result1, result2)
-                assert numpy.allclose(result1, result3)
+                assert coincide(result1, result2)
+                assert coincide(result1, result3)
 
 
 test_reduction_stress()
@@ -258,7 +261,7 @@ def test_transpose_examples():
             x = numpy.arange(10 * 20 * 30 * 40).reshape([10, 20, 30, 40])
             result1 = test(x)
             result2 = backend.to_numpy(test(backend.from_numpy(x)))
-            assert numpy.allclose(result1, result2)
+            assert numpy.array_equal(result1, result2)
             print(result1.shape)
 
     def shufflenet(x, convolve, c1=8, c2=8):
@@ -374,3 +377,5 @@ def test_concatenations_and_stacking():
 
 
 test_concatenations_and_stacking()
+
+print(_prepare_transformation_recipe.cache_info())
