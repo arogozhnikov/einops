@@ -1,6 +1,6 @@
 import itertools
 from collections import OrderedDict
-from typing import Tuple, List, Set
+from typing import Tuple, List, Set, Dict
 
 import numpy
 
@@ -8,6 +8,11 @@ from backends import get_backend
 
 CompositeAxis = List[str]
 _reductions = ('min', 'max', 'sum', 'mean', 'prod')
+_ellipsis = '…'
+
+
+class EinopsError(RuntimeError):
+    pass
 
 
 def reduce_axes(tensor, reduction_type, reduced_axes: Tuple[int]):
@@ -37,20 +42,24 @@ class TransformRecipe:
         self.output_composite_axes = output_composite_axes
         self.final_axes_grouping_flat = list(itertools.chain(*output_composite_axes))
         self.reduction_type = reduction_type
+        # TODO keep? Remove? This is redundant information
         self.reduced_elementary_axes = reduced_elementary_axes
         self.ellipsis_positions = ellipsis_positions
 
     def reconstruct_from_shape(self, shape):
         axes_lengths = list(self.axes_lengths)
         if self.ellipsis_positions != (1000, 1000):
-            assert len(shape) >= len(self.input_composite_axes) - 1
+            if len(shape) < len(self.input_composite_axes) - 1:
+                raise EinopsError('Expected at least {} dimensions, got {}'.format(
+                    len(self.input_composite_axes) - 1, len(shape)))
         else:
-            assert len(shape) == len(self.input_composite_axes)
+            if len(shape) != len(self.input_composite_axes):
+                raise EinopsError('Expected {} dimensions, got {}'.format(len(self.input_composite_axes), len(shape)))
         for input_axis, (known_axes, unknown_axes) in enumerate(self.input_composite_axes):
             before_ellipsis = input_axis
             after_ellipsis = input_axis + len(shape) - len(self.input_composite_axes)
             if input_axis == self.ellipsis_positions[0]:
-                assert len(known_axes) == 0
+                assert len(known_axes) == 0 and len(unknown_axes) == 1
                 unknown_axis, = unknown_axes
                 ellipsis_shape = shape[before_ellipsis:after_ellipsis + 1]
                 axes_lengths[unknown_axis] = numpy.prod(ellipsis_shape, dtype=int)
@@ -64,11 +73,12 @@ class TransformRecipe:
                     known_product *= axes_lengths[axis]
 
                 if len(unknown_axes) == 0:
-                    if isinstance(length, int) and isinstance(known_product, int):
-                        assert length == known_product
+                    if isinstance(length, int) and isinstance(known_product, int) and length != known_product:
+                        raise EinopsError('Shape mismatch, {} != {}'.format(length, known_product))
                 else:
-                    if isinstance(length, int) and isinstance(known_product, int):
-                        assert length % known_product == 0
+                    if isinstance(length, int) and isinstance(known_product, int) and length % known_product != 0:
+                        raise EinopsError("Shape mismatch, can't divide axis of length {} in chunks of {}".format(
+                            length, known_product))
                     unknown_axis, = unknown_axes
                     axes_lengths[unknown_axis] = length // known_product
 
@@ -105,15 +115,18 @@ def parse_expression(expression: str) -> Tuple[Set[str], List[CompositeAxis]]:
     identifiers = set()
     composite_axes = []
     if '.' in expression:
-        assert ('...' in expression) and (str.count(expression, '...') == 1) and (str.count(expression, '.') == 3)
-        expression = expression.replace('...', '.')
+        if '...' not in expression:
+            raise EinopsError('Expression may contain dots only inside ellipsis (...)')
+        if str.count(expression, '...') != 1 or str.count(expression, '.') != 3:
+            raise EinopsError('Expression may contain dots only inside ellipsis (...); only one ellipsis for tensor ')
+        expression = expression.replace('...', _ellipsis)
 
     bracket_group = None
 
     def add_axis_name(x):
         if x is not None:
             if x in identifiers:
-                raise ValueError('Indexing expression contains duplicate dimension "{x}"')
+                raise ValueError('Indexing expression contains duplicate dimension "{}"'.format(x))
             identifiers.add(x)
             if bracket_group is None:
                 composite_axes.append([x])
@@ -122,23 +135,26 @@ def parse_expression(expression: str) -> Tuple[Set[str], List[CompositeAxis]]:
 
     current_identifier = None
     for char in expression:
-        if char in '(). ':
+        if char in '() ' + _ellipsis:
             add_axis_name(current_identifier)
             current_identifier = None
-            if char == '.':
-                assert bracket_group is None
-                # TODO replace with unicode ellipsis
-                composite_axes.append('.')
-                identifiers.add('.')
+            if char == _ellipsis:
+                if bracket_group is not None:
+                    raise EinopsError("Ellipsis can't be used inside the composite axis (inside brackets)")
+                composite_axes.append(_ellipsis)
+                identifiers.add(_ellipsis)
             elif char == '(':
-                assert bracket_group is None
+                if bracket_group is not None:
+                    raise EinopsError("Axis composition is one-level (brackets inside brackets not allowed)")
                 bracket_group = []
             elif char == ')':
-                assert bracket_group is not None
+                if bracket_group is None:
+                    raise EinopsError('Brackets are not balanced')
                 composite_axes.append(bracket_group)
                 bracket_group = None
         elif '0' <= char <= '9':
-            assert current_identifier is not None
+            if current_identifier is None:
+                raise EinopsError("Axis name can't start with a digit")
             current_identifier += char
         elif 'a' <= char <= 'z':
             if current_identifier is None:
@@ -146,10 +162,10 @@ def parse_expression(expression: str) -> Tuple[Set[str], List[CompositeAxis]]:
             else:
                 current_identifier += char
         else:
-            raise RuntimeError("Unknown character '{}'".format(char))
+            raise EinopsError("Unknown character '{}'".format(char))
 
     if bracket_group is not None:
-        raise ValueError('Imbalanced parentheses in expression: "{}"'.format(expression))
+        raise EinopsError('Imbalanced parentheses in expression: "{}"'.format(expression))
     add_axis_name(current_identifier)
     return identifiers, composite_axes
 
@@ -181,21 +197,23 @@ def _check_elementary_axis_name(name: str) -> bool:
 
 # TODO parenthesis within brackets
 # TODO add logaddexp
-def reduce(tensor, pattern, operation, **axes_lengths):
-    assert operation in ['none', 'min', 'max', 'sum', 'mean', 'prod']
+def prepare_reduction_recipe(pattern: str, reduction: str, axes_lengths: Dict[str, int]) -> TransformRecipe:
+    if reduction not in ['none', 'min', 'max', 'sum', 'mean', 'prod']:
+        raise EinopsError('Unknown reduction {}'.format(reduction))
+
     left, right = pattern.split('->')
-    # checking that both have similar letters
     identifiers_left, composite_axes_left = parse_expression(left)
     identifiers_rght, composite_axes_rght = parse_expression(right)
 
-    if operation == 'none':
+    # checking that both have similar letters
+    if reduction == 'none':
         difference = set.symmetric_difference(identifiers_left, identifiers_rght)
         if len(difference) > 0:
-            raise RuntimeError('Identifiers were only one side of expression: {}'.format(difference))
+            raise EinopsError('Identifiers were on one side of expression (should be on both): {}'.format(difference))
     else:
         difference = set.difference(identifiers_rght, identifiers_left)
         if len(difference) > 0:
-            raise RuntimeError('Unexpected identifiers appeared on the right side of expression: {}'.format(difference))
+            raise EinopsError('Unexpected identifiers appeared on the right side of expression: {}'.format(difference))
 
     # parsing all dimensions to find out lengths
     known_lengths = OrderedDict()
@@ -216,14 +234,16 @@ def reduce(tensor, pattern, operation, **axes_lengths):
             # TODO add check for static graphs?
             if isinstance(axis_length, int) and isinstance(known_lengths[axis_name], int):
                 if axis_length != known_lengths[axis_name]:
-                    raise RuntimeError('Value for {} was inferred to be {} not {}'.format(
+                    raise RuntimeError('Inferred length for {} is {} not {}'.format(
                         axis_name, axis_length, known_lengths[axis_name]))
         else:
             known_lengths[axis_name] = axis_length
 
     for elementary_axis, axis_length in axes_lengths.items():
         if not _check_elementary_axis_name(elementary_axis):
-            raise RuntimeError('Invalid name for an axis', elementary_axis)
+            raise EinopsError('Invalid name for an axis', elementary_axis)
+        if elementary_axis not in known_lengths:
+            raise EinopsError('Axis {} is not used in transform'.format(elementary_axis))
         update_axis_length(elementary_axis, axis_length)
 
     input_axes_known_unknown = []
@@ -233,25 +253,37 @@ def reduce(tensor, pattern, operation, **axes_lengths):
         unknown = {axis for axis in composite_axis if known_lengths[axis] is None}
         lookup = dict(zip(list(known_lengths), range(len(known_lengths))))
         if len(unknown) > 1:
-            raise RuntimeError('', )
+            raise EinopsError('Could not infer sizes for {}'.format(unknown))
         assert len(unknown) + len(known) == len(composite_axis)
         input_axes_known_unknown.append(([lookup[axis] for axis in known], [lookup[axis] for axis in unknown]))
 
     result_axes_grouping = [[position_lookup_after_reduction[axis] for axis in composite_axis]
                             for composite_axis in composite_axes_rght]
 
-    ellipsis_left = 1000 if '.' not in composite_axes_left else composite_axes_left.index('.')
-    ellipsis_rght = 1000 if '.' not in composite_axes_rght else composite_axes_rght.index('.')
+    ellipsis_left = 1000 if _ellipsis not in composite_axes_left else composite_axes_left.index(_ellipsis)
+    ellipsis_rght = 1000 if _ellipsis not in composite_axes_rght else composite_axes_rght.index(_ellipsis)
 
-    recipe = TransformRecipe(elementary_axes_lengths=list(known_lengths.values()),
-                             input_composite_axes=input_axes_known_unknown,
-                             output_composite_axes=result_axes_grouping,
-                             reduction_type=operation,
-                             reduced_elementary_axes=tuple(reduced_axes),
-                             ellipsis_positions=(ellipsis_left, ellipsis_rght)
-                             )
+    return TransformRecipe(elementary_axes_lengths=list(known_lengths.values()),
+                           input_composite_axes=input_axes_known_unknown,
+                           output_composite_axes=result_axes_grouping,
+                           reduction_type=reduction,
+                           reduced_elementary_axes=tuple(reduced_axes),
+                           ellipsis_positions=(ellipsis_left, ellipsis_rght)
+                           )
 
-    return recipe.apply(tensor=tensor)
+
+def reduce(tensor, pattern: str, reduction: str, **axes_lengths: int):
+    try:
+        recipe = prepare_reduction_recipe(pattern, reduction, axes_lengths=axes_lengths)
+        return recipe.apply(tensor)
+    except EinopsError as e:
+        message = ' Error while processing {}-reduction pattern "{}".'.format(reduction, pattern)
+        if not isinstance(tensor, list):
+            message += '\n Input tensor shape: {}.'.format(get_backend(tensor).shape(tensor))
+        else:
+            message += '\n Input is list'
+        message += 'Additionally given: {}.'.format(axes_lengths)
+        raise EinopsError(message + '\n {}'.format(e))
 
 
 def transpose(tensor, pattern, **axes_lengths):
@@ -289,7 +321,7 @@ def transpose(tensor, pattern, **axes_lengths):
         if len(tensor) == 0:
             raise TypeError("Transposition can't be applied to an empty list")
         tensor = get_backend(tensor[0]).stack_on_zeroth_dimension(tensor)
-    return reduce(tensor, pattern, operation='none', **axes_lengths)
+    return reduce(tensor, pattern, reduction='none', **axes_lengths)
 
 
 def check_shapes(*shapes: List[dict], **lengths):
@@ -304,19 +336,21 @@ def check_shapes(*shapes: List[dict], **lengths):
                 lengths[axis_name] = axis_length
 
 
-def parse_shape(x, names: str):
+def parse_shape(x, pattern: str):
     """
     Parse a tensor shape to dictionary mapping axes names to their lengths.
-    Underscores are for
+    Use underscore to skip the dimension in parsing
 
     >>> x = numpy.zeros([2, 3, 5, 7])
     >>> parse_shape(x, 'batch _ h w')
     {'batch': 2, 'h': 5, 'w': 7}
 
     """
-    names = [elementary_axis for elementary_axis in names.split(' ') if len(elementary_axis) > 0]
+    names = [elementary_axis for elementary_axis in pattern.split(' ') if len(elementary_axis) > 0]
     shape = get_backend(x).shape(x)
-    assert len(shape) == len(names)
+    if len(shape) != len(names):
+        raise RuntimeError("Can't parse shape with different number of dimensions: {pattern} {shape}".format(
+            pattern=pattern, shape=shape))
     result = {}
     for axis_name, axis_length in zip(names, shape):
         if axis_name != '_':
@@ -344,6 +378,6 @@ def _enumerate_directions(x):
 
 def asnumpy(tensor):
     """
-    Convert tensor of imperative frameworks (numpy/cupy/torch/gluon/etc.) to numpy
+    Convert a tensor of an imperative framework (i.e. numpy/cupy/torch/gluon/etc.) to numpy
     """
     return get_backend(tensor).to_numpy(tensor)
