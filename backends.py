@@ -24,7 +24,7 @@ def get_backend(tensor):
                 if isinstance(tensor, backend.tensor_types()):
                     return backend
 
-    raise RuntimeError('Tensor type unknown')
+    raise RuntimeError('Tensor type unknown to einops.')
 
 
 class AbstractBackend:

@@ -1,4 +1,4 @@
-from einops import transpose, reduce, parse_shape, _enumerate_directions
+from einops import transpose, reduce as reduce, parse_shape, _enumerate_directions
 import numpy
 import tensorflow as tf
 import backends
@@ -39,12 +39,12 @@ def test_transpose_ellipsis_numpy():
     assert (numpy.allclose(transpose(x, 'a b c d e -> a b c d e'),
                            transpose(x, '... -> ... ')))
     for reduction in ['min', 'max', 'sum']:
-        assert (numpy.allclose(reduce(x, 'a b c d e -> ', operation=reduction),
-                               reduce(x, '... -> ', operation=reduction)))
-        assert (numpy.allclose(reduce(x, 'a b c d e -> (e a)', operation=reduction),
-                               reduce(x, 'a ... e -> (e a)', operation=reduction)))
-        assert (numpy.allclose(reduce(x, 'a b c d e -> d (a e)', operation=reduction),
-                               reduce(x, 'a b c d e ... -> d (a e)', operation=reduction)))
+        assert (numpy.allclose(reduce(x, 'a b c d e -> ', reduction=reduction),
+                               reduce(x, '... -> ', reduction=reduction)))
+        assert (numpy.allclose(reduce(x, 'a b c d e -> (e a)', reduction=reduction),
+                               reduce(x, 'a ... e -> (e a)', reduction=reduction)))
+        assert (numpy.allclose(reduce(x, 'a b c d e -> d (a e)', reduction=reduction),
+                               reduce(x, 'a b c d e ... -> d (a e)', reduction=reduction)))
     # TODO ellipsis inside parentheses on the right side
     # assert (numpy.allclose(transpose(x, 'a b c d e -> (a b c d e)'),
     #                        transpose(x, '... -> (...) ')))
@@ -131,32 +131,32 @@ def test_reduction():
             dtype = 'float64' if reduction == 'mean' else 'int64'
             # composite axes
             x = numpy.arange(2 * 3 * 4 * 5 * 6, dtype=dtype).reshape(2, 3, 4, 5, 6)
-            result1 = reduce(x, 'a b c d e -> (e c) a', operation=reduction)
+            result1 = reduce(x, 'a b c d e -> (e c) a', reduction=reduction)
             result2 = getattr(x, reduction)(axis=(1, 3)).transpose(2, 1, 0).reshape(-1, 2)
             assert numpy.allclose(result1, result2)
 
             x = numpy.arange(2 * 3 * 4 * 5 * 6, dtype=dtype).reshape(2, 3, 4, 5, 6)
-            result1 = reduce(x, 'a b c d e -> (e c a)', operation=reduction)
+            result1 = reduce(x, 'a b c d e -> (e c a)', reduction=reduction)
             result2 = getattr(x, reduction)(axis=(1, 3)).transpose(2, 1, 0).reshape(-1)
             assert numpy.allclose(result1, result2)
 
             x = numpy.arange(2 * 3 * 4 * 5 * 6, dtype=dtype).reshape(2, 3, 4, 5, 6)
-            result1 = reduce(x, 'a b c d e -> ', operation=reduction)
+            result1 = reduce(x, 'a b c d e -> ', reduction=reduction)
             result2 = getattr(x, reduction)()
             assert numpy.allclose(result1, result2)
 
             x = numpy.arange(2 * 3 * 4 * 5 * 6, dtype=dtype).reshape(2, 3, 4, 5, 6)
-            result1 = reduce(x, '... -> ', operation=reduction)
+            result1 = reduce(x, '... -> ', reduction=reduction)
             result2 = getattr(x, reduction)()
             assert numpy.allclose(result1, result2)
 
             x = numpy.arange(2 * 3 * 4 * 5 * 6, dtype=dtype).reshape(2, 3, 4, 5, 6)
-            result1 = reduce(x, '(a1 a2) ... (e1 e2) -> ', operation=reduction, a1=2, e1=2)
+            result1 = reduce(x, '(a1 a2) ... (e1 e2) -> ', reduction=reduction, a1=2, e1=2)
             result2 = getattr(x, reduction)()
             assert numpy.allclose(result1, result2)
 
             x = numpy.arange(3 * 3 * 3, dtype=dtype).reshape(3, 3, 3)
-            result1 = reduce(x, 'a b c -> ', operation=reduction)
+            result1 = reduce(x, 'a b c -> ', reduction=reduction)
             result2 = getattr(x, reduction)()
             assert numpy.allclose(result1, result2)
 
@@ -184,9 +184,9 @@ def test_reduction_stress():
                 x = numpy.arange(numpy.prod(shape), dtype=dtype).reshape(shape)
                 if reduction == 'prod' and x.shape != ():
                     x /= x.mean()
-                result1 = reduce(x, left + '->' + right, operation=reduction)
+                result1 = reduce(x, left + '->' + right, reduction=reduction)
                 result2 = getattr(x.transpose(permutation), reduction)(axis=tuple(range(skipped)))
-                result3 = backend.to_numpy(reduce(backend.from_numpy(x), left + '->' + right, operation=reduction))
+                result3 = backend.to_numpy(reduce(backend.from_numpy(x), left + '->' + right, reduction=reduction))
                 assert numpy.allclose(result1, result2)
                 assert numpy.allclose(result1, result3)
 
