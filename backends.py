@@ -234,7 +234,7 @@ class TensorflowBackend(AbstractBackend):
 
     def shape(self, x):
         if self.tf.executing_eagerly():
-            return x.shape
+            return list(int(d) for d in x.shape)
         else:
             return self.tf.unstack(self.tf.shape(x))
 
