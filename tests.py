@@ -11,6 +11,40 @@ if use_tf_eager:
 all_backends = [c() for c in backends.AbstractBackend.__subclasses__()]
 
 
+def test_optimize_transformations_numpy():
+    print('Testing optimizations')
+    shapes = [[2] * n_dimensions for n_dimensions in range(14)]
+    shapes += [[3] * n_dimensions for n_dimensions in range(6)]
+    shapes += [[2, 3, 5, 7]]
+    shapes += [[2, 3, 5, 7, 11, 17]]
+
+    for shape in shapes:
+        for attempt in range(5):
+            n_dimensions = len(shape)
+            x = numpy.random.randint(0, 2 ** 12, size=shape).reshape([-1])
+            init_shape = shape[:]
+            n_reduced = numpy.random.randint(0, n_dimensions + 1)
+            reduced_axes = tuple(numpy.random.permutation(n_dimensions)[:n_reduced])
+            axes_reordering = numpy.random.permutation(n_dimensions - n_reduced)
+            final_shape = numpy.random.randint(0, 1024, size=333)  # just random
+
+            init_shape2, reduced_axes2, axes_reordering2, final_shape2 = combination2 = \
+                _optimize_transformation(init_shape, reduced_axes, axes_reordering, final_shape)
+
+            assert numpy.array_equal(final_shape, final_shape2)
+            result1 = x.reshape(init_shape).sum(axis=reduced_axes).transpose(axes_reordering).reshape([-1])
+            result2 = x.reshape(init_shape2).sum(axis=reduced_axes2).transpose(axes_reordering2).reshape([-1])
+            assert numpy.array_equal(result1, result2)
+
+            # testing we can't optimize this formula again
+            combination3 = _optimize_transformation(*combination2)
+            for a, b in zip(combination2, combination3):
+                assert numpy.array_equal(a, b)
+
+
+test_optimize_transformations_numpy()
+
+
 def test_check_elementary_axis_name():
     from einops import _check_elementary_axis_name
     for name in ['a', 'b', 'h', 'dx', 'h1', 'zz', 'i9123', 'somelongname']:
