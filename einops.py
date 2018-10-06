@@ -292,7 +292,7 @@ def _prepare_transformation_recipe(pattern: str, reduction: str,
 
     def update_axis_length(axis_name, axis_length):
         if known_lengths[axis_name] is not None:
-            # TODO add check for static graphs?
+            # TODO symbolic frameworks?
             if isinstance(axis_length, int) and isinstance(known_lengths[axis_name], int):
                 if axis_length != known_lengths[axis_name]:
                     raise RuntimeError('Inferred length for {} is {} not {}'.format(
@@ -392,7 +392,7 @@ def check_shapes(*shapes: List[dict], **lengths):
         for axis_name, axis_length in shape.items():
             assert isinstance(axis_length, int)
             if axis_name in lengths:
-                # TODO static frameworks?
+                # TODO symbolic frameworks?
                 assert lengths[axis_name] == axis_length
             else:
                 lengths[axis_name] = axis_length
