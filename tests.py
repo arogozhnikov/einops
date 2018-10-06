@@ -1,5 +1,5 @@
 from einops import transpose, reduce, parse_shape, _enumerate_directions, _prepare_transformation_recipe, \
-    _optimize_transformation
+    _optimize_transformation, _reductions
 import numpy
 import tensorflow as tf
 import backends
@@ -89,7 +89,7 @@ test_transpose_ellipsis_numpy()
 
 
 def test_transpose_with_numpy():
-    shape = [1, 1, 2, 3, 5, 8]
+    shape = [1, 2, 3, 5, 7, 11]
     x = numpy.arange(numpy.prod(shape)).reshape(shape)
     for expression in [
         'a b c d e f-> a b c d e f',
@@ -115,7 +115,7 @@ def test_transpose_with_numpy():
     result2 = transpose(x, 'f e d c b a -> a b c d e f')
     assert numpy.array_equal(result1, result2)
 
-    result = transpose(transpose(x, 'a b c d e f -> (f d) c (e b) a'), '(f d) c (e b) a -> a b c d e f', b=1, d=3)
+    result = transpose(transpose(x, 'a b c d e f -> (f d) c (e b) a'), '(f d) c (e b) a -> a b c d e f', b=2, d=5)
     assert numpy.array_equal(x, result)
 
     sizes = dict(zip('abcdef', shape))
@@ -161,8 +161,7 @@ test_transpose_with_numpy()
 def test_reduction():
     for backend in all_backends:
         print('Reduction tests for ', backend.framework_name)
-        # TODO checks for logaddexp (maybe also needed for any and all)
-        for reduction in ['min', 'max', 'sum', 'mean', 'prod']:
+        for reduction in _reductions:
             dtype = 'float64' if reduction == 'mean' else 'int64'
             # composite axes
             x = numpy.arange(2 * 3 * 4 * 5 * 6, dtype=dtype).reshape(2, 3, 4, 5, 6)
@@ -206,7 +205,7 @@ def test_reduction_stress():
             print('skipped testing for mxnet, not working yet with scalar tensors')
             continue
         print('Reduction tests for ', backend.framework_name)
-        for reduction in ['min', 'max', 'sum', 'mean', 'prod']:
+        for reduction in _reductions + ('none',):
             dtype = 'int64'
             coincide = numpy.array_equal
             if reduction in ['mean', 'prod']:
@@ -215,14 +214,16 @@ def test_reduction_stress():
             for n_axes in range(7):
                 shape = numpy.random.randint(2, 4, size=n_axes)
                 permutation = numpy.random.permutation(n_axes)
-                skipped = numpy.random.randint(n_axes + 1)
+                skipped = 0 if reduction == 'none' else numpy.random.randint(n_axes + 1)
                 left = ' '.join(f'x{i}' for i in range(n_axes))
                 right = ' '.join(f'x{i}' for i in permutation[skipped:])
                 x = numpy.arange(numpy.prod(shape), dtype=dtype).reshape(shape)
                 if reduction == 'prod' and x.shape != ():
                     x /= x.mean()
                 result1 = reduce(x, left + '->' + right, reduction=reduction)
-                result2 = getattr(x.transpose(permutation), reduction)(axis=tuple(range(skipped)))
+                result2 = x.transpose(permutation)
+                if skipped > 0:
+                    result2 = getattr(result2, reduction)(axis=tuple(range(skipped)))
                 result3 = backend.to_numpy(reduce(backend.from_numpy(x), left + '->' + right, reduction=reduction))
                 assert coincide(result1, result2)
                 assert coincide(result1, result3)
@@ -298,6 +299,15 @@ def test_transpose_examples():
             assert numpy.array_equal(result1, result2)
             print(result1.shape)
 
+            # now with strides
+            x = numpy.arange(10 * 2 * 20 * 3 * 30 * 1 * 40).reshape([10 * 2, 20 * 3, 30 * 1, 40])
+            last_step = -1 if backend.framework_name != 'torch' else 1  # torch still doesn't support negative steps
+            indexing = (slice(None, None, 2), slice(None, None, 3), slice(None, None, 1), slice(None, None, last_step))
+            result1 = test(x[indexing])
+            result2 = backend.to_numpy(test(backend.from_numpy(x)[indexing]))
+            assert numpy.array_equal(result1, result2)
+            print(result1.shape)
+
     def shufflenet(x, convolve, c1=8, c2=8):
         # shufflenet example
         x = convolve(x)
@@ -315,7 +325,7 @@ def test_transpose_examples():
         result = usual_conv(x_reshaped)
         return transpose(result, '(h1 w1 b) c h w) -> b c (h h1) (w w1)')
 
-    # TODO add example for detection module?
+    # TODO example for detection module?
 
     # TODO example for tensor train?
     # einsum(  G[i, j, alpha0, alpha1] X[...,  i, alpha0] -> [i, ...,  alpha1]  )
