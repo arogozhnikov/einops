@@ -256,9 +256,10 @@ def _check_elementary_axis_name(name: str) -> bool:
 # TODO parenthesis within brackets
 # TODO add logaddexp
 @functools.lru_cache(256)
-def _prepare_transformation_recipe(pattern: str, reduction: str,
-                                   axes_lengths: Tuple[Tuple[str, int]]) -> TransformRecipe:
-    """ Perform initial parsing of pattern and provided suuplementary info """
+def _prepare_transformation_recipe(pattern: str, reduction: str, axes_lengths: Tuple) -> TransformRecipe:
+    """ Perform initial parsing of pattern and provided supplementary info
+    axes_lengths is a tuple of tuples (axis_name, axis_length)
+    """
     if reduction not in ['none', 'min', 'max', 'sum', 'mean', 'prod']:
         raise EinopsError('Unknown reduction {}'.format(reduction))
 

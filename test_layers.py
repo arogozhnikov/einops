@@ -1,5 +1,7 @@
 __author__ = 'Alex Rogozhnikov'
 
+import pickle
+
 import layers
 
 import torch
@@ -11,9 +13,9 @@ import backends
 
 def test_transpose():
     backend_pairs = [
-        (backends.TorchBackend(), layers.torch.Transpose),
-        (backends.ChainerBackend(), layers.chainer.Transpose),
-        (backends.MXNetNdarrayBackend(), layers.gluon.Transpose),
+        (backends.TorchBackend(), layers.TorchTranspose),
+        (backends.ChainerBackend(), layers.ChainerTranspose),
+        (backends.MXNetNdarrayBackend(), layers.GluonTranspose),
     ]
     patterns = [
         ('b c h w -> b (c h w)', dict(b=10), (10, 20 * 30 * 40)),
@@ -33,23 +35,28 @@ def test_transpose():
                 else:
                     raise AssertionError('Failure expected')
 
-        x = numpy.arange(10 * 20 * 30 * 40, dtype='float32').reshape([10, 20, 30, 40])
-        x = backend.from_numpy(x)
-        if isinstance(x, torch.Tensor):
-            x.requires_grad = True
-        if isinstance(x, mxnet.nd.NDArray):
-            x.attach_grad()
+            # simple pickling / unpickling
+            layer2 = pickle.loads(pickle.dumps(layer))
+            result1 = backend.to_numpy(layer(backend.from_numpy(x)))
+            result2 = backend.to_numpy(layer2(backend.from_numpy(x)))
+            assert numpy.allclose(result1, result2)
 
-        if isinstance(x, chainer.Variable):
-            chainer.functions.sum(layer(x)).backward()
-        elif isinstance(x, mxnet.nd.NDArray):
-            from mxnet import autograd
-            with autograd.record():
-                layer(x).sum().backward()
-        else:
-            layer(x).sum().backward()
+            v = backend.from_numpy(x)
+            if isinstance(v, torch.Tensor):
+                v.requires_grad = True
+            if isinstance(v, mxnet.nd.NDArray):
+                v.attach_grad()
 
-        assert numpy.allclose(backend.to_numpy(x.grad), 1)
+            if isinstance(v, chainer.Variable):
+                chainer.functions.sum(layer(v)).backward()
+            elif isinstance(v, mxnet.nd.NDArray):
+                from mxnet import autograd
+                with autograd.record():
+                    layer(v).sum().backward()
+            else:
+                layer(v).sum().backward()
+
+            assert numpy.allclose(backend.to_numpy(v.grad), 1)
 
         print('Tested layer for ', backend.framework_name)
 
