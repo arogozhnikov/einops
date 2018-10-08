@@ -2,7 +2,7 @@ __author__ = 'Alex Rogozhnikov'
 
 import functools
 
-from einops import transpose, TransformRecipe, _prepare_transformation_recipe
+from einops import transpose, TransformRecipe, _prepare_transformation_recipe, EinopsError
 
 
 # TODO tests for serialization / deserialization inside the model
@@ -24,8 +24,17 @@ class TransposeMixin:
 
     @functools.lru_cache(maxsize=1024)
     def recipe(self) -> TransformRecipe:
-        hashable_lengths = tuple(sorted(self.axes_lengths.items()))
-        return _prepare_transformation_recipe(self.pattern, reduction='none', axes_lengths=hashable_lengths)
+        try:
+            hashable_lengths = tuple(sorted(self.axes_lengths.items()))
+            return _prepare_transformation_recipe(self.pattern, reduction='none', axes_lengths=hashable_lengths)
+        except EinopsError as e:
+            raise EinopsError(' Error while preparing {!r}\n {}'.format(self, e))
+
+    def _apply_recipe(self, x):
+        try:
+            return self.recipe().apply(x)
+        except EinopsError as e:
+            raise EinopsError(' Error while computing {!r}\n {}'.format(self, e))
 
 
 class ReduceMixin:
@@ -44,8 +53,17 @@ class ReduceMixin:
 
     @functools.lru_cache(maxsize=1024)
     def recipe(self) -> TransformRecipe:
-        hashable_lengths = tuple(sorted(self.axes_lengths.items()))
-        return _prepare_transformation_recipe(self.pattern, reduction=self.reduction, axes_lengths=hashable_lengths)
+        try:
+            hashable_lengths = tuple(sorted(self.axes_lengths.items()))
+            return _prepare_transformation_recipe(self.pattern, reduction=self.reduction, axes_lengths=hashable_lengths)
+        except EinopsError as e:
+            raise EinopsError(' Error while preparing {!r}\n {}'.format(self, e))
+
+    def _apply_recipe(self, x):
+        try:
+            return self.recipe().apply(x)
+        except EinopsError as e:
+            raise EinopsError(' Error while computing {!r}\n {}'.format(self, e))
 
 
 import torch
@@ -53,12 +71,12 @@ import torch
 
 class TorchTranspose(TransposeMixin, torch.nn.Module):
     def forward(self, input):
-        return self.recipe().apply(input)
+        return self._apply_recipe(input)
 
 
 class TorchReduce(ReduceMixin, torch.nn.Module):
     def forward(self, input):
-        return self.recipe().apply(input)
+        return self._apply_recipe(input)
 
 
 import chainer
@@ -66,25 +84,27 @@ import chainer
 
 class ChainerTranspose(TransposeMixin, chainer.Link):
     def __call__(self, x):
-        return self.recipe().apply(x)
+        return self._apply_recipe(x)
 
 
 class ChainerReduce(ReduceMixin, chainer.Link):
     def __call__(self, x):
-        return self.recipe().apply(x)
+        return self._apply_recipe(x)
 
 
 import mxnet
 
 
-class GluonTranspose(TransposeMixin, mxnet.gluon.Block):
-    def forward(self, x):
-        return self.recipe().apply(x)
+# TODO symbolic is not working right now
+
+class GluonTranspose(TransposeMixin, mxnet.gluon.HybridBlock):
+    def hybrid_forward(self, F, x):
+        return self._apply_recipe(x)
 
 
-class GluonReduce(ReduceMixin, mxnet.gluon.Block):
-    def forward(self, x):
-        return self.recipe().apply(x)
+class GluonReduce(ReduceMixin, mxnet.gluon.HybridBlock):
+    def hybrid_forward(self, F, x):
+        return self._apply_recipe(x)
 
 
 from keras.engine.topology import Layer
@@ -92,10 +112,12 @@ from keras.engine.topology import Layer
 
 class KerasTranspose(TransposeMixin, Layer):
     def compute_output_shape(self, input_shape):
-        return self.recipe().compute_output_shape(input_shape)
+        input_shape = tuple(None if d is None else int(d) for d in input_shape)
+        init_shapes, reduced_axes, axes_reordering, final_shapes = self.recipe().reconstruct_from_shape(input_shape)
+        return final_shapes
 
     def call(self, inputs):
-        return self.recipe().apply(inputs)
+        return self._apply_recipe(inputs)
 
     def get_config(self):
         return {'pattern': self.pattern, **self.axes_lengths}
@@ -103,10 +125,12 @@ class KerasTranspose(TransposeMixin, Layer):
 
 class KerasReduce(ReduceMixin, Layer):
     def compute_output_shape(self, input_shape):
-        return self.recipe().compute_output_shape(input_shape)
+        input_shape = tuple(None if d is None else int(d) for d in input_shape)
+        init_shapes, reduced_axes, axes_reordering, final_shapes = self.recipe().reconstruct_from_shape(input_shape)
+        return final_shapes
 
     def call(self, inputs):
-        return self.recipe().apply(inputs)
+        return self._apply_recipe(inputs)
 
     def get_config(self):
         return {'pattern': self.pattern, 'reduction': self.reduction, **self.axes_lengths}

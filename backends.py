@@ -114,6 +114,40 @@ class GluonBackend(AbstractBackend):
         return 'float' in str(x.dtype)
 
 
+# class MXNetBackend(AbstractBackend):
+class MXNetBackend:
+    framework_name = 'mxnet.symbol'
+
+    def __init__(self):
+        import mxnet
+        self.mx = mxnet
+
+    def is_appropriate_type(self, tensor):
+        return isinstance(tensor, self.mx.symbol.Symbol)
+
+    def from_numpy(self, x):
+        self.last_var_ = self.mx.symbol.Variable('input', shape=x.shape)
+        self.last_val_ = x.shape
+        return self.last_var_
+
+    def to_numpy(self, x):
+        ex = self.last_var_.bind(ctx=self.mx.cpu(), args={'input': self.last_val_})
+        ex.forward()
+        return ex.outputs[0].asnumpy()
+
+    def shape(self, x):
+        return x.infer_shape_partial()[1][0]
+
+    def arange(self, start, stop):
+        return self.mx.symbol.arange(start, stop)
+
+    def stack_on_zeroth_dimension(self, tensors: list):
+        return self.mx.symbol.stack(*tensors)
+
+    def is_float_type(self, x):
+        return 'float' in str(x.infer_type()[1][0])
+
+
 class TorchBackend(AbstractBackend):
     framework_name = 'torch'
 
@@ -262,7 +296,8 @@ class TensorflowBackend(AbstractBackend):
         return x.dtype in ('float16', 'float32', 'float64', 'float128')
 
 
-class KerasBackend(AbstractBackend):
+# class KerasBackend(AbstractBackend):
+class KerasBackend:
     framework_name = 'keras'
 
     def __init__(self):
@@ -286,7 +321,8 @@ class KerasBackend(AbstractBackend):
         return self.K.arange(start, stop)
 
     def shape(self, x):
-        return self.K.shape(x)
+        shape = self.K.shape(x)
+        return tuple(shape[i] for i in range(shape.shape[0]))
 
     def reduce(self, x, operation, axes):
         return getattr(self.K, operation)(x, axis=axes)
