@@ -4,7 +4,7 @@ import numpy
 import tensorflow as tf
 import backends
 
-use_tf_eager = True
+use_tf_eager = False
 if use_tf_eager:
     tf.enable_eager_execution()
 
@@ -64,7 +64,6 @@ def test_transpose_ellipsis_numpy():
     assert (numpy.array_equal(x, transpose(x, 'a b c d e ...-> a ... b c d e')))
     assert (numpy.array_equal(x, transpose(x, '... a b c d e -> ... a b c d e')))
     assert (numpy.array_equal(x, transpose(x, 'a ... e-> a ... e')))
-    assert (numpy.array_equal(x, transpose(x, 'a ... -> a ... ')))
     assert (numpy.array_equal(x, transpose(x, 'a ... -> a ... ')))
 
     assert (numpy.array_equal(transpose(x, 'a b c d e -> (a b) c d e'),
@@ -204,6 +203,9 @@ def test_reduction_stress():
         if 'mxnet' in backend.framework_name:
             print('skipped testing for mxnet, not working yet with scalar tensors')
             continue
+        if 'keras' in backend.framework_name:
+            print('skipped testing for mxnet, not working yet with scalar tensors')
+            continue
         print('Reduction tests for ', backend.framework_name)
         for reduction in _reductions + ('none',):
             dtype = 'int64'
@@ -268,17 +270,11 @@ def test_transpose_examples():
         return y
 
     def test5(x):
-        y1, y2 = transpose(x, 'b h w (c g) -> g b h w c', g=2)
-        assert y1.shape == (10, 20, 30, 20)
-        assert y2.shape == (10, 20, 30, 20)
-        return y1 + y2
-
-    def test6(x):
         y = transpose(x, 'b1 s b2 t -> b1 b2 s t')
         assert y.shape == (10, 30, 20, 40)
         return y
 
-    def test7(x):
+    def test6(x):
         # TODO return matrix-by-matrix multiplication
         t = transpose(x, 'b c h w -> (b h w) c')
         assert t.shape == (10 * 30 * 40, 20)
@@ -288,11 +284,21 @@ def test_transpose_examples():
         assert y.shape == (10, 20, 30, 40)
         return y
 
-    tests = [test1, test2, test3, test4, test5, test6, test7]
+    def test7(x):
+        y1, y2 = transpose(x, 'b h w (c g) -> g b h w c', g=2)
+        assert y1.shape == (10, 20, 30, 20)
+        assert y2.shape == (10, 20, 30, 20)
+        return y1 + y2
+
+    tests = [test1, test2, test3, test4, test5, test6]
 
     for backend in all_backends:
         print('testing examples for ', backend.framework_name)
-        for test in tests:
+        if 'tensorflow' in backend.framework_name:
+            extended_tests = tests
+        else:
+            extended_tests = tests + [test7]
+        for test in extended_tests:
             x = numpy.arange(10 * 20 * 30 * 40).reshape([10, 20, 30, 40])
             result1 = test(x)
             result2 = backend.to_numpy(test(backend.from_numpy(x)))
@@ -302,7 +308,7 @@ def test_transpose_examples():
             # now with strides
             x = numpy.arange(10 * 2 * 20 * 3 * 30 * 1 * 40).reshape([10 * 2, 20 * 3, 30 * 1, 40])
             last_step = -1 if backend.framework_name != 'torch' else 1  # torch still doesn't support negative steps
-            indexing = (slice(None, None, 2), slice(None, None, 3), slice(None, None, 1), slice(None, None, last_step))
+            indexing = numpy.index_exp[::2, ::3, ::1, ::last_step]
             result1 = test(x[indexing])
             result2 = backend.to_numpy(test(backend.from_numpy(x)[indexing]))
             assert numpy.array_equal(result1, result2)
@@ -336,7 +342,9 @@ test_transpose_examples()
 
 def test_parse_shape():
     for backend in all_backends:
-        # TODO skip static tensorflow
+        if backend.framework_name == 'tensorflow' and not use_tf_eager:
+            print('Skipped parsing for', backend.framework_name)
+            continue
         print('Shape parsing for ', backend.framework_name)
         x = numpy.zeros([10, 20, 30, 40])
         parsed1 = parse_shape(x, 'a b c d')
@@ -416,8 +424,8 @@ def test_concatenations_and_stacking():
                 result0 = numpy.asarray(arrays1)
                 result1 = transpose(arrays1, '...->...')
                 result2 = transpose(arrays2, '...->...')
-                assert numpy.allclose(result0, result1)
-                assert numpy.allclose(result1, backend.to_numpy(result2))
+                assert numpy.array_equal(result0, result1)
+                assert numpy.array_equal(result1, backend.to_numpy(result2))
 
 
 test_concatenations_and_stacking()

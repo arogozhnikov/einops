@@ -12,9 +12,18 @@ _reductions = ('min', 'max', 'sum', 'mean', 'prod')
 _ellipsis = '…'  # NB, this is a single unicode symbol. String is used as it is not a list, but can be iterated
 
 
+def prod(sequence):
+    result = 1
+    for element in sequence:
+        result *= element
+    return result
+
+
 class EinopsError(RuntimeError):
     """ Runtime error thrown by einops """
-    pass
+
+    def __init__(self, *args, **kargs):
+        super().__init__(*args, **kargs)
 
 
 def _reduce_axes(tensor, reduction_type: str, reduced_axes: Tuple[int], backend):
@@ -104,7 +113,12 @@ class TransformRecipe:
         self.ellipsis_positions = ellipsis_positions
 
     @functools.lru_cache(maxsize=1024)
-    def reconstruct_from_shape(self, shape):
+    def reconstruct_from_shape(self, shape, optimize=False, allow_none_in_output=False):
+        """
+        Shape is a tuple that may contain integers, shape variables (tf, keras, theano) and Nones (keras, mxnet)
+        known axes can be integers or variables, but not Nones
+        If Nones are in the input, output should also expect Nones
+        """
         axes_lengths = list(self.axes_lengths)
         if self.ellipsis_positions != (numpy.inf, numpy.inf):
             if len(shape) < len(self.input_composite_axes) - 1:
@@ -120,7 +134,9 @@ class TransformRecipe:
                 assert len(known_axes) == 0 and len(unknown_axes) == 1
                 unknown_axis, = unknown_axes
                 ellipsis_shape = shape[before_ellipsis:after_ellipsis + 1]
-                axes_lengths[unknown_axis] = numpy.prod(ellipsis_shape, dtype=int)
+                if any(d is None for d in ellipsis_shape):
+                    raise EinopsError("Couldn't infer shape for one or more axes represented by ellipsis")
+                axes_lengths[unknown_axis] = prod(ellipsis_shape)
             else:
                 if input_axis < self.ellipsis_positions[0]:
                     length = shape[before_ellipsis]
@@ -137,8 +153,12 @@ class TransformRecipe:
                     if isinstance(length, int) and isinstance(known_product, int) and length % known_product != 0:
                         raise EinopsError("Shape mismatch, can't divide axis of length {} in chunks of {}".format(
                             length, known_product))
-                    unknown_axis, = unknown_axes
-                    axes_lengths[unknown_axis] = length // known_product
+                    if length is None:
+                        pass  # TODO not throwing because of keras shape inference, is it always ok?
+                        # raise EinopsError("Underlying framework couldn't provide necessary information about shape")
+                    else:
+                        unknown_axis, = unknown_axes
+                        axes_lengths[unknown_axis] = length // known_product
 
         init_shapes = axes_lengths
         reduced_axes_lengths = [dim for i, dim in enumerate(axes_lengths) if i not in self.reduced_elementary_axes]
@@ -147,13 +167,17 @@ class TransformRecipe:
             if output_axis == self.ellipsis_positions[1]:
                 final_shapes.extend(ellipsis_shape)
             else:
-                group_length = 1
-                for elementary_axis in grouping:
-                    group_length = group_length * reduced_axes_lengths[elementary_axis]
-                final_shapes.append(group_length)
+                lengths = [reduced_axes_lengths[elementary_axis] for elementary_axis in grouping]
+                if any(l is None for l in lengths):
+                    final_shapes.append(None)
+                else:
+                    final_shapes.append(prod(lengths))
         reduced_axes = self.reduced_elementary_axes
         axes_reordering = self.final_axes_grouping_flat
-        return _optimize_transformation(init_shapes, reduced_axes, axes_reordering, final_shapes)
+        if optimize:
+            return _optimize_transformation(init_shapes, reduced_axes, axes_reordering, final_shapes)
+        else:
+            return init_shapes, reduced_axes, axes_reordering, final_shapes
 
     def apply(self, tensor):
         backend = get_backend(tensor)
@@ -260,9 +284,6 @@ def _prepare_transformation_recipe(pattern: str, reduction: str, axes_lengths: T
     """ Perform initial parsing of pattern and provided supplementary info
     axes_lengths is a tuple of tuples (axis_name, axis_length)
     """
-    if reduction not in ['none', 'min', 'max', 'sum', 'mean', 'prod']:
-        raise EinopsError('Unknown reduction {}'.format(reduction))
-
     left, right = pattern.split('->')
     identifiers_left, composite_axes_left = parse_expression(left)
     identifiers_rght, composite_axes_rght = parse_expression(right)
@@ -272,10 +293,12 @@ def _prepare_transformation_recipe(pattern: str, reduction: str, axes_lengths: T
         difference = set.symmetric_difference(identifiers_left, identifiers_rght)
         if len(difference) > 0:
             raise EinopsError('Identifiers only on one side of expression (should be on both): {}'.format(difference))
-    else:
+    elif reduction in _reductions:
         difference = set.difference(identifiers_rght, identifiers_left)
         if len(difference) > 0:
             raise EinopsError('Unexpected identifiers on the right side of expression: {}'.format(difference))
+    else:
+        raise EinopsError('Unknown reduction {}'.format(reduction))
 
     # parsing all dimensions to find out lengths
     known_lengths = OrderedDict()
@@ -352,8 +375,8 @@ def reduce(tensor, pattern: str, reduction: str, **axes_lengths: int):
 def transpose(tensor, pattern, **axes_lengths):
     """
     einops.transpose is a reader-friendly smart element reordering for multidimensional tensors.
-    This operation replaces usual transpose (axes permutation), reshape (view), squeeze, unsqueeze, and
-    other operations.
+    This operation includes functionality of transpose (axes permutation), reshape (view), squeeze, unsqueeze,
+    stack, concatenate and other operations.
 
     :param tensor: tensor of any supported library (e.g. numpy.ndarray).
             list of tensors is also accepted, those should be of the same type and shape
@@ -387,7 +410,7 @@ def transpose(tensor, pattern, **axes_lengths):
     return reduce(tensor, pattern, reduction='none', **axes_lengths)
 
 
-def check_shapes(*shapes: List[dict], **lengths):
+def _check_shapes(*shapes: List[dict], **lengths):
     for shape in shapes:
         assert isinstance(shape, dict)
         for axis_name, axis_length in shape.items():
@@ -428,7 +451,8 @@ def _enumerate_directions(x):
     >>> i, j, k = _enumerate_directions(x)
     >>> result = i + 2 * j + 3 * k
 
-    result[i, j, k] = i + 2 * j + 3 * k, and also has the same shape as
+    result[i, j, k] = i + 2 * j + 3 * k, and also has the same shape as result
+    Works very similarly to numpy.ogrid (open indexing grid)
     """
     backend = get_backend(x)
     shape = backend.shape(x)
