@@ -8,29 +8,30 @@ _debugging = False
 
 
 def get_backend(tensor):
-    for framework_name, (tensor_types, backend) in _backends.items():
-        if isinstance(tensor, tensor_types):
+    for framework_name, backend in _backends.items():
+        if backend.is_appropriate_type(tensor):
             return backend
 
     for BackendSubclass in AbstractBackend.__subclasses__():
         if _debugging:
-            print('Testing subclass ', BackendSubclass)
-        if BackendSubclass.framework_name in sys.modules:
-            if BackendSubclass.framework_name not in _backends:
+            print('Testing for subclass of ', BackendSubclass)
+        if BackendSubclass.framework_name not in _backends:
+            if BackendSubclass.framework_name in sys.modules:
                 if _debugging:
-                    print('imported ', BackendSubclass.framework_name)
+                    print('Imported backend for ', BackendSubclass.framework_name)
                 backend = BackendSubclass()
-                _backends[backend.framework_name] = backend.tensor_types(), backend
-                if isinstance(tensor, backend.tensor_types()):
+                _backends[backend.framework_name] = backend
+                if backend.is_appropriate_type(tensor):
                     return backend
 
-    raise RuntimeError('Tensor type unknown to einops.')
+    raise RuntimeError('Tensor type unknown to einops {}'.format(type(tensor)))
 
 
 class AbstractBackend:
+    """ Base backend class, major part of methods are only for debugging purposes. """
     framework_name = None
 
-    def tensor_types(self):
+    def is_appropriate_type(self, tensor):
         raise NotImplementedError()
 
     def from_numpy(self, x):
@@ -68,8 +69,8 @@ class NumpyBackend(AbstractBackend):
         import numpy
         self.np = numpy
 
-    def tensor_types(self):
-        return self.np.ndarray,
+    def is_appropriate_type(self, tensor):
+        return isinstance(tensor, self.np.ndarray)
 
     def from_numpy(self, x):
         return x
@@ -87,15 +88,15 @@ class NumpyBackend(AbstractBackend):
         return x.dtype in ('float16', 'float32', 'float64', 'float128')
 
 
-class MXNetNdarrayBackend(AbstractBackend):
+class GluonBackend(AbstractBackend):
     framework_name = 'mxnet.ndarray'
 
     def __init__(self):
         import mxnet
         self.mx = mxnet
 
-    def tensor_types(self):
-        return self.mx.nd.NDArray,
+    def is_appropriate_type(self, tensor):
+        return isinstance(tensor, self.mx.nd.NDArray)
 
     def from_numpy(self, x):
         return self.mx.nd.array(x)
@@ -120,8 +121,8 @@ class TorchBackend(AbstractBackend):
         import torch
         self.torch = torch
 
-    def tensor_types(self):
-        return self.torch.Tensor
+    def is_appropriate_type(self, tensor):
+        return isinstance(tensor, self.torch.Tensor)
 
     def from_numpy(self, x):
         return self.torch.from_numpy(x)
@@ -161,8 +162,8 @@ class CupyBackend(AbstractBackend):
         import cupy
         self.cupy = cupy
 
-    def tensor_types(self):
-        return self.cupy.ndarray,
+    def is_appropriate_type(self, tensor):
+        return isinstance(tensor, self.cupy.ndarray)
 
     def from_numpy(self, x):
         return self.cupy.asarray(x)
@@ -189,8 +190,8 @@ class ChainerBackend(AbstractBackend):
         self.chainer = chainer
         self.cupy = cupy
 
-    def tensor_types(self):
-        return self.chainer.Variable
+    def is_appropriate_type(self, tensor):
+        return isinstance(tensor, self.chainer.Variable)
 
     def from_numpy(self, x):
         return self.chainer.Variable(self.cupy.asarray(x, dtype='float32'))
@@ -220,14 +221,21 @@ class TensorflowBackend(AbstractBackend):
         import tensorflow
         self.tf = tensorflow
 
-    def tensor_types(self):
-        return self.tf.Tensor, self.tf.Variable
+    def is_appropriate_type(self, tensor):
+        return isinstance(tensor, (self.tf.Tensor, self.tf.Variable))
 
     def from_numpy(self, x):
-        return self.tf.contrib.eager.Variable(x)
+        if self.tf.executing_eagerly():
+            return self.tf.contrib.eager.Variable(x)
+        else:
+            return self.tf.placeholder_with_default(x, shape=x.shape, name='einops_placeholder')
 
     def to_numpy(self, x):
-        return x.numpy()
+        if self.tf.executing_eagerly():
+            return x.numpy()
+        else:
+            sess = self.tf.Session()
+            return sess.run(x)
 
     def arange(self, start, stop):
         return self.tf.range(start, stop)
@@ -236,7 +244,7 @@ class TensorflowBackend(AbstractBackend):
         if self.tf.executing_eagerly():
             return tuple(int(d) for d in x.shape)
         else:
-            return self.tf.unstack(self.tf.shape(x))
+            return tuple(self.tf.unstack(self.tf.shape(x)))
 
     def reduce(self, x, operation, axes):
         return getattr(self.tf, 'reduce_' + operation)(x, axis=axes)
@@ -254,23 +262,25 @@ class TensorflowBackend(AbstractBackend):
         return x.dtype in ('float16', 'float32', 'float64', 'float128')
 
 
-# class KerasBackend(AbstractBackend):
-class KerasBackend:
+class KerasBackend(AbstractBackend):
     framework_name = 'keras'
 
     def __init__(self):
         import keras
+        self.keras = keras
         self.K = keras.backend
 
-    def tensor_types(self):
-        # здесь методы проверки на самом деле
-        raise NotImplementedError
+    def is_appropriate_type(self, tensor):
+        return self.K.is_keras_tensor(tensor)
 
     def from_numpy(self, x):
-        return self.K.variable(x, name='einkeras-test')
+        self._lastvar = self.keras.Input(batch_shape=x.shape)
+        self._lastval = x
+        return self._lastvar
 
     def to_numpy(self, x):
-        raise NotImplementedError()
+        model = self.keras.models.Model(self._lastvar, x)
+        return model.predict_on_batch(self._lastval)
 
     def arange(self, start, stop):
         return self.K.arange(start, stop)
@@ -292,11 +302,3 @@ class KerasBackend:
 
     def is_float_type(self, x):
         return 'float' in self.K.dtype(x)
-
-# this one is for static tensorflow
-# def tf_wrap_and_compute(function):
-#     def returned(x, *args, **kargs):
-#         x_placeholder = tf.placeholder(dtype=x.dtype)
-#         return tf.Session().run([function(x_placeholder, *args, **kargs)], {x_placeholder: x})[0]
-#
-#     return returned

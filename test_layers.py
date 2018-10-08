@@ -1,30 +1,74 @@
+from layers import keras_custom_objects
+
 __author__ = 'Alex Rogozhnikov'
 
 import pickle
+from copy import deepcopy
 
-import layers
-
-import torch
 import chainer
 import mxnet
 import numpy
+import torch
+import keras
+
+import tempfile
 import backends
+import layers
+
+transposition_patterns = [
+    ('b c h w -> b (c h w)', dict(b=10), (10, 20, 30, 40), (10, 20 * 30 * 40)),
+    ('b c (h1 h2) (w1 w2) -> b (c h2 w2) h1 w1', dict(h1=15, h2=2, w2=2), (10, 20, 30, 40), (10, 20 * 2 * 2, 15, 20)),
+    # ('b ... c -> c b ...', dict(b=10, c=40), (10, 20, 30, 40), (40, 10, 20, 30)),
+]
+
+
+# reduction_patterns = transposition_patterns + [
+#     ('b c h w -> b ()', dict(b=10), (10, 20, 30, 40), (10, 1)),
+#     ('b c (h1 h2) (w1 w2) -> b c h1 w1', dict(h1=15, h2=2, w2=2), (10, 20, 30, 40), (10, 20, 15, 20)),
+#     ('b ... c -> b', dict(b=10, c=40), (10, 20, 30, 40), (10,)),
+# ]
+
+
+def test_keras():
+    for pattern, axes_lengths, input_shape, result_shape in transposition_patterns:
+        x = numpy.arange(numpy.prod(input_shape), dtype='float32').reshape(input_shape)
+
+        keras_input = keras.layers.Input(shape=input_shape[1:])
+        layer = layers.KerasTranspose(pattern, **axes_lengths)
+        output = layer(keras_input)
+        # output = keras.layers.Activation('tanh')(keras_input)
+        model = keras.models.Model(keras_input, output)
+        result1 = model.predict_on_batch(x)
+        assert result1.shape == result_shape
+
+        # create a temporary file using a context manager
+        with tempfile.NamedTemporaryFile(mode='r+b') as fp:
+            keras.models.save_model(model, fp.name)
+            model2 = keras.models.load_model(fp.name, custom_objects=keras_custom_objects)
+
+        result2 = model2.predict_on_batch(x)
+        assert numpy.allclose(result1, result2)
+
+        # model3 = pickle.loads(pickle.dumps(model))
+        # result3 = model3.predict_on_batch(x)
+        # assert numpy.allclose(result1, result3)
+
+    print('Tested keras layer')
+
+
+test_keras()
 
 
 def test_transpose():
     backend_pairs = [
         (backends.TorchBackend(), layers.TorchTranspose),
         (backends.ChainerBackend(), layers.ChainerTranspose),
-        (backends.MXNetNdarrayBackend(), layers.GluonTranspose),
-    ]
-    patterns = [
-        ('b c h w -> b (c h w)', dict(b=10), (10, 20 * 30 * 40)),
-        ('b c (h1 h2) (w1 w2) -> b (c h2 w2) h1 w1', dict(h1=15, h2=2, w2=2), (10, 20 * 2 * 2, 15, 20)),
+        (backends.GluonBackend(), layers.GluonTranspose),
     ]
 
     for backend, TransposeLayer in backend_pairs:
-        for pattern, axes_lengths, result_shape in patterns:
-            x = numpy.arange(10 * 20 * 30 * 40, dtype='float32').reshape([10, 20, 30, 40])
+        for pattern, axes_lengths, input_shape, result_shape in transposition_patterns:
+            x = numpy.arange(numpy.prod(input_shape), dtype='float32').reshape(input_shape)
             layer = TransposeLayer(pattern, **axes_lengths)
             assert layer(backend.from_numpy(x)).shape == result_shape
             for shape in [(), (10,), (10, 10, 10), (15, 20, 31, 40), (10, 1, 1, 1, 1)]:
@@ -40,6 +84,17 @@ def test_transpose():
             result1 = backend.to_numpy(layer(backend.from_numpy(x)))
             result2 = backend.to_numpy(layer2(backend.from_numpy(x)))
             assert numpy.allclose(result1, result2)
+
+            if TransposeLayer == layers.TorchTranspose:
+                layer3 = deepcopy(layer2)
+            elif TransposeLayer == layers.ChainerTranspose:
+                layer3 = deepcopy(layer2)
+            elif TransposeLayer == layers.GluonTranspose:
+                # hybridization doesn't work
+                # layer3 = layer2.hybridize()
+                layer3 = deepcopy(layer2)
+            result3 = backend.to_numpy(layer3(backend.from_numpy(x)))
+            assert numpy.allclose(result1, result3)
 
             v = backend.from_numpy(x)
             if isinstance(v, torch.Tensor):

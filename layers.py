@@ -1,7 +1,8 @@
 __author__ = 'Alex Rogozhnikov'
 
-from einops import TransformRecipe, _prepare_transformation_recipe
 import functools
+
+from einops import transpose, TransformRecipe, _prepare_transformation_recipe
 
 
 # TODO tests for serialization / deserialization inside the model
@@ -9,7 +10,6 @@ import functools
 # TODO make imports like from einops.torch import ...
 
 class TransposeMixin:
-
     def __init__(self, pattern, **axes_lengths):
         super().__init__()
         self.pattern = pattern
@@ -85,3 +85,31 @@ class GluonTranspose(TransposeMixin, mxnet.gluon.Block):
 class GluonReduce(ReduceMixin, mxnet.gluon.Block):
     def forward(self, x):
         return self.recipe().apply(x)
+
+
+from keras.engine.topology import Layer
+
+
+class KerasTranspose(TransposeMixin, Layer):
+    def compute_output_shape(self, input_shape):
+        return self.recipe().compute_output_shape(input_shape)
+
+    def call(self, inputs):
+        return self.recipe().apply(inputs)
+
+    def get_config(self):
+        return {'pattern': self.pattern, **self.axes_lengths}
+
+
+class KerasReduce(ReduceMixin, Layer):
+    def compute_output_shape(self, input_shape):
+        return self.recipe().compute_output_shape(input_shape)
+
+    def call(self, inputs):
+        return self.recipe().apply(inputs)
+
+    def get_config(self):
+        return {'pattern': self.pattern, 'reduction': self.reduction, **self.axes_lengths}
+
+
+keras_custom_objects = {'KerasTranspose': KerasTranspose, 'KerasReduce': KerasReduce}
