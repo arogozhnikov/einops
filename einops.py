@@ -278,7 +278,7 @@ def _check_elementary_axis_name(name: str) -> bool:
 
 
 # TODO parenthesis within brackets
-# TODO add logaddexp
+# TODO add logaddexp, std, var, ptp
 @functools.lru_cache(256)
 def _prepare_transformation_recipe(pattern: str, reduction: str, axes_lengths: Tuple) -> TransformRecipe:
     """ Perform initial parsing of pattern and provided supplementary info
@@ -358,6 +358,38 @@ def _prepare_transformation_recipe(pattern: str, reduction: str, axes_lengths: T
 
 
 def reduce(tensor, pattern: str, reduction: str, **axes_lengths: int):
+    """
+    einops.reduce provides combination of reordering and reduction using reader-friendly notion.
+    
+    Examples for reduce operation:
+    
+    # perform max-reduction on the first axis
+    >>> y = reduce(x, 't b c -> b c', 'max') 
+    Reduce layer work similarly, so examples for brevity will be given for an operation  
+    >>> layer = Reduce('time batch channel -> batch channel', 'max')
+    >>> y = layer(x)
+    # same as previous, but with clearer axes meaning
+    >>> y = reduce(x, 'time batch channel -> batch channel', 'max')
+    # 2d max-pooling with kernel size = 2 * 2 for image processing
+    >>> y = reduce(x, 'b c (h1 h2) (w1 w2) -> b c h1 w1', 'max', h2=2, w2=2) 
+    # if one wants to go back to original height and width, depth-to-space trick can be applied
+    >>> y = transpose(x, 'b (c h2 w2) h1 w1 -> b c (h1 h2) (w1 w2)', h2=2, w2=2) 
+    # Adaptive 2d max-pooling to 3 * 4 grid
+    >>> y = reduce(x, 'b c (h1 h2) (w1 w2) -> b c h1 w1', 'max', h1=3, w1=4) 
+    # Global average pooling
+    >>> y = reduce(x, 'b c h w -> b c', 'mean') 
+    # Subtracting batch mean for each channel
+    >>> y = x - reduce(x, 'b c h w -> () c () ()', 'mean') 
+    # Subtracting mean for each channel
+    >>> y = x - reduce(x, 'b c h w -> b c () ()', 'mean') 
+    
+    :param tensor: tensor: tensor of any supported library (e.g. numpy.ndarray, tensorflow, pytorch, mxnet.ndarray).
+            list of tensors is also accepted, those should be of the same type and shape
+    :param pattern: string, reduction pattern
+    :param reduction: one of available reductions {reductions}, case-sensitive
+    :param axes_lengths: any additional specifications for dimensions
+    :return: tensor of the same type as input
+    """.format(reductions=_reductions)
     try:
         hashable_axes_lengths = tuple(sorted(axes_lengths.items()))
         recipe = _prepare_transformation_recipe(pattern, reduction, axes_lengths=hashable_axes_lengths)
@@ -378,13 +410,8 @@ def transpose(tensor, pattern, **axes_lengths):
     This operation includes functionality of transpose (axes permutation), reshape (view), squeeze, unsqueeze,
     stack, concatenate and other operations.
 
-    :param tensor: tensor of any supported library (e.g. numpy.ndarray).
-            list of tensors is also accepted, those should be of the same type and shape
-    :param pattern: string, transposition pattern
-    :param axes_lengths: any additional specifications fpr dimensions
-    :return: tensor of the same type as input. If possible, a view to the original tensor is returned.
+    Examples for transpose operation:
 
-    Examples:
     >>> # suppose we have a set of images in "h w c" format (height-width-channel)
     >>> images = [numpy.random.randn(30, 40, 3) for _ in range(32)]
     >>> transpose(images, 'b h w c -> b h w c').shape # stacked along first (batch) axis
@@ -399,6 +426,18 @@ def transpose(tensor, pattern, **axes_lengths):
     (32, 3600)        # 3600 = 30 * 40 * 3
     >>> transpose(images, 'b (h1 h) (w1 w) c -> (b h1 w1) h w c', h1=2, w1=2).shape # split each image into 4 smaller
     (128, 15, 20, 3)  # 128 = 32 * 2 * 2
+    >>> transpose(images, 'b (h h1) (w w1) c -> b h w (c h1 w1)', h1=2, w1=2).shape # space-to-depth
+    (32, 15, 20, 12)
+
+    Layers behave similarly, but accept only tensors from frameworks (and e.g. don't accept lists)
+    >>> layer = Transpose('b h w c -> b h w c')
+    >>> y = layer(x)
+
+    :param tensor: tensor of any supported library (e.g. numpy.ndarray, tensorflow, pytorch, mxnet.ndarray).
+            list of tensors is also accepted, those should be of the same type and shape
+    :param pattern: string, transposition pattern
+    :param axes_lengths: any additional specifications for dimensions
+    :return: tensor of the same type as input. If possible, a view to the original tensor is returned.
 
     When composing axes, C-order enumeration used (consecutive elements have different last axis)
     More examples and explanations can be found in the einops guide.
