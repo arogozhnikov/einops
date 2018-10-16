@@ -12,7 +12,7 @@ _reductions = ('min', 'max', 'sum', 'mean', 'prod')
 _ellipsis = '…'  # NB, this is a single unicode symbol. String is used as it is not a list, but can be iterated
 
 
-def prod(sequence):
+def _product(sequence):
     result = 1
     for element in sequence:
         result *= element
@@ -114,7 +114,7 @@ class TransformRecipe:
 
     # TODO caching only for integer shapes, otherwise we keep references
     @functools.lru_cache(maxsize=1024)
-    def reconstruct_from_shape(self, shape, optimize=False, allow_none_in_output=False):
+    def reconstruct_from_shape(self, shape, optimize=False):
         """
         Shape is a tuple that may contain integers, shape variables (tf, keras, theano) and Nones (keras, mxnet)
         known axes can be integers or variables, but not Nones
@@ -137,7 +137,7 @@ class TransformRecipe:
                 ellipsis_shape = shape[before_ellipsis:after_ellipsis + 1]
                 if any(d is None for d in ellipsis_shape):
                     raise EinopsError("Couldn't infer shape for one or more axes represented by ellipsis")
-                axes_lengths[unknown_axis] = prod(ellipsis_shape)
+                axes_lengths[unknown_axis] = _product(ellipsis_shape)
             else:
                 if input_axis < self.ellipsis_positions[0]:
                     length = shape[before_ellipsis]
@@ -172,7 +172,7 @@ class TransformRecipe:
                 if any(l is None for l in lengths):
                     final_shapes.append(None)
                 else:
-                    final_shapes.append(prod(lengths))
+                    final_shapes.append(_product(lengths))
         reduced_axes = self.reduced_elementary_axes
         axes_reordering = self.final_axes_grouping_flat
         if optimize:
@@ -364,33 +364,36 @@ def reduce(tensor, pattern: str, reduction: str, **axes_lengths: int):
     
     Examples for reduce operation:
     
-    # perform max-reduction on the first axis
-    >>> y = reduce(x, 't b c -> b c', 'max') 
-    Reduce layer work similarly, so examples for brevity will be given for an operation  
-    >>> layer = Reduce('time batch channel -> batch channel', 'max')
-    >>> y = layer(x)
-    # same as previous, but with clearer axes meaning
+    >>> x = numpy.random.randn(100, 32, 64)
+    >>> # perform max-reduction on the first axis
+    >>> y = reduce(x, 't b c -> b c', 'max')
+    >>> # same as previous, but with clearer axes meaning
     >>> y = reduce(x, 'time batch channel -> batch channel', 'max')
-    # 2d max-pooling with kernel size = 2 * 2 for image processing
-    >>> y = reduce(x, 'b c (h1 h2) (w1 w2) -> b c h1 w1', 'max', h2=2, w2=2) 
-    # if one wants to go back to original height and width, depth-to-space trick can be applied
-    >>> y = rearrange(x, 'b (c h2 w2) h1 w1 -> b c (h1 h2) (w1 w2)', h2=2, w2=2) 
-    # Adaptive 2d max-pooling to 3 * 4 grid
-    >>> y = reduce(x, 'b c (h1 h2) (w1 w2) -> b c h1 w1', 'max', h1=3, w1=4) 
-    # Global average pooling
-    >>> y = reduce(x, 'b c h w -> b c', 'mean') 
-    # Subtracting batch mean for each channel
-    >>> y = x - reduce(x, 'b c h w -> () c () ()', 'mean') 
-    # Subtracting mean for each channel
+
+    >>> x = numpy.random.randn(10, 20, 30, 40)
+    >>> # 2d max-pooling with kernel size = 2 * 2 for image processing
+    >>> y1 = reduce(x, 'b c (h1 h2) (w1 w2) -> b c h1 w1', 'max', h2=2, w2=2)
+    >>> # if one wants to go back to the original height and width, depth-to-space trick can be applied
+    >>> y2 = rearrange(y1, 'b (c h2 w2) h1 w1 -> b c (h1 h2) (w1 w2)', h2=2, w2=2)
+    >>> assert parse_shape(x, 'b _ h w') == parse_shape(y2, 'b _ h w')
+    >>> # Adaptive 2d max-pooling to 3 * 4 grid
+    >>> reduce(x, 'b c (h1 h2) (w1 w2) -> b c h1 w1', 'max', h1=3, w1=4).shape
+    (10, 20, 3, 4)
+    >>> # Global average pooling
+    >>> reduce(x, 'b c h w -> b c', 'mean').shape
+    (10, 20)
+    >>> # Subtracting mean over batch for each channel
+    >>> y = x - reduce(x, 'b c h w -> () c () ()', 'mean')
+    >>> # Subtracting per-image mean for each channel
     >>> y = x - reduce(x, 'b c h w -> b c () ()', 'mean') 
     
     :param tensor: tensor: tensor of any supported library (e.g. numpy.ndarray, tensorflow, pytorch, mxnet.ndarray).
             list of tensors is also accepted, those should be of the same type and shape
     :param pattern: string, reduction pattern
-    :param reduction: one of available reductions {reductions}, case-sensitive
+    :param reduction: one of available reductions ('min', 'max', 'sum', 'mean', 'prod'), case-sensitive
     :param axes_lengths: any additional specifications for dimensions
     :return: tensor of the same type as input
-    """.format(reductions=_reductions)
+    """
     try:
         hashable_axes_lengths = tuple(sorted(axes_lengths.items()))
         recipe = _prepare_transformation_recipe(pattern, reduction, axes_lengths=hashable_axes_lengths)
@@ -415,24 +418,27 @@ def rearrange(tensor, pattern, **axes_lengths):
 
     >>> # suppose we have a set of images in "h w c" format (height-width-channel)
     >>> images = [numpy.random.randn(30, 40, 3) for _ in range(32)]
-    >>> rearrange(images, 'b h w c -> b h w c').shape # stacked along first (batch) axis, output is single array
+    >>> # stack along first (batch) axis, output is a single array
+    >>> y = rearrange(images, 'b h w c -> b h w c').shape
     (32, 30, 40, 3)
-    >>> rearrange(images, 'b h w c -> (b h) w c').shape # concatenated images along height (vertical axis)
-    (960, 40, 3)      # 960 = 32 * 30
-    >>> rearrange(images, 'b h w c -> h (b w) c').shape # concatenated images along horizontal axis
-    (30, 1280, 3)     # 1280 = 32 * 40
-    >>> rearrange(images, 'b h w c -> b c h w').shape # reordered axes to "b c h w" format for deep learning
+    >>> # concatenate images along height (vertical axis), 960 = 32 * 30
+    >>> rearrange(images, 'b h w c -> (b h) w c').shape
+    (960, 40, 3)
+    >>> # concatenated images along horizontal axis, 1280 = 32 * 40
+    >>> rearrange(images, 'b h w c -> h (b w) c').shape
+    (30, 1280, 3)
+    >>> # reordered axes to "b c h w" format for deep learning
+    >>> rearrange(images, 'b h w c -> b c h w').shape
     (32, 3, 30, 40)
-    >>> rearrange(images, 'b h w c -> b (c h w)').shape # flattened each image into a vector
-    (32, 3600)        # 3600 = 30 * 40 * 3
-    >>> rearrange(images, 'b (h1 h) (w1 w) c -> (b h1 w1) h w c', h1=2, w1=2).shape # split each image into 4 smaller
-    (128, 15, 20, 3)  # 128 = 32 * 2 * 2
-    >>> rearrange(images, 'b (h h1) (w w1) c -> b h w (c h1 w1)', h1=2, w1=2).shape # space-to-depth
+    >>> # flattened each image into a vector, 3600 = 30 * 40 * 3
+    >>> rearrange(images, 'b h w c -> b (c h w)').shape
+    (32, 3600)
+    >>> # split each image into 4 smaller (top-left, top-right, bottom-left, bottom-right), 128 = 32 * 2 * 2
+    >>> rearrange(images, 'b (h1 h) (w1 w) c -> (b h1 w1) h w c', h1=2, w1=2).shape
+    (128, 15, 20, 3)
+    >>> # space-to-depth operation
+    >>> rearrange(images, 'b (h h1) (w w1) c -> b h w (c h1 w1)', h1=2, w1=2).shape
     (32, 15, 20, 12)
-
-    Layers behave similarly, but accept only tensors from frameworks (and e.g. don't accept lists)
-    >>> layer = Rearrange('b h w c -> b h w c')
-    >>> y = layer(x)
 
     :param tensor: tensor of any supported library (e.g. numpy.ndarray, tensorflow, pytorch, mxnet.ndarray).
             list of tensors is also accepted, those should be of the same type and shape
