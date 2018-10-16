@@ -1,4 +1,7 @@
-from layers import keras_custom_objects
+import layers.chainer
+import layers.gluon
+import layers.keras
+import layers.torch
 
 __author__ = 'Alex Rogozhnikov'
 
@@ -13,7 +16,6 @@ import keras
 
 import tempfile
 import backends
-import layers
 
 rearrangement_patterns = [
     ('b c h w -> b (c h w)', dict(b=10), (10, 20, 30, 40), (10, 20 * 30 * 40)),
@@ -34,7 +36,7 @@ def test_keras():
         x = numpy.arange(numpy.prod(input_shape), dtype='float32').reshape(input_shape)
 
         keras_input = keras.layers.Input(shape=input_shape[1:])
-        layer = layers.KerasRearrange(pattern, **axes_lengths)
+        layer = layers.keras.Rearrange(pattern, **axes_lengths)
         output = layer(keras_input)
         # output = keras.layers.Activation('tanh')(keras_input)
         model = keras.models.Model(keras_input, output)
@@ -44,7 +46,7 @@ def test_keras():
         # create a temporary file using a context manager
         with tempfile.NamedTemporaryFile(mode='r+b') as fp:
             keras.models.save_model(model, fp.name)
-            model2 = keras.models.load_model(fp.name, custom_objects=keras_custom_objects)
+            model2 = keras.models.load_model(fp.name, custom_objects=layers.keras.keras_custom_objects)
 
         result2 = model2.predict_on_batch(x)
         assert numpy.allclose(result1, result2)
@@ -61,9 +63,9 @@ test_keras()
 
 def test_rearrange():
     backend_pairs = [
-        (backends.TorchBackend(), layers.TorchRearrange),
-        (backends.ChainerBackend(), layers.ChainerRearrange),
-        (backends.GluonBackend(), layers.GluonRearrange),
+        (backends.TorchBackend(), layers.torch.Rearrange),
+        (backends.ChainerBackend(), layers.chainer.Rearrange),
+        (backends.GluonBackend(), layers.gluon.Rearrange),
     ]
 
     for backend, RearrangeLayer in backend_pairs:
@@ -85,11 +87,11 @@ def test_rearrange():
             result2 = backend.to_numpy(layer2(backend.from_numpy(x)))
             assert numpy.allclose(result1, result2)
 
-            if RearrangeLayer == layers.TorchRearrange:
+            if RearrangeLayer == layers.torch.Rearrange:
                 layer3 = deepcopy(layer2)
-            elif RearrangeLayer == layers.ChainerRearrange:
+            elif RearrangeLayer == layers.chainer.Rearrange:
                 layer3 = deepcopy(layer2)
-            elif RearrangeLayer == layers.GluonRearrange:
+            elif RearrangeLayer == layers.gluon.Rearrange:
                 # hybridization doesn't work
                 # layer3 = layer2.hybridize()
                 layer3 = deepcopy(layer2)
