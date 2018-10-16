@@ -1,4 +1,4 @@
-from einops import transpose, reduce, parse_shape, _enumerate_directions, _prepare_transformation_recipe, \
+from einops import rearrange, reduce, parse_shape, _enumerate_directions, _prepare_transformation_recipe, \
     _optimize_transformation, _reductions
 import numpy
 import tensorflow as tf
@@ -56,22 +56,22 @@ def test_check_elementary_axis_name():
 test_check_elementary_axis_name()
 
 
-def test_transpose_ellipsis_numpy():
+def test_rearrange_ellipsis_numpy():
     x = numpy.arange(2 * 3 * 4 * 5 * 6).reshape([2, 3, 4, 5, 6])
-    assert (numpy.array_equal(x, transpose(x, '...->...')))
-    assert (numpy.array_equal(x, transpose(x, 'a b c d e-> a b c d e')))
-    assert (numpy.array_equal(x, transpose(x, 'a b c d e ...-> ... a b c d e')))
-    assert (numpy.array_equal(x, transpose(x, 'a b c d e ...-> a ... b c d e')))
-    assert (numpy.array_equal(x, transpose(x, '... a b c d e -> ... a b c d e')))
-    assert (numpy.array_equal(x, transpose(x, 'a ... e-> a ... e')))
-    assert (numpy.array_equal(x, transpose(x, 'a ... -> a ... ')))
+    assert (numpy.array_equal(x, rearrange(x, '...->...')))
+    assert (numpy.array_equal(x, rearrange(x, 'a b c d e-> a b c d e')))
+    assert (numpy.array_equal(x, rearrange(x, 'a b c d e ...-> ... a b c d e')))
+    assert (numpy.array_equal(x, rearrange(x, 'a b c d e ...-> a ... b c d e')))
+    assert (numpy.array_equal(x, rearrange(x, '... a b c d e -> ... a b c d e')))
+    assert (numpy.array_equal(x, rearrange(x, 'a ... e-> a ... e')))
+    assert (numpy.array_equal(x, rearrange(x, 'a ... -> a ... ')))
 
-    assert (numpy.array_equal(transpose(x, 'a b c d e -> (a b) c d e'),
-                              transpose(x, 'a b ... -> (a b ) ... ')))
-    assert (numpy.array_equal(transpose(x, 'a b c d e -> a b (c d) e'),
-                              transpose(x, '... c d e -> ... (c d) e')))
-    assert (numpy.array_equal(transpose(x, 'a b c d e -> a b c d e'),
-                              transpose(x, '... -> ... ')))
+    assert (numpy.array_equal(rearrange(x, 'a b c d e -> (a b) c d e'),
+                              rearrange(x, 'a b ... -> (a b ) ... ')))
+    assert (numpy.array_equal(rearrange(x, 'a b c d e -> a b (c d) e'),
+                              rearrange(x, '... c d e -> ... (c d) e')))
+    assert (numpy.array_equal(rearrange(x, 'a b c d e -> a b c d e'),
+                              rearrange(x, '... -> ... ')))
     for reduction in ['min', 'max', 'sum']:
         assert (numpy.array_equal(reduce(x, 'a b c d e -> ', reduction=reduction),
                                   reduce(x, '... -> ', reduction=reduction)))
@@ -79,15 +79,12 @@ def test_transpose_ellipsis_numpy():
                                   reduce(x, 'a ... e -> (e a)', reduction=reduction)))
         assert (numpy.array_equal(reduce(x, 'a b c d e -> d (a e)', reduction=reduction),
                                   reduce(x, 'a b c d e ... -> d (a e)', reduction=reduction)))
-        # TODO ellipsis inside parentheses on the right side
-        # assert (numpy.array_equal(transpose(x, 'a b c d e -> (a b c d e)'),
-        #                        transpose(x, '... -> (...) ')))
 
 
-test_transpose_ellipsis_numpy()
+test_rearrange_ellipsis_numpy()
 
 
-def test_transpose_with_numpy():
+def test_rearrange_with_numpy():
     shape = [1, 2, 3, 5, 7, 11]
     x = numpy.arange(numpy.prod(shape)).reshape(shape)
     for expression in [
@@ -97,33 +94,33 @@ def test_transpose_with_numpy():
         'a b c d e f-> (f e) d (c b a)',
         'a b c d e f-> (f e d c b a)',
     ]:
-        result = transpose(x, expression)
+        result = rearrange(x, expression)
         assert len(numpy.setdiff1d(x, result)) == 0
         assert result.dtype == x.dtype
 
-    result = transpose(x, 'a b c d e f -> a b c d e f')
+    result = rearrange(x, 'a b c d e f -> a b c d e f')
     assert numpy.array_equal(x, result)
 
-    result = transpose(x, 'a b c d e f -> a (b) (c d e) f')
+    result = rearrange(x, 'a b c d e f -> a (b) (c d e) f')
     assert numpy.array_equal(x.flatten(), result.flatten())
 
-    result = transpose(x, 'a aa aa1 a1a1 aaaa a11 -> a aa aa1 a1a1 aaaa a11')
+    result = rearrange(x, 'a aa aa1 a1a1 aaaa a11 -> a aa aa1 a1a1 aaaa a11')
     assert numpy.array_equal(x, result)
 
-    result1 = transpose(x, 'a b c d e f -> f e d c b a')
-    result2 = transpose(x, 'f e d c b a -> a b c d e f')
+    result1 = rearrange(x, 'a b c d e f -> f e d c b a')
+    result2 = rearrange(x, 'f e d c b a -> a b c d e f')
     assert numpy.array_equal(result1, result2)
 
-    result = transpose(transpose(x, 'a b c d e f -> (f d) c (e b) a'), '(f d) c (e b) a -> a b c d e f', b=2, d=5)
+    result = rearrange(rearrange(x, 'a b c d e f -> (f d) c (e b) a'), '(f d) c (e b) a -> a b c d e f', b=2, d=5)
     assert numpy.array_equal(x, result)
 
     sizes = dict(zip('abcdef', shape))
-    temp = transpose(x, 'a b c d e f -> (f d) c (e b) a', **sizes)
-    result = transpose(temp, '(f d) c (e b) a -> a b c d e f', **sizes)
+    temp = rearrange(x, 'a b c d e f -> (f d) c (e b) a', **sizes)
+    result = rearrange(temp, '(f d) c (e b) a -> a b c d e f', **sizes)
     assert numpy.array_equal(x, result)
 
     x2 = numpy.arange(2 * 3 * 4).reshape([2, 3, 4])
-    result = transpose(x2, 'a b c -> b c a')
+    result = rearrange(x2, 'a b c -> b c a')
     assert x2[1, 2, 3] == result[2, 3, 1]
     assert x2[0, 1, 2] == result[1, 2, 0]
 
@@ -133,7 +130,7 @@ def test_transpose_with_numpy():
         left_expression = ' '.join(f'i{axis}' for axis in range(n_axes))
         right_expression = ' '.join(f'i{axis}' for axis in permutation)
         expression = left_expression + ' -> ' + right_expression
-        result = transpose(input, expression)
+        result = rearrange(input, expression)
 
         for pick in numpy.random.randint(0, 2, [10, n_axes]):
             assert input[tuple(pick)] == result[tuple(pick[permutation])]
@@ -144,7 +141,7 @@ def test_transpose_with_numpy():
         left_expression = ' '.join(f'i{axis}' for axis in range(n_axes)[::-1])
         right_expression = ' '.join(f'i{axis}' for axis in permutation[::-1])
         expression = left_expression + ' -> ' + right_expression
-        result = transpose(input, expression)
+        result = rearrange(input, expression)
         assert result.shape == input.shape
         expected_result = numpy.zeros_like(input)
         for original_axis, result_axis in enumerate(permutation):
@@ -154,7 +151,7 @@ def test_transpose_with_numpy():
     print('simple tests passed')
 
 
-test_transpose_with_numpy()
+test_rearrange_with_numpy()
 
 
 def test_reduction():
@@ -234,58 +231,62 @@ def test_reduction_stress():
 test_reduction_stress()
 
 
-def test_transpose_examples():
+def test_rearrange_examples():
     # TODO order
     # transposition = permute_dimensions
     # reshape = view
     # squeeze, unsqueeze
+    # concatenating and stacking
     # depth-to-space and space-to-depth
     # splitting of dimension into groups
     # stack and concat
 
     # ну и всевозможные редукции
 
-    # shufflenet
+    # shufflenet reordering
     # max-pooling
-    # strided convolutions
+    # strided convolutions (1d 2d)
+    # добавление / вытаскивание глубины для одномерных моделей
+    # отрисовка набора изображений
+    #
 
     def test1(x):
-        y = transpose(x, 'b h w c -> b c h w')
+        y = rearrange(x, 'b h w c -> b c h w')
         assert y.shape == (10, 40, 20, 30)
         return y
 
     def test2(x):
-        y = transpose(x, 'b h w c -> b c (h w)')
+        y = rearrange(x, 'b h w c -> b c (h w)')
         assert y.shape == (10, 40, 20 * 30)
         return y
 
     def test3(x):
-        y = transpose(x, 'b h w (c h1 w1) -> b (h h1) (w w1) c', h1=2, w1=2)
+        y = rearrange(x, 'b h w (c h1 w1) -> b (h h1) (w w1) c', h1=2, w1=2)
         assert y.shape == (10, 40, 60, 10)
         return y
 
     def test4(x):
-        y = transpose(x, 'b (h h1) (w w1) c -> b h w (h1 w1 c)', h1=2, w1=2)
+        y = rearrange(x, 'b (h h1) (w w1) c -> b h w (h1 w1 c)', h1=2, w1=2)
         assert y.shape == (10, 10, 15, 160)
         return y
 
     def test5(x):
-        y = transpose(x, 'b1 s b2 t -> b1 b2 s t')
+        y = rearrange(x, 'b1 s b2 t -> b1 b2 s t')
         assert y.shape == (10, 30, 20, 40)
         return y
 
     def test6(x):
         # TODO return matrix-by-matrix multiplication
-        t = transpose(x, 'b c h w -> (b h w) c')
+        t = rearrange(x, 'b c h w -> (b h w) c')
         assert t.shape == (10 * 30 * 40, 20)
 
         # TODO this test specifically for TF with x.shape replaced by tf.shape for expression
-        y = transpose(t, '(b h w) c2->b c2 h w', **parse_shape(x, 'b _ h w'))
+        y = rearrange(t, '(b h w) c2->b c2 h w', **parse_shape(x, 'b _ h w'))
         assert y.shape == (10, 20, 30, 40)
         return y
 
     def test7(x):
-        y1, y2 = transpose(x, 'b h w (c g) -> g b h w c', g=2)
+        y1, y2 = rearrange(x, 'b h w (c g) -> g b h w c', g=2)
         assert y1.shape == (10, 20, 30, 20)
         assert y2.shape == (10, 20, 30, 20)
         return y1 + y2
@@ -317,19 +318,19 @@ def test_transpose_examples():
     def shufflenet(x, convolve, c1=8, c2=8):
         # shufflenet example
         x = convolve(x)
-        x = transpose(x, 'b (c1 c2) h w-> b (c2 c1) h w', c1=c1, c2=c2)
+        x = rearrange(x, 'b (c1 c2) h w-> b (c2 c1) h w', c1=c1, c2=c2)
         x = convolve(x)
         print(x.shape)
 
     def convolve_strided_1d(x, stride, usual_conv):
-        x_reshaped = transpose(x, 'b c (t stride) -> (stride b) c t)', stride=stride)
+        x_reshaped = rearrange(x, 'b c (t stride) -> (stride b) c t)', stride=stride)
         result = usual_conv(x_reshaped)
-        return transpose(result, '(stride b) c t -> b c (t stride)')
+        return rearrange(result, '(stride b) c t -> b c (t stride)')
 
     def convolve_strided_2d(x, stride, usual_conv):
-        x_reshaped = transpose(x, 'b c (h h1) (w w1) -> (h1 w1 b) c h w)', stride=stride)
+        x_reshaped = rearrange(x, 'b c (h h1) (w w1) -> (h1 w1 b) c h w)', stride=stride)
         result = usual_conv(x_reshaped)
-        return transpose(result, '(h1 w1 b) c h w) -> b c (h h1) (w w1)')
+        return rearrange(result, '(h1 w1 b) c h w) -> b c (h h1) (w w1)')
 
     # TODO example for detection module?
 
@@ -337,7 +338,7 @@ def test_transpose_examples():
     # einsum(  G[i, j, alpha0, alpha1] X[...,  i, alpha0] -> [i, ...,  alpha1]  )
 
 
-test_transpose_examples()
+test_rearrange_examples()
 
 
 def test_parse_shape():
@@ -381,7 +382,7 @@ def test_parse_shape_tf_static():
         shape = tf.Session().run(shape_placeholder, {placeholder: numpy.zeros([10, 20, 30, 40])})
         print(shape)
 
-        result_placeholder = transpose(placeholder, 'a b (c1 c2) (d1 d2) -> (a b d1) c1 (c2 d2)',
+        result_placeholder = rearrange(placeholder, 'a b (c1 c2) (d1 d2) -> (a b d1) c1 (c2 d2)',
                                        **parse_shape(placeholder, 'a b c1 _'), d2=2)
         result = tf.Session().run(result_placeholder, {placeholder: numpy.zeros([10, 20, 30, 40])})
         print(result.shape)
@@ -422,8 +423,8 @@ def test_concatenations_and_stacking():
                 arrays1 = [numpy.arange(i, i + numpy.prod(shape)).reshape(shape) for i in range(n_arrays)]
                 arrays2 = [backend.from_numpy(array) for array in arrays1]
                 result0 = numpy.asarray(arrays1)
-                result1 = transpose(arrays1, '...->...')
-                result2 = transpose(arrays2, '...->...')
+                result1 = rearrange(arrays1, '...->...')
+                result2 = rearrange(arrays2, '...->...')
                 assert numpy.array_equal(result0, result1)
                 assert numpy.array_equal(result1, backend.to_numpy(result2))
 

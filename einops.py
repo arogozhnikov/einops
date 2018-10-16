@@ -112,6 +112,7 @@ class TransformRecipe:
         self.reduced_elementary_axes = reduced_elementary_axes
         self.ellipsis_positions = ellipsis_positions
 
+    # TODO caching only for integer shapes, otherwise we keep references
     @functools.lru_cache(maxsize=1024)
     def reconstruct_from_shape(self, shape, optimize=False, allow_none_in_output=False):
         """
@@ -373,7 +374,7 @@ def reduce(tensor, pattern: str, reduction: str, **axes_lengths: int):
     # 2d max-pooling with kernel size = 2 * 2 for image processing
     >>> y = reduce(x, 'b c (h1 h2) (w1 w2) -> b c h1 w1', 'max', h2=2, w2=2) 
     # if one wants to go back to original height and width, depth-to-space trick can be applied
-    >>> y = transpose(x, 'b (c h2 w2) h1 w1 -> b c (h1 h2) (w1 w2)', h2=2, w2=2) 
+    >>> y = rearrange(x, 'b (c h2 w2) h1 w1 -> b c (h1 h2) (w1 w2)', h2=2, w2=2) 
     # Adaptive 2d max-pooling to 3 * 4 grid
     >>> y = reduce(x, 'b c (h1 h2) (w1 w2) -> b c h1 w1', 'max', h1=3, w1=4) 
     # Global average pooling
@@ -404,38 +405,38 @@ def reduce(tensor, pattern: str, reduction: str, **axes_lengths: int):
         raise EinopsError(message + '\n {}'.format(e))
 
 
-def transpose(tensor, pattern, **axes_lengths):
+def rearrange(tensor, pattern, **axes_lengths):
     """
-    einops.transpose is a reader-friendly smart element reordering for multidimensional tensors.
+    einops.rearrange is a reader-friendly smart element reordering for multidimensional tensors.
     This operation includes functionality of transpose (axes permutation), reshape (view), squeeze, unsqueeze,
     stack, concatenate and other operations.
 
-    Examples for transpose operation:
+    Examples for rearrange operation:
 
     >>> # suppose we have a set of images in "h w c" format (height-width-channel)
     >>> images = [numpy.random.randn(30, 40, 3) for _ in range(32)]
-    >>> transpose(images, 'b h w c -> b h w c').shape # stacked along first (batch) axis
+    >>> rearrange(images, 'b h w c -> b h w c').shape # stacked along first (batch) axis, output is single array
     (32, 30, 40, 3)
-    >>> transpose(images, 'b h w c -> (b h) w c').shape # concatenated images along height (vertical axis)
+    >>> rearrange(images, 'b h w c -> (b h) w c').shape # concatenated images along height (vertical axis)
     (960, 40, 3)      # 960 = 32 * 30
-    >>> transpose(images, 'b h w c -> h (b w) c').shape # concatenated images along horizontal axis
+    >>> rearrange(images, 'b h w c -> h (b w) c').shape # concatenated images along horizontal axis
     (30, 1280, 3)     # 1280 = 32 * 40
-    >>> transpose(images, 'b h w c -> b c h w').shape # reordered axes to "b c h w" format for deep learning
+    >>> rearrange(images, 'b h w c -> b c h w').shape # reordered axes to "b c h w" format for deep learning
     (32, 3, 30, 40)
-    >>> transpose(images, 'b h w c -> b (c h w)').shape # flattened each image into a vector
+    >>> rearrange(images, 'b h w c -> b (c h w)').shape # flattened each image into a vector
     (32, 3600)        # 3600 = 30 * 40 * 3
-    >>> transpose(images, 'b (h1 h) (w1 w) c -> (b h1 w1) h w c', h1=2, w1=2).shape # split each image into 4 smaller
+    >>> rearrange(images, 'b (h1 h) (w1 w) c -> (b h1 w1) h w c', h1=2, w1=2).shape # split each image into 4 smaller
     (128, 15, 20, 3)  # 128 = 32 * 2 * 2
-    >>> transpose(images, 'b (h h1) (w w1) c -> b h w (c h1 w1)', h1=2, w1=2).shape # space-to-depth
+    >>> rearrange(images, 'b (h h1) (w w1) c -> b h w (c h1 w1)', h1=2, w1=2).shape # space-to-depth
     (32, 15, 20, 12)
 
     Layers behave similarly, but accept only tensors from frameworks (and e.g. don't accept lists)
-    >>> layer = Transpose('b h w c -> b h w c')
+    >>> layer = Rearrange('b h w c -> b h w c')
     >>> y = layer(x)
 
     :param tensor: tensor of any supported library (e.g. numpy.ndarray, tensorflow, pytorch, mxnet.ndarray).
             list of tensors is also accepted, those should be of the same type and shape
-    :param pattern: string, transposition pattern
+    :param pattern: string, rearrangement pattern
     :param axes_lengths: any additional specifications for dimensions
     :return: tensor of the same type as input. If possible, a view to the original tensor is returned.
 
@@ -444,7 +445,7 @@ def transpose(tensor, pattern, **axes_lengths):
     """
     if isinstance(tensor, list):
         if len(tensor) == 0:
-            raise TypeError("Transposition can't be applied to an empty list")
+            raise TypeError("Rearrange can't be applied to an empty list")
         tensor = get_backend(tensor[0]).stack_on_zeroth_dimension(tensor)
     return reduce(tensor, pattern, reduction='none', **axes_lengths)
 

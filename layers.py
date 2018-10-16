@@ -2,14 +2,14 @@ __author__ = 'Alex Rogozhnikov'
 
 import functools
 
-from einops import transpose, TransformRecipe, _prepare_transformation_recipe, EinopsError
+from einops import rearrange, TransformRecipe, _prepare_transformation_recipe, EinopsError
 
 
 # TODO tests for serialization / deserialization inside the model
 # TODO docstrings
 # TODO make imports like from einops.torch import ...
 
-class TransposeMixin:
+class RearrangeMixin:
     def __init__(self, pattern, **axes_lengths):
         super().__init__()
         self.pattern = pattern
@@ -69,7 +69,7 @@ class ReduceMixin:
 import torch
 
 
-class TorchTranspose(TransposeMixin, torch.nn.Module):
+class TorchRearrange(RearrangeMixin, torch.nn.Module):
     def forward(self, input):
         return self._apply_recipe(input)
 
@@ -82,7 +82,7 @@ class TorchReduce(ReduceMixin, torch.nn.Module):
 import chainer
 
 
-class ChainerTranspose(TransposeMixin, chainer.Link):
+class ChainerRearrange(RearrangeMixin, chainer.Link):
     def __call__(self, x):
         return self._apply_recipe(x)
 
@@ -97,7 +97,7 @@ import mxnet
 
 # TODO symbolic is not working right now
 
-class GluonTranspose(TransposeMixin, mxnet.gluon.HybridBlock):
+class GluonRearrange(RearrangeMixin, mxnet.gluon.HybridBlock):
     def hybrid_forward(self, F, x):
         return self._apply_recipe(x)
 
@@ -110,7 +110,7 @@ class GluonReduce(ReduceMixin, mxnet.gluon.HybridBlock):
 from keras.engine.topology import Layer
 
 
-class KerasTranspose(TransposeMixin, Layer):
+class KerasRearrange(RearrangeMixin, Layer):
     def compute_output_shape(self, input_shape):
         input_shape = tuple(None if d is None else int(d) for d in input_shape)
         init_shapes, reduced_axes, axes_reordering, final_shapes = self.recipe().reconstruct_from_shape(input_shape)
@@ -136,4 +136,4 @@ class KerasReduce(ReduceMixin, Layer):
         return {'pattern': self.pattern, 'reduction': self.reduction, **self.axes_lengths}
 
 
-keras_custom_objects = {'KerasTranspose': KerasTranspose, 'KerasReduce': KerasReduce}
+keras_custom_objects = {'KerasRearrange': KerasRearrange, 'KerasReduce': KerasReduce}

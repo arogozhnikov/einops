@@ -15,14 +15,14 @@ import tempfile
 import backends
 import layers
 
-transposition_patterns = [
+rearrangement_patterns = [
     ('b c h w -> b (c h w)', dict(b=10), (10, 20, 30, 40), (10, 20 * 30 * 40)),
     ('b c (h1 h2) (w1 w2) -> b (c h2 w2) h1 w1', dict(h1=15, h2=2, w2=2), (10, 20, 30, 40), (10, 20 * 2 * 2, 15, 20)),
     # ('b ... c -> c b ...', dict(b=10, c=40), (10, 20, 30, 40), (40, 10, 20, 30)),
 ]
 
 
-# reduction_patterns = transposition_patterns + [
+# reduction_patterns = rearrangement_patterns + [
 #     ('b c h w -> b ()', dict(b=10), (10, 20, 30, 40), (10, 1)),
 #     ('b c (h1 h2) (w1 w2) -> b c h1 w1', dict(h1=15, h2=2, w2=2), (10, 20, 30, 40), (10, 20, 15, 20)),
 #     ('b ... c -> b', dict(b=10, c=40), (10, 20, 30, 40), (10,)),
@@ -30,11 +30,11 @@ transposition_patterns = [
 
 
 def test_keras():
-    for pattern, axes_lengths, input_shape, result_shape in transposition_patterns:
+    for pattern, axes_lengths, input_shape, result_shape in rearrangement_patterns:
         x = numpy.arange(numpy.prod(input_shape), dtype='float32').reshape(input_shape)
 
         keras_input = keras.layers.Input(shape=input_shape[1:])
-        layer = layers.KerasTranspose(pattern, **axes_lengths)
+        layer = layers.KerasRearrange(pattern, **axes_lengths)
         output = layer(keras_input)
         # output = keras.layers.Activation('tanh')(keras_input)
         model = keras.models.Model(keras_input, output)
@@ -59,17 +59,17 @@ def test_keras():
 test_keras()
 
 
-def test_transpose():
+def test_rearrange():
     backend_pairs = [
-        (backends.TorchBackend(), layers.TorchTranspose),
-        (backends.ChainerBackend(), layers.ChainerTranspose),
-        (backends.GluonBackend(), layers.GluonTranspose),
+        (backends.TorchBackend(), layers.TorchRearrange),
+        (backends.ChainerBackend(), layers.ChainerRearrange),
+        (backends.GluonBackend(), layers.GluonRearrange),
     ]
 
-    for backend, TransposeLayer in backend_pairs:
-        for pattern, axes_lengths, input_shape, result_shape in transposition_patterns:
+    for backend, RearrangeLayer in backend_pairs:
+        for pattern, axes_lengths, input_shape, result_shape in rearrangement_patterns:
             x = numpy.arange(numpy.prod(input_shape), dtype='float32').reshape(input_shape)
-            layer = TransposeLayer(pattern, **axes_lengths)
+            layer = RearrangeLayer(pattern, **axes_lengths)
             assert layer(backend.from_numpy(x)).shape == result_shape
             for shape in [(), (10,), (10, 10, 10), (15, 20, 31, 40), (10, 1, 1, 1, 1)]:
                 try:
@@ -85,11 +85,11 @@ def test_transpose():
             result2 = backend.to_numpy(layer2(backend.from_numpy(x)))
             assert numpy.allclose(result1, result2)
 
-            if TransposeLayer == layers.TorchTranspose:
+            if RearrangeLayer == layers.TorchRearrange:
                 layer3 = deepcopy(layer2)
-            elif TransposeLayer == layers.ChainerTranspose:
+            elif RearrangeLayer == layers.ChainerRearrange:
                 layer3 = deepcopy(layer2)
-            elif TransposeLayer == layers.GluonTranspose:
+            elif RearrangeLayer == layers.GluonRearrange:
                 # hybridization doesn't work
                 # layer3 = layer2.hybridize()
                 layer3 = deepcopy(layer2)
@@ -116,4 +116,4 @@ def test_transpose():
         print('Tested layer for ', backend.framework_name)
 
 
-test_transpose()
+test_rearrange()
