@@ -2,14 +2,20 @@ __author__ = 'Alex Rogozhnikov'
 
 import functools
 
-from einops import rearrange, TransformRecipe, _prepare_transformation_recipe, EinopsError
+from einops import TransformRecipe, _prepare_transformation_recipe, EinopsError
 
 
 # TODO tests for serialization / deserialization inside the model
-# TODO docstrings
-# TODO make imports like from einops.torch import ...
 
 class RearrangeMixin:
+    """
+    Rearrange layer behaves identically to einops.rearrange operation.
+
+    :param pattern: str, rearrangement pattern
+    :param axes_lengths: any additional specification of dimensions
+
+    See einops.rearrange for examples.
+    """
     def __init__(self, pattern, **axes_lengths):
         super().__init__()
         self.pattern = pattern
@@ -38,6 +44,15 @@ class RearrangeMixin:
 
 
 class ReduceMixin:
+    """
+    Reduce layer behaves identically to einops.reduce operation.
+
+    :param pattern: str, rearrangement pattern
+    :param reduction: one of available reductions ('min', 'max', 'sum', 'mean', 'prod'), case-sensitive
+    :param axes_lengths: any additional specification of dimensions
+
+    See einops.reduce for examples.
+    """
     def __init__(self, pattern, reduction, **axes_lengths):
         super().__init__()
         self.pattern = pattern
@@ -66,74 +81,5 @@ class ReduceMixin:
             raise EinopsError(' Error while computing {!r}\n {}'.format(self, e))
 
 
-import torch
 
 
-class TorchRearrange(RearrangeMixin, torch.nn.Module):
-    def forward(self, input):
-        return self._apply_recipe(input)
-
-
-class TorchReduce(ReduceMixin, torch.nn.Module):
-    def forward(self, input):
-        return self._apply_recipe(input)
-
-
-import chainer
-
-
-class ChainerRearrange(RearrangeMixin, chainer.Link):
-    def __call__(self, x):
-        return self._apply_recipe(x)
-
-
-class ChainerReduce(ReduceMixin, chainer.Link):
-    def __call__(self, x):
-        return self._apply_recipe(x)
-
-
-import mxnet
-
-
-# TODO symbolic is not working right now
-
-class GluonRearrange(RearrangeMixin, mxnet.gluon.HybridBlock):
-    def hybrid_forward(self, F, x):
-        return self._apply_recipe(x)
-
-
-class GluonReduce(ReduceMixin, mxnet.gluon.HybridBlock):
-    def hybrid_forward(self, F, x):
-        return self._apply_recipe(x)
-
-
-from keras.engine.topology import Layer
-
-
-class KerasRearrange(RearrangeMixin, Layer):
-    def compute_output_shape(self, input_shape):
-        input_shape = tuple(None if d is None else int(d) for d in input_shape)
-        init_shapes, reduced_axes, axes_reordering, final_shapes = self.recipe().reconstruct_from_shape(input_shape)
-        return final_shapes
-
-    def call(self, inputs):
-        return self._apply_recipe(inputs)
-
-    def get_config(self):
-        return {'pattern': self.pattern, **self.axes_lengths}
-
-
-class KerasReduce(ReduceMixin, Layer):
-    def compute_output_shape(self, input_shape):
-        input_shape = tuple(None if d is None else int(d) for d in input_shape)
-        init_shapes, reduced_axes, axes_reordering, final_shapes = self.recipe().reconstruct_from_shape(input_shape)
-        return final_shapes
-
-    def call(self, inputs):
-        return self._apply_recipe(inputs)
-
-    def get_config(self):
-        return {'pattern': self.pattern, 'reduction': self.reduction, **self.axes_lengths}
-
-
-keras_custom_objects = {'KerasRearrange': KerasRearrange, 'KerasReduce': KerasReduce}
