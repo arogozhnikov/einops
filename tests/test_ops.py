@@ -1,8 +1,8 @@
-from einops import rearrange, reduce, parse_shape, _enumerate_directions, _prepare_transformation_recipe, \
+from einops.einops import rearrange, reduce, parse_shape, _enumerate_directions, _prepare_transformation_recipe, \
     _optimize_transformation, _reductions
+import einops.backends as backends
 import numpy
 import tensorflow as tf
-import backends
 
 use_tf_eager = False
 if use_tf_eager:
@@ -46,7 +46,7 @@ test_optimize_transformations_numpy()
 
 
 def test_check_elementary_axis_name():
-    from einops import _check_elementary_axis_name
+    from einops.einops import _check_elementary_axis_name
     for name in ['a', 'b', 'h', 'dx', 'h1', 'zz', 'i9123', 'somelongname']:
         assert _check_elementary_axis_name(name)
     for name in ['', '2b', 'Alex', 'camelCase', 'under_score', '12']:

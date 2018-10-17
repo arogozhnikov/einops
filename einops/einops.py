@@ -5,9 +5,8 @@ from typing import Tuple, List, Set
 
 import numpy
 
-from backends import get_backend
+from .backends import get_backend
 
-CompositeAxis = List[str]
 _reductions = ('min', 'max', 'sum', 'mean', 'prod')
 _ellipsis = '…'  # NB, this is a single unicode symbol. String is used as it is not a list, but can be iterated
 
@@ -189,10 +188,13 @@ class TransformRecipe:
         return backend.reshape(tensor, final_shapes)
 
 
+CompositeAxis = List[str]
+
+
 def parse_expression(expression: str) -> Tuple[Set[str], List[CompositeAxis]]:
     """
     Parses an indexing expression (for a single tensor).
-    Checks uniqueness of names, checks usage of '...'
+    Checks uniqueness of names, checks usage of '...' (allowed only once)
     Returns set of all used identifiers and a list of axis groups
     """
     identifiers = set()
@@ -419,7 +421,7 @@ def rearrange(tensor, pattern, **axes_lengths):
     >>> # suppose we have a set of images in "h w c" format (height-width-channel)
     >>> images = [numpy.random.randn(30, 40, 3) for _ in range(32)]
     >>> # stack along first (batch) axis, output is a single array
-    >>> y = rearrange(images, 'b h w c -> b h w c').shape
+    >>> rearrange(images, 'b h w c -> b h w c').shape
     (32, 30, 40, 3)
     >>> # concatenate images along height (vertical axis), 960 = 32 * 30
     >>> rearrange(images, 'b h w c -> (b h) w c').shape

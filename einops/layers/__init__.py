@@ -2,7 +2,7 @@ __author__ = 'Alex Rogozhnikov'
 
 import functools
 
-from einops import TransformRecipe, _prepare_transformation_recipe, EinopsError
+from ..einops import TransformRecipe, _prepare_transformation_recipe, EinopsError
 
 
 # TODO tests for serialization / deserialization inside the model

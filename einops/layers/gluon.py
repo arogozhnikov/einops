@@ -1,6 +1,6 @@
 import mxnet
 
-from layers import RearrangeMixin, ReduceMixin
+from . import RearrangeMixin, ReduceMixin
 
 __author__ = 'Alex Rogozhnikov'
 
