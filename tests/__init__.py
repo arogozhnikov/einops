@@ -7,12 +7,13 @@ from einops import backends
 __author__ = 'Alex Rogozhnikov'
 
 
-if bool(os.environ.get('TF_EAGER', False)):
+assert os.environ.get('TF_EAGER', '') in ['', '1', '0']
+if os.environ.get('TF_EAGER', '') == '1':
     tf.enable_eager_execution()
     print('testing with eager execution')
 
 
-def collect_test_settings(symbolic=False, layers=False):
+def collect_test_backends(symbolic=False, layers=False):
     """
     :param symbolic: symbolic or imperative frameworks?
     :param layers: layers or operation?
@@ -32,14 +33,18 @@ def collect_test_settings(symbolic=False, layers=False):
                              backends.TorchBackend,
                              backends.GluonBackend,
                              backends.ChainerBackend,
-                             ] + ([backends.TensorflowBackend] if tf_running_eagerly else [])
+                             ]
+            if tf_running_eagerly:
+                backend_types += [backends.TensorflowBackend]
         else:
             backend_types = [backends.TorchBackend,
                              backends.GluonBackend,
                              backends.ChainerBackend]
     else:
         if not layers:
-            backend_types = [backends.MXNetBackend] + ([] if tf_running_eagerly else [backends.TensorflowBackend])
+            backend_types = [backends.MXNetBackend]
+            if not tf_running_eagerly:
+                backend_types += [backends.TensorflowBackend]
         else:
             backend_types = [backends.KerasBackend, backends.MXNetBackend]
 

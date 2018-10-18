@@ -3,10 +3,10 @@ import numpy
 from einops.einops import (rearrange, reduce, parse_shape,
                            _enumerate_directions, _optimize_transformation, _reductions,
                            _check_elementary_axis_name)
-from . import collect_test_settings
+from . import collect_test_backends
 
-imp_op_backends = collect_test_settings(symbolic=False, layers=False)
-sym_op_backends = collect_test_settings(symbolic=True, layers=False)
+imp_op_backends = collect_test_backends(symbolic=False, layers=False)
+sym_op_backends = collect_test_backends(symbolic=True, layers=False)
 
 
 def test_optimize_transformations_numpy():
@@ -49,27 +49,27 @@ def test_elementary_axis_name():
 
 def test_rearrange_ellipsis_numpy():
     x = numpy.arange(2 * 3 * 4 * 5 * 6).reshape([2, 3, 4, 5, 6])
-    assert (numpy.array_equal(x, rearrange(x, '...->...')))
-    assert (numpy.array_equal(x, rearrange(x, 'a b c d e-> a b c d e')))
-    assert (numpy.array_equal(x, rearrange(x, 'a b c d e ...-> ... a b c d e')))
-    assert (numpy.array_equal(x, rearrange(x, 'a b c d e ...-> a ... b c d e')))
-    assert (numpy.array_equal(x, rearrange(x, '... a b c d e -> ... a b c d e')))
-    assert (numpy.array_equal(x, rearrange(x, 'a ... e-> a ... e')))
-    assert (numpy.array_equal(x, rearrange(x, 'a ... -> a ... ')))
+    assert numpy.array_equal(x, rearrange(x, '...->...'))
+    assert numpy.array_equal(x, rearrange(x, 'a b c d e-> a b c d e'))
+    assert numpy.array_equal(x, rearrange(x, 'a b c d e ...-> ... a b c d e'))
+    assert numpy.array_equal(x, rearrange(x, 'a b c d e ...-> a ... b c d e'))
+    assert numpy.array_equal(x, rearrange(x, '... a b c d e -> ... a b c d e'))
+    assert numpy.array_equal(x, rearrange(x, 'a ... e-> a ... e'))
+    assert numpy.array_equal(x, rearrange(x, 'a ... -> a ... '))
 
-    assert (numpy.array_equal(rearrange(x, 'a b c d e -> (a b) c d e'),
-                              rearrange(x, 'a b ... -> (a b) ... ')))
-    assert (numpy.array_equal(rearrange(x, 'a b c d e -> a b (c d) e'),
-                              rearrange(x, '... c d e -> ... (c d) e')))
-    assert (numpy.array_equal(rearrange(x, 'a b c d e -> a b c d e'),
-                              rearrange(x, '... -> ... ')))
+    assert numpy.array_equal(rearrange(x, 'a b c d e -> (a b) c d e'),
+                             rearrange(x, 'a b ... -> (a b) ... '))
+    assert numpy.array_equal(rearrange(x, 'a b c d e -> a b (c d) e'),
+                             rearrange(x, '... c d e -> ... (c d) e'))
+    assert numpy.array_equal(rearrange(x, 'a b c d e -> a b c d e'),
+                             rearrange(x, '... -> ... '))
     for reduction in ['min', 'max', 'sum']:
-        assert (numpy.array_equal(reduce(x, 'a b c d e -> ', reduction=reduction),
-                                  reduce(x, '... -> ', reduction=reduction)))
-        assert (numpy.array_equal(reduce(x, 'a b c d e -> (e a)', reduction=reduction),
-                                  reduce(x, 'a ... e -> (e a)', reduction=reduction)))
-        assert (numpy.array_equal(reduce(x, 'a b c d e -> d (a e)', reduction=reduction),
-                                  reduce(x, 'a b c d e ... -> d (a e)', reduction=reduction)))
+        assert numpy.array_equal(reduce(x, 'a b c d e -> ', reduction=reduction),
+                                 reduce(x, '... -> ', reduction=reduction))
+        assert numpy.array_equal(reduce(x, 'a b c d e -> (e a)', reduction=reduction),
+                                 reduce(x, 'a ... e -> (e a)', reduction=reduction))
+        assert numpy.array_equal(reduce(x, 'a b c d e -> d (a e)', reduction=reduction),
+                                 reduce(x, 'a b c d e ... -> d (a e)', reduction=reduction))
 
 
 def test_rearrange_with_numpy():
@@ -168,8 +168,7 @@ def test_reduction_symbolic():
         print('Reduction tests for ', backend.framework_name)
         for reduction in _reductions:
             input = numpy.arange(2 * 3 * 4 * 5 * 6, dtype='int64').reshape(2, 3, 4, 5, 6)
-            if reduction in ['mean', 'prod']:
-                input = input / input.astype('float64').mean()
+            input /= input.astype('float64').mean()
             test_cases = [
                 ['a b c d e -> ', {}, getattr(input, reduction)()],
                 ['a ... -> ', {}, getattr(input, reduction)()],
@@ -311,16 +310,15 @@ def test_rearrange_examples():
             result1 = test(x)
             result2 = backend.to_numpy(test(backend.from_numpy(x)))
             assert numpy.array_equal(result1, result2)
-            print(result1.shape)
 
             # now with strides
             x = numpy.arange(10 * 2 * 20 * 3 * 30 * 1 * 40).reshape([10 * 2, 20 * 3, 30 * 1, 40])
-            last_step = -1 if backend.framework_name != 'torch' else 1  # torch still doesn't support negative steps
-            indexing = numpy.index_exp[::2, ::3, ::1, ::last_step]
-            result1 = test(x[indexing])
-            result2 = backend.to_numpy(test(backend.from_numpy(x)[indexing]))
+            # known torch bug - torch doesn't support negative steps
+            last_step = -1 if backend.framework_name != 'torch' else 1
+            indexing_expression = numpy.index_exp[::2, ::3, ::1, ::last_step]
+            result1 = test(x[indexing_expression])
+            result2 = backend.to_numpy(test(backend.from_numpy(x)[indexing_expression]))
             assert numpy.array_equal(result1, result2)
-            print(result1.shape)
 
     def shufflenet(x, convolve, c1=8, c2=8):
         # shufflenet example
@@ -441,7 +439,6 @@ def test_doctests():
     testmod(einops.einops, raise_on_error=True, )
     import einops.layers
     testmod(einops.layers, raise_on_error=True)
-
 
 # TODO test for gradients
 
