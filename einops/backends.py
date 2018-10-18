@@ -32,13 +32,20 @@ class AbstractBackend:
     framework_name = None
 
     def is_appropriate_type(self, tensor):
+        """ helper method should recognize tensors it can handle """
         raise NotImplementedError()
 
     def from_numpy(self, x):
-        raise NotImplementedError()
+        raise NotImplementedError("framework doesn't support imperative execution")
 
     def to_numpy(self, x):
-        raise NotImplementedError()
+        raise NotImplementedError("framework doesn't support imperative execution")
+
+    def create_symbol(self, shape):
+        raise NotImplementedError("framework doesn't support symbolic computations")
+
+    def eval_symbol(self, symbol, input_dict):
+        raise NotImplementedError("framework doesn't support symbolic computations")
 
     def arange(self, start, stop):
         raise NotImplementedError()
@@ -60,6 +67,25 @@ class AbstractBackend:
 
     def is_float_type(self, x):
         raise NotImplementedError()
+
+    def __repr__(self):
+        return "<einops backend for {}>".format(self.framework_name)
+
+
+class UnknownSize:
+    """ pseudo-symbol for symbolic frameworks which do not provide symbols for shape elements """
+
+    def __floordiv__(self, other):
+        return self
+
+    def __eq__(self, other):
+        return True  # we don't know actual size
+
+    def __rmul__(self, other):
+        return self
+
+    def __hash__(self):
+        return None.__hash__()
 
 
 class NumpyBackend(AbstractBackend):
@@ -99,10 +125,17 @@ class GluonBackend(AbstractBackend):
         return isinstance(tensor, self.mx.nd.NDArray)
 
     def from_numpy(self, x):
-        return self.mx.nd.array(x)
+        var = self.mx.nd.array(x)
+        var.attach_grad()
+        return var
 
     def to_numpy(self, x):
         return self.mx.nd.NDArray.asnumpy(x)
+
+    def reshape(self, x, shape):
+        if len(shape) == 0:
+            return x  # poor support of scalars in mxnet
+        return x.reshape(shape)
 
     def arange(self, start, stop):
         return self.mx.nd.arange(start, stop)
@@ -113,9 +146,12 @@ class GluonBackend(AbstractBackend):
     def is_float_type(self, x):
         return 'float' in str(x.dtype)
 
+    def layers(self):
+        from .layers import gluon
+        return gluon
 
-# class MXNetBackend(AbstractBackend):
-class MXNetBackend:
+
+class MXNetBackend(AbstractBackend):
     framework_name = 'mxnet.symbol'
 
     def __init__(self):
@@ -125,18 +161,33 @@ class MXNetBackend:
     def is_appropriate_type(self, tensor):
         return isinstance(tensor, self.mx.symbol.Symbol)
 
-    def from_numpy(self, x):
-        self.last_var_ = self.mx.symbol.Variable('input', shape=x.shape)
-        self.last_val_ = x.shape
-        return self.last_var_
+    def create_symbol(self, shape, dtype='float32'):
+        shape = tuple(0 if d is None else d for d in shape)
+        var = self.mx.symbol.Variable('input', shape=shape, dtype=dtype)
+        return var
 
-    def to_numpy(self, x):
-        ex = self.last_var_.bind(ctx=self.mx.cpu(), args={'input': self.last_val_})
+    def eval_symbol(self, symbol, input_dict):
+        args = {var.name: self.mx.nd.array(val) for var, val in input_dict}
+        ex = symbol.bind(ctx=self.mx.cpu(), args=args)
         ex.forward()
         return ex.outputs[0].asnumpy()
 
     def shape(self, x):
-        return x.infer_shape_partial()[1][0]
+        # mxnet has problems with shape inference - it does not provide shape variables
+        # shape_array seems to be impossible to use in shape inference
+        # infer_shape_partial returns empty tuple if was not able to infer shape
+        # reductions such as sum can't return scalars, but return 1-element vectors
+        shape = x.infer_shape_partial()[1][0]
+        shape = tuple(UnknownSize() if d == 0 else d for d in shape)
+        return shape
+
+    def reshape(self, x, shape):
+        if len(shape) == 0:
+            return x  # poor support of scalars in mxnet
+        if any(isinstance(dimension, UnknownSize) for dimension in shape):
+            from .einops import EinopsError
+            raise EinopsError("Mxnet could't infer all dimensions statically, please provide those with axes_lengths")
+        return x.reshape(shape)
 
     def arange(self, start, stop):
         return self.mx.symbol.arange(start, stop)
@@ -146,6 +197,10 @@ class MXNetBackend:
 
     def is_float_type(self, x):
         return 'float' in str(x.infer_type()[1][0])
+
+    def layers(self):
+        from .layers import gluon
+        return gluon
 
 
 class TorchBackend(AbstractBackend):
@@ -159,7 +214,9 @@ class TorchBackend(AbstractBackend):
         return isinstance(tensor, self.torch.Tensor)
 
     def from_numpy(self, x):
-        return self.torch.from_numpy(x)
+        variable = self.torch.from_numpy(x)
+        variable.requires_grad = True
+        return variable
 
     def to_numpy(self, x):
         return x.detach().cpu().numpy()
@@ -187,6 +244,10 @@ class TorchBackend(AbstractBackend):
 
     def is_float_type(self, x):
         return x.dtype in [self.torch.float16, self.torch.float32, self.torch.float64]
+
+    def layers(self):
+        from .layers import torch
+        return torch
 
 
 class CupyBackend(AbstractBackend):
@@ -247,6 +308,10 @@ class ChainerBackend(AbstractBackend):
     def is_float_type(self, x):
         return x.dtype in ('float16', 'float32', 'float64', 'float128')
 
+    def layers(self):
+        from .layers import chainer
+        return chainer
+
 
 class TensorflowBackend(AbstractBackend):
     framework_name = 'tensorflow'
@@ -259,17 +324,21 @@ class TensorflowBackend(AbstractBackend):
         return isinstance(tensor, (self.tf.Tensor, self.tf.Variable))
 
     def from_numpy(self, x):
-        if self.tf.executing_eagerly():
-            return self.tf.contrib.eager.Variable(x)
-        else:
-            return self.tf.placeholder_with_default(x, shape=x.shape, name='einops_placeholder')
+        assert self.tf.executing_eagerly()
+        return self.tf.contrib.eager.Variable(x)
 
     def to_numpy(self, x):
-        if self.tf.executing_eagerly():
-            return x.numpy()
-        else:
-            sess = self.tf.Session()
-            return sess.run(x)
+        assert self.tf.executing_eagerly()
+        return x.numpy()
+
+    def create_symbol(self, shape, dtype='float32'):
+        assert not self.tf.executing_eagerly()
+        return self.tf.placeholder(dtype=dtype, shape=shape, name='einops_placeholder')
+
+    def eval_symbol(self, symbol, input_dict):
+        assert not self.tf.executing_eagerly()
+        with self.tf.Session() as sess:
+            return sess.run(symbol, feed_dict=dict(input_dict))
 
     def arange(self, start, stop):
         return self.tf.range(start, stop)
@@ -296,8 +365,7 @@ class TensorflowBackend(AbstractBackend):
         return x.dtype in ('float16', 'float32', 'float64', 'float128')
 
 
-# class KerasBackend(AbstractBackend):
-class KerasBackend:
+class KerasBackend(AbstractBackend):
     framework_name = 'keras'
 
     def __init__(self):
@@ -306,22 +374,21 @@ class KerasBackend:
         self.K = keras.backend
 
     def is_appropriate_type(self, tensor):
-        return self.K.is_keras_tensor(tensor)
+        return self.K.is_tensor(tensor) and self.K.is_keras_tensor(tensor)
 
-    def from_numpy(self, x):
-        self._lastvar = self.keras.Input(batch_shape=x.shape)
-        self._lastval = x
-        return self._lastvar
+    def create_symbol(self, shape):
+        return self.keras.Input(batch_shape=shape)
 
-    def to_numpy(self, x):
-        model = self.keras.models.Model(self._lastvar, x)
-        return model.predict_on_batch(self._lastval)
+    def eval_symbol(self, symbol, input_dict):
+        (variable, value), = input_dict.items()
+        model = self.keras.models.Model(variable, symbol)
+        return model.predict_on_batch(value)
 
     def arange(self, start, stop):
         return self.K.arange(start, stop)
 
     def shape(self, x):
-        shape = self.K.shape(x)
+        shape = self.K.shape(x)  # tf tensor (if tf is backend)
         return tuple(shape[i] for i in range(shape.shape[0]))
 
     def reduce(self, x, operation, axes):
@@ -338,3 +405,7 @@ class KerasBackend:
 
     def is_float_type(self, x):
         return 'float' in self.K.dtype(x)
+
+    def layers(self):
+        from .layers import keras
+        return keras

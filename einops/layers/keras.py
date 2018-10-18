@@ -1,5 +1,6 @@
 from keras.engine import Layer
 
+from ..backends import UnknownSize
 from . import RearrangeMixin, ReduceMixin
 
 __author__ = 'Alex Rogozhnikov'
@@ -7,9 +8,10 @@ __author__ = 'Alex Rogozhnikov'
 
 class Rearrange(RearrangeMixin, Layer):
     def compute_output_shape(self, input_shape):
-        input_shape = tuple(None if d is None else int(d) for d in input_shape)
-        init_shapes, reduced_axes, axes_reordering, final_shapes = self.recipe().reconstruct_from_shape(input_shape)
-        return final_shapes
+        input_shape = tuple(UnknownSize() if d is None else int(d) for d in input_shape)
+        init_shapes, reduced_axes, axes_reordering, final_shape = self.recipe().reconstruct_from_shape(input_shape)
+        final_shape = tuple(None if isinstance(d, UnknownSize) else int(d) for d in final_shape)
+        return final_shape
 
     def call(self, inputs):
         return self._apply_recipe(inputs)
@@ -20,9 +22,10 @@ class Rearrange(RearrangeMixin, Layer):
 
 class Reduce(ReduceMixin, Layer):
     def compute_output_shape(self, input_shape):
-        input_shape = tuple(None if d is None else int(d) for d in input_shape)
-        init_shapes, reduced_axes, axes_reordering, final_shapes = self.recipe().reconstruct_from_shape(input_shape)
-        return final_shapes
+        input_shape = tuple(UnknownSize() if d is None else int(d) for d in input_shape)
+        init_shapes, reduced_axes, axes_reordering, final_shape = self.recipe().reconstruct_from_shape(input_shape)
+        final_shape = tuple(None if isinstance(d, UnknownSize) else int(d) for d in final_shape)
+        return final_shape
 
     def call(self, inputs):
         return self._apply_recipe(inputs)

@@ -1,14 +1,17 @@
-from einops.einops import rearrange, reduce, parse_shape, _enumerate_directions, _prepare_transformation_recipe, \
-    _optimize_transformation, _reductions
-import einops.backends as backends
 import numpy
-import tensorflow as tf
 
-use_tf_eager = False
-if use_tf_eager:
-    tf.enable_eager_execution()
+from einops.einops import (rearrange, reduce, parse_shape,
+                           _enumerate_directions, _optimize_transformation, _reductions,
+                           _check_elementary_axis_name)
+from . import collect_test_settings
 
-all_backends = [c() for c in backends.AbstractBackend.__subclasses__()]
+imp_op_backends = []
+sym_op_backends = []
+for keys, setting in collect_test_settings().items():
+    if 'operation' in keys and 'imperative' in keys:
+        imp_op_backends.append(setting['backend'])
+    if 'operation' in keys and 'symbolic' in keys:
+        sym_op_backends.append(setting['backend'])
 
 
 def test_optimize_transformations_numpy():
@@ -42,18 +45,11 @@ def test_optimize_transformations_numpy():
                 assert numpy.array_equal(a, b)
 
 
-test_optimize_transformations_numpy()
-
-
-def test_check_elementary_axis_name():
-    from einops.einops import _check_elementary_axis_name
+def test_elementary_axis_name():
     for name in ['a', 'b', 'h', 'dx', 'h1', 'zz', 'i9123', 'somelongname']:
         assert _check_elementary_axis_name(name)
     for name in ['', '2b', 'Alex', 'camelCase', 'under_score', '12']:
         assert not _check_elementary_axis_name(name)
-
-
-test_check_elementary_axis_name()
 
 
 def test_rearrange_ellipsis_numpy():
@@ -67,7 +63,7 @@ def test_rearrange_ellipsis_numpy():
     assert (numpy.array_equal(x, rearrange(x, 'a ... -> a ... ')))
 
     assert (numpy.array_equal(rearrange(x, 'a b c d e -> (a b) c d e'),
-                              rearrange(x, 'a b ... -> (a b ) ... ')))
+                              rearrange(x, 'a b ... -> (a b) ... ')))
     assert (numpy.array_equal(rearrange(x, 'a b c d e -> a b (c d) e'),
                               rearrange(x, '... c d e -> ... (c d) e')))
     assert (numpy.array_equal(rearrange(x, 'a b c d e -> a b c d e'),
@@ -79,9 +75,6 @@ def test_rearrange_ellipsis_numpy():
                                   reduce(x, 'a ... e -> (e a)', reduction=reduction)))
         assert (numpy.array_equal(reduce(x, 'a b c d e -> d (a e)', reduction=reduction),
                                   reduce(x, 'a b c d e ... -> d (a e)', reduction=reduction)))
-
-
-test_rearrange_ellipsis_numpy()
 
 
 def test_rearrange_with_numpy():
@@ -148,62 +141,81 @@ def test_rearrange_with_numpy():
             expected_result |= ((input >> original_axis) & 1) << result_axis
 
         assert numpy.array_equal(result, expected_result)
-    print('simple tests passed')
 
 
-test_rearrange_with_numpy()
-
-
-def test_reduction():
-    for backend in all_backends:
+def test_reduction_imperatives():
+    for backend in imp_op_backends:
         print('Reduction tests for ', backend.framework_name)
         for reduction in _reductions:
-            dtype = 'float64' if reduction == 'mean' else 'int64'
-            # composite axes
-            x = numpy.arange(2 * 3 * 4 * 5 * 6, dtype=dtype).reshape(2, 3, 4, 5, 6)
-            result1 = reduce(x, 'a b c d e -> (e c) a', reduction=reduction)
-            result2 = getattr(x, reduction)(axis=(1, 3)).transpose(2, 1, 0).reshape(-1, 2)
-            assert numpy.allclose(result1, result2)
-
-            x = numpy.arange(2 * 3 * 4 * 5 * 6, dtype=dtype).reshape(2, 3, 4, 5, 6)
-            result1 = reduce(x, 'a b c d e -> (e c a)', reduction=reduction)
-            result2 = getattr(x, reduction)(axis=(1, 3)).transpose(2, 1, 0).reshape(-1)
-            assert numpy.allclose(result1, result2)
-
-            x = numpy.arange(2 * 3 * 4 * 5 * 6, dtype=dtype).reshape(2, 3, 4, 5, 6)
-            result1 = reduce(x, 'a b c d e -> ', reduction=reduction)
-            result2 = getattr(x, reduction)()
-            assert numpy.allclose(result1, result2)
-
-            x = numpy.arange(2 * 3 * 4 * 5 * 6, dtype=dtype).reshape(2, 3, 4, 5, 6)
-            result1 = reduce(x, '... -> ', reduction=reduction)
-            result2 = getattr(x, reduction)()
-            assert numpy.allclose(result1, result2)
-
-            x = numpy.arange(2 * 3 * 4 * 5 * 6, dtype=dtype).reshape(2, 3, 4, 5, 6)
-            result1 = reduce(x, '(a1 a2) ... (e1 e2) -> ', reduction=reduction, a1=2, e1=2)
-            result2 = getattr(x, reduction)()
-            assert numpy.allclose(result1, result2)
-
-            x = numpy.arange(3 * 3 * 3, dtype=dtype).reshape(3, 3, 3)
-            result1 = reduce(x, 'a b c -> ', reduction=reduction)
-            result2 = getattr(x, reduction)()
-            assert numpy.allclose(result1, result2)
+            input = numpy.arange(2 * 3 * 4 * 5 * 6, dtype='int64').reshape(2, 3, 4, 5, 6)
+            if reduction in ['mean', 'prod']:
+                input = input / input.astype('float64').mean()
+            test_cases = [
+                ['a b c d e -> ', {}, getattr(input, reduction)()],
+                ['... -> ', {}, getattr(input, reduction)()],
+                ['(a1 a2) ... (e1 e2) -> ', dict(a1=1, e2=2), getattr(input, reduction)()],
+                ['a b c d e -> (e c) a', {}, getattr(input, reduction)(axis=(1, 3)).transpose(2, 1, 0).reshape(-1, 2)],
+                ['a ... c d e -> (e c) a', {},
+                 getattr(input, reduction)(axis=(1, 3)).transpose(2, 1, 0).reshape(-1, 2)],
+                ['a b c d e ... -> (e c) a', {},
+                 getattr(input, reduction)(axis=(1, 3)).transpose(2, 1, 0).reshape(-1, 2)],
+                ['a b c d e -> (e c a)', {}, getattr(input, reduction)(axis=(1, 3)).transpose(2, 1, 0).reshape(-1)],
+                ['(a1 a2) ... -> (a2 a1) ...', dict(a2=1), input],
+            ]
+            for pattern, axes_lengths, expected_result in test_cases:
+                result = reduce(backend.from_numpy(input.copy()), pattern, reduction=reduction, **axes_lengths)
+                result = backend.to_numpy(result)
+                assert numpy.allclose(result, expected_result)
 
 
-test_reduction()
+def test_reduction_symbolic():
+    for backend in sym_op_backends:
+        print('Reduction tests for ', backend.framework_name)
+        for reduction in _reductions:
+            input = numpy.arange(2 * 3 * 4 * 5 * 6, dtype='int64').reshape(2, 3, 4, 5, 6)
+            if reduction in ['mean', 'prod']:
+                input = input / input.astype('float64').mean()
+            test_cases = [
+                ['a b c d e -> ', {}, getattr(input, reduction)()],
+                ['a ... -> ', {}, getattr(input, reduction)()],
+                ['(a a2) ... (e e2) -> ', dict(a2=1, e2=1), getattr(input, reduction)()],
+                ['a b c d e -> (e c) a', {}, getattr(input, reduction)(axis=(1, 3)).transpose(2, 1, 0).reshape(-1, 2)],
+                ['a ... c d e -> (e c) a', {},
+                 getattr(input, reduction)(axis=(1, 3)).transpose(2, 1, 0).reshape(-1, 2)],
+                ['a b c d e ... -> (e c) a', {},
+                 getattr(input, reduction)(axis=(1, 3)).transpose(2, 1, 0).reshape(-1, 2)],
+                ['a b c d e -> (e c a)', {}, getattr(input, reduction)(axis=(1, 3)).transpose(2, 1, 0).reshape(-1)],
+                ['(a a2) ... -> (a2 a) ...', dict(a2=1), input],
+            ]
+            for pattern, axes_lengths, expected_result in test_cases:
+                shapes = [input.shape]
+                if backend.framework_name != 'mxnet.symbol':
+                    shapes.append(tuple([None] * 5))
+                for shape in shapes:
+                    sym = backend.create_symbol(shape)
+                    result_sym = reduce(sym, pattern, reduction=reduction, **axes_lengths)
+                    result = backend.eval_symbol(result_sym, [(sym, input)])
+                    assert numpy.allclose(result, expected_result)
+
+                if True:
+                    shape = []
+                    _axes_lengths = {**axes_lengths}
+                    for axis, length in zip('abcde', input.shape):
+                        # filling as much with Nones
+                        if axis in pattern:
+                            shape.append(None)
+                            _axes_lengths[axis] = length
+                        else:
+                            shape.append(length)
+                    sym = backend.create_symbol(shape)
+                    result_sym = reduce(sym, pattern, reduction=reduction, **_axes_lengths)
+                    result = backend.eval_symbol(result_sym, [(sym, input)])
+                    assert numpy.allclose(result, expected_result)
 
 
 def test_reduction_stress():
-    for backend in all_backends:
+    for backend in imp_op_backends:
         print('Stress-testing reduction for ', backend.framework_name)
-        if 'mxnet' in backend.framework_name:
-            print('skipped testing for mxnet, not working yet with scalar tensors')
-            continue
-        if 'keras' in backend.framework_name:
-            print('skipped testing for mxnet, not working yet with scalar tensors')
-            continue
-        print('Reduction tests for ', backend.framework_name)
         for reduction in _reductions + ('none',):
             dtype = 'int64'
             coincide = numpy.array_equal
@@ -216,8 +228,11 @@ def test_reduction_stress():
                 skipped = 0 if reduction == 'none' else numpy.random.randint(n_axes + 1)
                 left = ' '.join(f'x{i}' for i in range(n_axes))
                 right = ' '.join(f'x{i}' for i in permutation[skipped:])
-                x = numpy.arange(numpy.prod(shape), dtype=dtype).reshape(shape)
-                if reduction == 'prod' and x.shape != ():
+                if len(right) == 0 and ('mxnet' in backend.framework_name):
+                    # known mxnet bug
+                    continue
+                x = numpy.arange(1, 1 + numpy.prod(shape), dtype=dtype).reshape(shape)
+                if reduction == 'prod':
                     x /= x.mean()
                 result1 = reduce(x, left + '->' + right, reduction=reduction)
                 result2 = x.transpose(permutation)
@@ -226,9 +241,6 @@ def test_reduction_stress():
                 result3 = backend.to_numpy(reduce(backend.from_numpy(x), left + '->' + right, reduction=reduction))
                 assert coincide(result1, result2)
                 assert coincide(result1, result3)
-
-
-test_reduction_stress()
 
 
 def test_rearrange_examples():
@@ -281,7 +293,7 @@ def test_rearrange_examples():
         assert t.shape == (10 * 30 * 40, 20)
 
         # TODO this test specifically for TF with x.shape replaced by tf.shape for expression
-        y = rearrange(t, '(b h w) c2->b c2 h w', **parse_shape(x, 'b _ h w'))
+        y = rearrange(t, '(b h w) c2 -> b c2 h w', **parse_shape(x, 'b _ h w'))
         assert y.shape == (10, 20, 30, 40)
         return y
 
@@ -293,7 +305,7 @@ def test_rearrange_examples():
 
     tests = [test1, test2, test3, test4, test5, test6]
 
-    for backend in all_backends:
+    for backend in imp_op_backends:
         print('testing examples for ', backend.framework_name)
         if 'tensorflow' in backend.framework_name:
             extended_tests = tests
@@ -338,14 +350,8 @@ def test_rearrange_examples():
     # einsum(  G[i, j, alpha0, alpha1] X[...,  i, alpha0] -> [i, ...,  alpha1]  )
 
 
-test_rearrange_examples()
-
-
-def test_parse_shape():
-    for backend in all_backends:
-        if backend.framework_name == 'tensorflow' and not use_tf_eager:
-            print('Skipped parsing for', backend.framework_name)
-            continue
+def test_parse_shape_imperative():
+    for backend in imp_op_backends:
         print('Shape parsing for ', backend.framework_name)
         x = numpy.zeros([10, 20, 30, 40])
         parsed1 = parse_shape(x, 'a b c d')
@@ -367,39 +373,41 @@ def test_parse_shape():
         assert parsed1 == parsed2 == dict(a1=30, a1a111a=40)
 
 
-test_parse_shape()
+def test_parse_shape_symbolic():
+    # TODO sym layet backends
+    for backend in sym_op_backends:
+        print('special shape parsing for', backend.framework_name)
+        input_symbols = [
+            backend.create_symbol([10, 20, 30, 40]),
+            backend.create_symbol([10, 20, None, None]),
+            backend.create_symbol([None, None, None, None]),
+        ]
+        if backend.framework_name == 'mxnet.symbol':
+            # mxnet can't normally run inference
+            input_symbols = [backend.create_symbol([10, 20, 30, 40])]
 
-
-def test_parse_shape_tf_static():
-    print('special shape parsing for tf_static')
-    placeholders = [
-        tf.placeholder('float32', [10, 20, 30, 40]),
-        tf.placeholder('float32', [10, 20, None, None]),
-        tf.placeholder('float32', [None, None, None, None]),
-    ]
-    for placeholder in placeholders:
-        shape_placeholder = parse_shape(placeholder, 'a b c d')
-        shape = tf.Session().run(shape_placeholder, {placeholder: numpy.zeros([10, 20, 30, 40])})
-        print(shape)
-
-        result_placeholder = rearrange(placeholder, 'a b (c1 c2) (d1 d2) -> (a b d1) c1 (c2 d2)',
-                                       **parse_shape(placeholder, 'a b c1 _'), d2=2)
-        result = tf.Session().run(result_placeholder, {placeholder: numpy.zeros([10, 20, 30, 40])})
-        print(result.shape)
-        assert result.shape == (10 * 20 * 20, 30, 1 * 2)
-        assert numpy.allclose(result, 0)
-
-
-if not use_tf_eager:
-    test_parse_shape_tf_static()
+        for input_symbol in input_symbols:
+            print(input_symbol)
+            shape_placeholder = parse_shape(input_symbol, 'a b c d')
+            shape = {}
+            for name, symbol in shape_placeholder.items():
+                shape[name] = symbol if isinstance(symbol, int) \
+                    else backend.eval_symbol(symbol, [(input_symbol, numpy.zeros([10, 20, 30, 40]))])
+            print(shape)
+            result_placeholder = rearrange(input_symbol, 'a b (c1 c2) (d1 d2) -> (a b d1) c1 (c2 d2)',
+                                           **parse_shape(input_symbol, 'a b c1 _'), d2=2)
+            result = backend.eval_symbol(result_placeholder, [(input_symbol, numpy.zeros([10, 20, 30, 40]))])
+            print(result.shape)
+            assert result.shape == (10 * 20 * 20, 30, 1 * 2)
+            assert numpy.allclose(result, 0)
 
 
 def test_enumerating_directions():
-    for backend in all_backends:
+    for backend in imp_op_backends:
         print('testing directions for', backend.framework_name)
         for shape in [[], [1], [1, 1, 1], [2, 3, 5, 7]]:
             if backend.framework_name == 'mxnet.ndarray' and len(shape) == 0:
-                # known bug of ndarray
+                # known bug of mxnet
                 continue
             x = numpy.arange(numpy.prod(shape)).reshape(shape)
             axes1 = _enumerate_directions(x)
@@ -410,15 +418,14 @@ def test_enumerating_directions():
                 assert numpy.allclose(axe1, axe2)
 
 
-test_enumerating_directions()
-
-
 def test_concatenations_and_stacking():
-    for backend in all_backends:
+    for backend in imp_op_backends:
         print('testing shapes for ', backend.framework_name)
         for n_arrays in [1, 2, 5]:
-            for shape in [[], [1], [1, 1], [2, 3, 5, 7], [1] * 6]:
-                if shape == [] and backend.framework_name == 'mxnet.ndarray':
+            shapes = [[], [1], [1, 1], [2, 3, 5, 7], [1] * 6]
+            for shape in shapes:
+                if backend.framework_name == 'mxnet.ndarray' and len(shape) == 0:
+                    # known bug of mxnet
                     continue
                 arrays1 = [numpy.arange(i, i + numpy.prod(shape)).reshape(shape) for i in range(n_arrays)]
                 arrays2 = [backend.from_numpy(array) for array in arrays1]
@@ -428,7 +435,17 @@ def test_concatenations_and_stacking():
                 assert numpy.array_equal(result0, result1)
                 assert numpy.array_equal(result1, backend.to_numpy(result2))
 
+                result1 = rearrange(arrays1, 'b ... -> ... b')
+                result2 = rearrange(arrays2, 'b ... -> ... b')
+                assert numpy.array_equal(result1, backend.to_numpy(result2))
 
-test_concatenations_and_stacking()
 
-print(_prepare_transformation_recipe.cache_info())
+def test_doctests():
+    from doctest import testmod
+    import einops
+    testmod(einops.einops, raise_on_error=True, )
+    import einops.layers
+    testmod(einops.layers, raise_on_error=True)
+
+# will not work that easily with nosetests
+# print(_prepare_transformation_recipe.cache_info())
