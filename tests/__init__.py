@@ -12,60 +12,41 @@ if bool(os.environ.get('TF_EAGER', False)):
     print('testing with eager execution')
 
 
-def collect_test_settings():
-    # TODO add only when available
+def collect_test_settings(symbolic=False, layers=False):
+    """
+    :param symbolic: symbolic or imperative frameworks?
+    :param layers: layers or operation?
+    :return: list of backends satisfying set conditions
+    """
     tf_running_eagerly = True
     try:
         import tensorflow
         tf_running_eagerly = tensorflow.executing_eagerly()
     except ImportError:
         print("Couldn't import tensorflow for testing")
-    testing_settings = {}
-    for backend_type in [backends.NumpyBackend,
-                         backends.CupyBackend,
-                         backends.TorchBackend,
-                         backends.GluonBackend,
-                         backends.ChainerBackend,
-                         ] + ([backends.TensorflowBackend] if tf_running_eagerly else []):
+
+    if not symbolic:
+        if not layers:
+            backend_types = [backends.NumpyBackend,
+                             backends.CupyBackend,
+                             backends.TorchBackend,
+                             backends.GluonBackend,
+                             backends.ChainerBackend,
+                             ] + ([backends.TensorflowBackend] if tf_running_eagerly else [])
+        else:
+            backend_types = [backends.TorchBackend,
+                             backends.GluonBackend,
+                             backends.ChainerBackend]
+    else:
+        if not layers:
+            backend_types = [backends.MXNetBackend] + ([] if tf_running_eagerly else [backends.TensorflowBackend])
+        else:
+            backend_types = [backends.KerasBackend, backends.MXNetBackend]
+
+    result = []
+    for backend_type in backend_types:
         try:
-            backend = backend_type()
-            testing_settings[backend.framework_name, 'imperative', 'operation'] = dict(
-                backend=backend
-            )
+            result.append(backend_type())
         except ImportError:
             pass
-
-    for backend_type in [backends.TorchBackend,
-                         backends.GluonBackend,
-                         backends.ChainerBackend]:
-        try:
-            backend = backend_type()
-            testing_settings[backend.framework_name, 'imperative', 'layer'] = dict(
-                backend=backend,
-                layers=backend.layers(),
-                savers_loaders=[],  # TODO
-            )
-        except ImportError:
-            pass
-
-    for backend_type in [backends.MXNetBackend] + ([] if tf_running_eagerly else [backends.TensorflowBackend]):
-        try:
-            backend = backend_type()
-            testing_settings[backend.framework_name, 'symbolic', 'operation'] = dict(
-                backend=backend
-            )
-        except ImportError:
-            pass
-
-    for backend_type in [backends.KerasBackend, backends.MXNetBackend]:
-        try:
-            backend = backend_type()
-            testing_settings[backend.framework_name, 'symbolic', 'layer'] = dict(
-                backend=backend,
-                layers=backend.layers(),
-                savers_loaders=[],  # TODO
-            )
-        except ImportError:
-            pass
-
-    return testing_settings
+    return result

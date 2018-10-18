@@ -81,6 +81,9 @@ class UnknownSize:
     def __eq__(self, other):
         return True  # we don't know actual size
 
+    def __mul__(self, other):
+        return self
+
     def __rmul__(self, other):
         return self
 
@@ -380,7 +383,7 @@ class KerasBackend(AbstractBackend):
         return self.keras.Input(batch_shape=shape)
 
     def eval_symbol(self, symbol, input_dict):
-        (variable, value), = input_dict.items()
+        (variable, value), = input_dict
         model = self.keras.models.Model(variable, symbol)
         return model.predict_on_batch(value)
 

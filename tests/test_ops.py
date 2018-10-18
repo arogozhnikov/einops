@@ -5,13 +5,8 @@ from einops.einops import (rearrange, reduce, parse_shape,
                            _check_elementary_axis_name)
 from . import collect_test_settings
 
-imp_op_backends = []
-sym_op_backends = []
-for keys, setting in collect_test_settings().items():
-    if 'operation' in keys and 'imperative' in keys:
-        imp_op_backends.append(setting['backend'])
-    if 'operation' in keys and 'symbolic' in keys:
-        sym_op_backends.append(setting['backend'])
+imp_op_backends = collect_test_settings(symbolic=False, layers=False)
+sym_op_backends = collect_test_settings(symbolic=True, layers=False)
 
 
 def test_optimize_transformations_numpy():
@@ -374,7 +369,7 @@ def test_parse_shape_imperative():
 
 
 def test_parse_shape_symbolic():
-    # TODO sym layet backends
+    # TODO add sym layer backends?
     for backend in sym_op_backends:
         print('special shape parsing for', backend.framework_name)
         input_symbols = [
@@ -446,6 +441,9 @@ def test_doctests():
     testmod(einops.einops, raise_on_error=True, )
     import einops.layers
     testmod(einops.layers, raise_on_error=True)
+
+
+# TODO test for gradients
 
 # will not work that easily with nosetests
 # print(_prepare_transformation_recipe.cache_info())
