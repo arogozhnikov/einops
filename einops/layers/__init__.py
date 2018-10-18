@@ -5,8 +5,6 @@ import functools
 from ..einops import TransformRecipe, _prepare_transformation_recipe, EinopsError
 
 
-# TODO tests for serialization / deserialization inside the model
-
 class RearrangeMixin:
     """
     Rearrange layer behaves identically to einops.rearrange operation.
@@ -16,6 +14,7 @@ class RearrangeMixin:
 
     See einops.rearrange for examples.
     """
+
     def __init__(self, pattern, **axes_lengths):
         super().__init__()
         self.pattern = pattern
@@ -53,6 +52,7 @@ class ReduceMixin:
 
     See einops.reduce for examples.
     """
+
     def __init__(self, pattern, reduction, **axes_lengths):
         super().__init__()
         self.pattern = pattern
@@ -79,7 +79,3 @@ class ReduceMixin:
             return self.recipe().apply(x)
         except EinopsError as e:
             raise EinopsError(' Error while computing {!r}\n {}'.format(self, e))
-
-
-
-

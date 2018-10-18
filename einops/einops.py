@@ -117,7 +117,6 @@ class TransformRecipe:
         """
         Shape is a tuple that may contain integers, shape variables (tf, keras, theano) and Nones (keras, mxnet)
         known axes can be integers or variables, but not Nones
-        If Nones are in the input, output should also expect Nones
         """
         axes_lengths = list(self.axes_lengths)
         if self.ellipsis_positions != (numpy.inf, numpy.inf):
@@ -153,12 +152,9 @@ class TransformRecipe:
                     if isinstance(length, int) and isinstance(known_product, int) and length % known_product != 0:
                         raise EinopsError("Shape mismatch, can't divide axis of length {} in chunks of {}".format(
                             length, known_product))
-                    if length is None:
-                        pass  # TODO not throwing because of keras shape inference, is it always ok?
-                        # raise EinopsError("Underlying framework couldn't provide necessary information about shape")
-                    else:
-                        unknown_axis, = unknown_axes
-                        axes_lengths[unknown_axis] = length // known_product
+
+                    unknown_axis, = unknown_axes
+                    axes_lengths[unknown_axis] = length // known_product
 
         init_shapes = axes_lengths
         reduced_axes_lengths = [dim for i, dim in enumerate(axes_lengths) if i not in self.reduced_elementary_axes]
@@ -281,7 +277,7 @@ def _check_elementary_axis_name(name: str) -> bool:
 
 
 # TODO parenthesis within brackets
-# TODO add logaddexp, std, var, ptp
+# TODO add logaddexp, std, var, ptp, l1, l2
 @functools.lru_cache(256)
 def _prepare_transformation_recipe(pattern: str, reduction: str, axes_lengths: Tuple) -> TransformRecipe:
     """ Perform initial parsing of pattern and provided supplementary info
@@ -319,7 +315,7 @@ def _prepare_transformation_recipe(pattern: str, reduction: str, axes_lengths: T
 
     def update_axis_length(axis_name, axis_length):
         if known_lengths[axis_name] is not None:
-            # TODO symbolic frameworks?
+            # check is not performed for symbols
             if isinstance(axis_length, int) and isinstance(known_lengths[axis_name], int):
                 if axis_length != known_lengths[axis_name]:
                     raise RuntimeError('Inferred length for {} is {} not {}'.format(
@@ -458,6 +454,7 @@ def rearrange(tensor, pattern, **axes_lengths):
     return reduce(tensor, pattern, reduction='none', **axes_lengths)
 
 
+# TODO rewrite and test
 def _check_shapes(*shapes: List[dict], **lengths):
     for shape in shapes:
         assert isinstance(shape, dict)
@@ -473,12 +470,16 @@ def _check_shapes(*shapes: List[dict], **lengths):
 def parse_shape(x, pattern: str):
     """
     Parse a tensor shape to dictionary mapping axes names to their lengths.
-    Use underscore to skip the dimension in parsing
+    Use underscore to skip the dimension in parsing.
 
     >>> x = numpy.zeros([2, 3, 5, 7])
     >>> parse_shape(x, 'batch _ h w')
     {'batch': 2, 'h': 5, 'w': 7}
 
+    For symbolic frameworks may return symbols, not integers.
+    :param x: tensor of any of supported frameworks
+    :param pattern: str, space separated names for axes, underscore means skip axis
+    :return: dict, maps axes names to their lengths
     """
     names = [elementary_axis for elementary_axis in pattern.split(' ') if len(elementary_axis) > 0]
     shape = get_backend(x).shape(x)
@@ -515,5 +516,8 @@ def _enumerate_directions(x):
 def asnumpy(tensor):
     """
     Convert a tensor of an imperative framework (i.e. numpy/cupy/torch/gluon/etc.) to numpy.ndarray
+
+    :param tensor: tensor of any of known imperative framework
+    :return: numpy.ndarray, converted to numpy
     """
     return get_backend(tensor).to_numpy(tensor)
