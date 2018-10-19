@@ -46,7 +46,9 @@ def collect_test_backends(symbolic=False, layers=False):
             if not tf_running_eagerly:
                 backend_types += [backends.TensorflowBackend]
         else:
-            backend_types = [backends.KerasBackend, backends.MXNetBackend]
+            backend_types = [backends.MXNetBackend]
+            if not tf_running_eagerly:
+                backend_types += [backends.KerasBackend]
 
     result = []
     for backend_type in backend_types:
