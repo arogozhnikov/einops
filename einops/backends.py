@@ -51,6 +51,7 @@ class AbstractBackend:
         raise NotImplementedError()
 
     def shape(self, x):
+        # shape should return a tuple with integers or "shape variables" (which will evaluate to actual size)
         return x.shape
 
     def reshape(self, x, shape):
@@ -128,7 +129,7 @@ class GluonBackend(AbstractBackend):
         return isinstance(tensor, self.mx.nd.NDArray)
 
     def from_numpy(self, x):
-        var = self.mx.nd.array(x)
+        var = self.mx.nd.array(x, dtype=x.dtype)
         var.attach_grad()
         return var
 
@@ -292,7 +293,8 @@ class ChainerBackend(AbstractBackend):
         return isinstance(tensor, self.chainer.Variable)
 
     def from_numpy(self, x):
-        return self.chainer.Variable(self.cupy.asarray(x, dtype='float32'))
+        # return self.chainer.Variable(self.cupy.asarray(x, dtype='float32'))
+        return self.chainer.Variable(x.astype('float32'))
 
     def to_numpy(self, x):
         if isinstance(x, self.chainer.Variable):

@@ -102,7 +102,7 @@ class TransformRecipe:
                  ellipsis_positions: Tuple[int, int] = (numpy.inf, numpy.inf),
                  ):
         # important: structure is non-mutable. In future, this will be non-mutable dataclass
-        self.axes_lengths = elementary_axes_lengths
+        self.elementary_axes_lengths = elementary_axes_lengths
         self.input_composite_axes = input_composite_axes
         self.output_composite_axes = output_composite_axes
         self.final_axes_grouping_flat = list(itertools.chain(*output_composite_axes))
@@ -118,7 +118,7 @@ class TransformRecipe:
         Shape is a tuple that may contain integers, shape variables (tf, keras, theano) and Nones (keras, mxnet)
         known axes can be integers or variables, but not Nones
         """
-        axes_lengths = list(self.axes_lengths)
+        axes_lengths = list(self.elementary_axes_lengths)
         if self.ellipsis_positions != (numpy.inf, numpy.inf):
             if len(shape) < len(self.input_composite_axes) - 1:
                 raise EinopsError('Expected at least {} dimensions, got {}'.format(
@@ -243,6 +243,8 @@ def parse_expression(expression: str) -> Tuple[Set[str], List[CompositeAxis]]:
             else:
                 current_identifier += char
         else:
+            if 'A' <= char <= 'Z':
+                raise EinopsError("Only lower-case latin letters allowed in names, not '{}'".format(char))
             raise EinopsError("Unknown character '{}'".format(char))
 
     if bracket_group is not None:
