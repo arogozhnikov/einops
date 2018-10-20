@@ -1,6 +1,7 @@
 import pickle
 import tempfile
 from collections import namedtuple
+
 import numpy
 
 from einops import rearrange, reduce
@@ -209,3 +210,137 @@ def test_reduce_symbolic():
                         result3 = model2.predict_on_batch(x)
                         assert numpy.allclose(result1, result2)
                         assert numpy.allclose(result1, result3)
+
+
+def test_torch_layer():
+    if any(backend.framework_name == 'torch' for backend in collect_test_backends(symbolic=False, layers=True)):
+        # checked that torch present
+        import torch
+        from torch.nn import Sequential, Conv2d, MaxPool2d, Linear, ReLU
+        from einops.layers.torch import Rearrange, Reduce
+
+        def create_model(use_reduce=False):
+            return Sequential(
+                Conv2d(3, 6, kernel_size=5),
+                Reduce('b c (h h2) (w w2) -> b c h w', 'max', h2=2, w2=2) if use_reduce else MaxPool2d(kernel_size=2),
+                Conv2d(6, 16, kernel_size=5),
+                Reduce('b c (h h2) (w w2) -> b c h w', 'max', h2=2, w2=2) if use_reduce else MaxPool2d(kernel_size=2),
+                Rearrange('b c h w -> b (c h w)'),
+                Linear(16 * 5 * 5, 120),
+                ReLU(),
+                Linear(120, 84),
+                ReLU(),
+                Linear(84, 10),
+            )
+
+        model1 = create_model(use_reduce=True)
+        model2 = create_model(use_reduce=False)
+        input = torch.randn([10, 3, 32, 32])
+        # random models have different predictions
+        assert not torch.allclose(model1(input), model2(input))
+        model2.load_state_dict(pickle.loads(pickle.dumps(model1.state_dict())))
+        assert torch.allclose(model1(input), model2(input))
+        # TODO jittization
+
+
+def test_keras_layer():
+    if any(backend.framework_name == 'keras' for backend in collect_test_backends(symbolic=True, layers=True)):
+        # checked that keras present
+
+        import keras
+        from keras.models import Sequential
+        from keras.layers import MaxPool2D as MaxPool2d, Conv2D as Conv2d, Dense as Linear, ReLU
+        from einops.layers.keras import Rearrange, Reduce, keras_custom_objects
+
+        def create_model():
+            return Sequential([
+                Conv2d(6, kernel_size=5, input_shape=[32, 32, 3]),
+                Reduce('b c (h h2) (w w2) -> b c h w', 'max', h2=2, w2=2),
+                Conv2d(16, kernel_size=5),
+                Reduce('b c (h h2) (w w2) -> b c h w', 'max', h2=2, w2=2),
+                Rearrange('b c h w -> b (c h w)'),
+                Linear(120),
+                ReLU(),
+                Linear(84),
+                ReLU(),
+                Linear(10),
+            ])
+
+        model1 = create_model()
+        model2 = create_model()
+        input = numpy.random.normal(size=[10, 32, 32, 3]).astype('float32')
+        assert not numpy.allclose(model1.predict_on_batch(input), model2.predict_on_batch(input))
+
+        # save arch + weights
+        with tempfile.NamedTemporaryFile(mode='r+b') as fp:
+            keras.models.save_model(model1, fp.name)
+            model3 = keras.models.load_model(fp.name, custom_objects=keras_custom_objects)
+        assert numpy.allclose(model1.predict_on_batch(input), model3.predict_on_batch(input))
+
+        # save arch as json, md5
+        model4 = keras.models.model_from_json(model1.to_json(), custom_objects=keras_custom_objects)
+        with tempfile.NamedTemporaryFile(mode='r+b') as fp:
+            model1.save_weights(fp.name)
+            model4.load_weights(fp.name)
+            model2.load_weights(fp.name)
+        assert numpy.allclose(model1.predict_on_batch(input), model4.predict_on_batch(input))
+        assert numpy.allclose(model1.predict_on_batch(input), model2.predict_on_batch(input))
+
+
+def test_gluon_layer():
+    if any('mxnet' in backend.framework_name for backend in collect_test_backends(symbolic=False, layers=True)):
+        # checked that gluon present
+        import mxnet
+        from mxnet.gluon.nn import HybridSequential, Dense, Conv2D, LeakyReLU
+        from einops.layers.gluon import Rearrange, Reduce
+        from einops import asnumpy
+
+        def create_model():
+            model = HybridSequential()
+            layers = [
+                Conv2D(6, kernel_size=5),
+                Reduce('b c (h h2) (w w2) -> b c h w', 'max', h2=2, w2=2),
+                Conv2D(16, kernel_size=5),
+                Reduce('b c (h h2) (w w2) -> b c h w', 'max', h2=2, w2=2),
+                Rearrange('b c h w -> b (c h w)'),
+                Dense(120),
+                LeakyReLU(alpha=0.0),
+                Dense(84),
+                LeakyReLU(alpha=0.0),
+                Dense(10),
+            ]
+            for layer in layers:
+                model.add(layer)
+            model.initialize(mxnet.init.Xavier(), ctx=mxnet.cpu())
+            return model
+
+        model1 = create_model()
+        model2 = create_model()
+        x = mxnet.ndarray.random_normal(shape=[10, 3, 32, 32])
+        assert not numpy.allclose(asnumpy(model1(x)), asnumpy(model2(x)))
+
+        with tempfile.NamedTemporaryFile(mode='r+b') as fp:
+            model1.save_parameters(fp.name)
+            model2.load_parameters(fp.name)
+
+        assert numpy.allclose(asnumpy(model1(x)), asnumpy(model2(x)))
+
+        # testing with symbolic (NB with fixed dimensions!)
+        input = mxnet.sym.Variable('data', shape=x.shape)
+        json = model1(input).tojson()
+        model3 = mxnet.gluon.SymbolBlock(outputs=mxnet.sym.load_json(json), inputs=input)
+        model4 = mxnet.gluon.SymbolBlock(outputs=mxnet.sym.load_json(json), inputs=input)
+        model3.initialize(ctx=mxnet.cpu())
+        model3(x)
+
+        with tempfile.NamedTemporaryFile(mode='r+b') as fp:
+            model3.save_parameters(fp.name)
+            model4.load_parameters(fp.name)
+        assert numpy.allclose(asnumpy(model3(x)), asnumpy(model4(x)))
+
+        try:
+            # hybridization doesn't work
+            model1.hybridize(static_alloc=True, static_shape=True)
+            model1(x)
+        except:
+            pass

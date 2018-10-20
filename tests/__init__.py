@@ -1,16 +1,23 @@
 import os
 
-import tensorflow as tf
-
 from einops import backends
 
 __author__ = 'Alex Rogozhnikov'
 
+import logging
+
+# minimize noise in tests logging
+logging.getLogger('tensorflow').disabled = True
+logging.getLogger('matplotlib').disabled = True
 
 assert os.environ.get('TF_EAGER', '') in ['', '1', '0']
 if os.environ.get('TF_EAGER', '') == '1':
-    tf.enable_eager_execution()
-    print('testing with eager execution')
+    try:
+        import tensorflow
+        tensorflow.enable_eager_execution()
+        print('testing with eager execution')
+    except:
+        pass
 
 
 def collect_test_backends(symbolic=False, layers=False):
