@@ -111,7 +111,7 @@ class TransformRecipe:
         self.reduced_elementary_axes = reduced_elementary_axes
         self.ellipsis_positions = ellipsis_positions
 
-    # TODO caching only for integer shapes, otherwise we keep references
+    # TODO cache only for integer shapes, otherwise we keep references
     @functools.lru_cache(maxsize=1024)
     def reconstruct_from_shape(self, shape, optimize=False):
         """
