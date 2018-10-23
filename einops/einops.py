@@ -3,7 +3,7 @@ import itertools
 from collections import OrderedDict
 from typing import Tuple, List, Set
 
-import numpy
+import math
 
 from .backends import get_backend
 
@@ -99,7 +99,7 @@ class TransformRecipe:
                  output_composite_axes: List[List[int]],  # ids of axes as they appear in result
                  reduction_type: str = 'none',
                  reduced_elementary_axes: Tuple[int] = (),
-                 ellipsis_positions: Tuple[int, int] = (numpy.inf, numpy.inf),
+                 ellipsis_positions: Tuple[int, int] = (math.inf, math.inf),
                  ):
         # important: structure is non-mutable. In future, this will be non-mutable dataclass
         self.elementary_axes_lengths = elementary_axes_lengths
@@ -115,11 +115,11 @@ class TransformRecipe:
     @functools.lru_cache(maxsize=1024)
     def reconstruct_from_shape(self, shape, optimize=False):
         """
-        Shape is a tuple that may contain integers, shape variables (tf, keras, theano) and Nones (keras, mxnet)
-        known axes can be integers or variables, but not Nones
+        Shape is a tuple that may contain integers, shape symbols (tf, keras, theano) and UnknownSize (keras, mxnet)
+        known axes can be integers or symbols, but not Nones
         """
         axes_lengths = list(self.elementary_axes_lengths)
-        if self.ellipsis_positions != (numpy.inf, numpy.inf):
+        if self.ellipsis_positions != (math.inf, math.inf):
             if len(shape) < len(self.input_composite_axes) - 1:
                 raise EinopsError('Expected at least {} dimensions, got {}'.format(
                     len(self.input_composite_axes) - 1, len(shape)))
@@ -346,8 +346,8 @@ def _prepare_transformation_recipe(pattern: str, reduction: str, axes_lengths: T
     result_axes_grouping = [[position_lookup_after_reduction[axis] for axis in composite_axis]
                             for composite_axis in composite_axes_rght]
 
-    ellipsis_left = numpy.inf if _ellipsis not in composite_axes_left else composite_axes_left.index(_ellipsis)
-    ellipsis_rght = numpy.inf if _ellipsis not in composite_axes_rght else composite_axes_rght.index(_ellipsis)
+    ellipsis_left = math.inf if _ellipsis not in composite_axes_left else composite_axes_left.index(_ellipsis)
+    ellipsis_rght = math.inf if _ellipsis not in composite_axes_rght else composite_axes_rght.index(_ellipsis)
 
     return TransformRecipe(elementary_axes_lengths=list(known_lengths.values()),
                            input_composite_axes=input_axes_known_unknown,
@@ -477,6 +477,11 @@ def parse_shape(x, pattern: str):
     >>> x = numpy.zeros([2, 3, 5, 7])
     >>> parse_shape(x, 'batch _ h w')
     {'batch': 2, 'h': 5, 'w': 7}
+
+    parse_shape output can be used to specify axes_lengths for other operations
+    >>> y = numpy.zeros([700])
+    >>> rearrange(y, '(b c h w) -> b c h w', **parse_shape(x, 'b _ h w')).shape
+    (2, 10, 5, 7)
 
     For symbolic frameworks may return symbols, not integers.
     :param x: tensor of any of supported frameworks
