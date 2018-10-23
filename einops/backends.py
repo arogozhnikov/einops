@@ -1,23 +1,40 @@
-import sys
+"""
+Backends in `einops` are organized to meet the following requirements
+- backends are not imported unless those are actually needed, because
+    - backends may not be installed
+    - importing all backends will drive to significant memory footprint
+    - backends may by present but installed with errors (but never used),
+      importing may drive to crashes
+- backend should be either symbolic or imperative (tensorflow is for both, but that causes problems)
+    - this determines which methods (from_numpy/to_numpy or create_symbol/eval_symbol) should be defined
+- if backend can't (temporarily) provide symbols for shapes, UnknownSize objects are used
+"""
 
-__all__ = ['get_backend']
+import sys
+import warnings
+
 __author__ = 'Alex Rogozhnikov'
 
 _backends = {}
-_debugging = False
+_debug_importing = False
 
 
 def get_backend(tensor):
+    """
+    Takes a correct backend (e.g. numpy backend if tensor is numpy.ndarray) for a tensor.
+    If needed, imports package and creates backend
+    """
     for framework_name, backend in _backends.items():
         if backend.is_appropriate_type(tensor):
             return backend
 
     for BackendSubclass in AbstractBackend.__subclasses__():
-        if _debugging:
+        if _debug_importing:
             print('Testing for subclass of ', BackendSubclass)
         if BackendSubclass.framework_name not in _backends:
+            # check that module was already imported. Otherwise it can't be imported
             if BackendSubclass.framework_name in sys.modules:
-                if _debugging:
+                if _debug_importing:
                     print('Imported backend for ', BackendSubclass.framework_name)
                 backend = BackendSubclass()
                 _backends[backend.framework_name] = backend
@@ -48,10 +65,11 @@ class AbstractBackend:
         raise NotImplementedError("framework doesn't support symbolic computations")
 
     def arange(self, start, stop):
-        raise NotImplementedError()
+        # TODO arange should return tensors on a particular device?
+        raise NotImplementedError("framework doesn't arange")
 
     def shape(self, x):
-        # shape should return a tuple with integers or "shape variables" (which will evaluate to actual size)
+        """shape should return a tuple with integers or "shape symbols" (which will evaluate to actual size)"""
         return x.shape
 
     def reshape(self, x, shape):
@@ -67,7 +85,12 @@ class AbstractBackend:
         raise NotImplementedError()
 
     def is_float_type(self, x):
+        # some backends (torch) can't compute average for non-floating types.
+        # Decided to drop average for all backends if type is not floating
         raise NotImplementedError()
+
+    def layers(self, x):
+        raise NotImplementedError("backend does not provide layers")
 
     def __repr__(self):
         return "<einops backend for {}>".format(self.framework_name)
@@ -166,6 +189,7 @@ class MXNetBackend(AbstractBackend):
         return isinstance(tensor, self.mx.symbol.Symbol)
 
     def create_symbol(self, shape, dtype='float32'):
+        # mxnet accepts zeros as undefined dimensions
         shape = tuple(0 if d is None else d for d in shape)
         var = self.mx.symbol.Variable('input', shape=shape, dtype=dtype)
         return var
@@ -177,11 +201,13 @@ class MXNetBackend(AbstractBackend):
         return ex.outputs[0].asnumpy()
 
     def shape(self, x):
-        # mxnet has problems with shape inference - it does not provide shape variables
+        # mxnet has problems with shape inference - it does not provide shape symbols
         # shape_array seems to be impossible to use in shape inference
         # infer_shape_partial returns empty tuple if was not able to infer shape
         # reductions such as sum can't return scalars, but return 1-element vectors
         shape = x.infer_shape_partial()[1][0]
+        if len(shape) == 0:
+            warnings.warn('mxnet inferred shape to be (), which probably means it could not be inferred')
         shape = tuple(UnknownSize() if d == 0 else d for d in shape)
         return shape
 
