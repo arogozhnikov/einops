@@ -364,13 +364,13 @@ def reduce(tensor, pattern: str, reduction: str, **axes_lengths: int):
     
     Examples for reduce operation:
     
-    >>> x = numpy.random.randn(100, 32, 64)
+    >>> x = np.random.randn(100, 32, 64)
     >>> # perform max-reduction on the first axis
     >>> y = reduce(x, 't b c -> b c', 'max')
     >>> # same as previous, but with clearer axes meaning
     >>> y = reduce(x, 'time batch channel -> batch channel', 'max')
 
-    >>> x = numpy.random.randn(10, 20, 30, 40)
+    >>> x = np.random.randn(10, 20, 30, 40)
     >>> # 2d max-pooling with kernel size = 2 * 2 for image processing
     >>> y1 = reduce(x, 'b c (h1 h2) (w1 w2) -> b c h1 w1', 'max', h2=2, w2=2)
     >>> # if one wants to go back to the original height and width, depth-to-space trick can be applied
@@ -417,7 +417,7 @@ def rearrange(tensor, pattern, **axes_lengths):
     Examples for rearrange operation:
 
     >>> # suppose we have a set of images in "h w c" format (height-width-channel)
-    >>> images = [numpy.random.randn(30, 40, 3) for _ in range(32)]
+    >>> images = [np.random.randn(30, 40, 3) for _ in range(32)]
     >>> # stack along first (batch) axis, output is a single array
     >>> rearrange(images, 'b h w c -> b h w c').shape
     (32, 30, 40, 3)
@@ -473,13 +473,12 @@ def parse_shape(x, pattern: str):
     """
     Parse a tensor shape to dictionary mapping axes names to their lengths.
     Use underscore to skip the dimension in parsing.
-
-    >>> x = numpy.zeros([2, 3, 5, 7])
+    >>> x = np.zeros([2, 3, 5, 7])
     >>> parse_shape(x, 'batch _ h w')
     {'batch': 2, 'h': 5, 'w': 7}
 
     parse_shape output can be used to specify axes_lengths for other operations
-    >>> y = numpy.zeros([700])
+    >>> y = np.zeros([700])
     >>> rearrange(y, '(b c h w) -> b c h w', **parse_shape(x, 'b _ h w')).shape
     (2, 10, 5, 7)
 
@@ -503,7 +502,7 @@ def parse_shape(x, pattern: str):
 def _enumerate_directions(x):
     """
     For an n-dimensional tensor, returns tensors to enumerate each axis.
-    >>> x = numpy.zeros([2, 3, 4]) # or any other tensor
+    >>> x = np.zeros([2, 3, 4]) # or any other tensor
     >>> i, j, k = _enumerate_directions(x)
     >>> result = i + 2 * j + 3 * k
 

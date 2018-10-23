@@ -12,8 +12,8 @@ __author__ = 'Alex Rogozhnikov'
 
 
 def test_doctests_examples():
-    testmod(einops.einops, raise_on_error=True)
-    testmod(einops.layers, raise_on_error=True)
+    testmod(einops.layers, raise_on_error=True, extraglobs=dict(np=numpy))
+    testmod(einops.einops, raise_on_error=True, extraglobs=dict(np=numpy))
 
 
 def test_backends_installed():
