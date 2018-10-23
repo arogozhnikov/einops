@@ -8,6 +8,8 @@ A new flavour of deep learning ops for pytorch, chainer, gluon, tensorflow and o
 
 `einops` introduces a new way to manipulate tensors, which is better seen in examples.
 
+
+
 ## Examples
 
 ```python
@@ -22,13 +24,13 @@ from einops import rearrange, reduce
 ## Layers
 
 Usually it is more convenient to use layers to build models, not operations 
-(some frameworks require using layers)
+(some frameworks require always using layers).
 
-Layers are behaving in the same way as operations 
+`Einops` layers are behaving in the same way as operations, and have same parameters
 
 ```python
 from torch.nn import Sequential, Conv2d, MaxPool2d, Linear, ReLU
-from einops.layers.torch import Rearrange, Reduce
+from einops.layers.torch import Rearrange
 model = Sequential(
     Conv2d(3, 6, kernel_size=5),
     MaxPool2d(kernel_size=2),
@@ -37,16 +39,16 @@ model = Sequential(
     Rearrange('b c h w -> b (c h w)'),
     Linear(16*5*5, 120), 
     ReLU(),
-    Linear(120, 84), 
-    ReLU(),    
-    Linear(84, 10), 
+    Linear(120, 10), 
 )
 ```
 
-## Why `einops` notion is good:
+Layers are available for `keras`, `torch`, `mxnet` and `gluon`. 
+
+## Why using `einops` notion
 
 
-### Semantics:
+### Semantic information:
 
 ```python
 y = x.view(x.shape[0], -1)
@@ -56,10 +58,14 @@ while these two lines are doing the same job in the same context,
 second one provides information about input and output.
 Readability also counts.
 
-t c h w
-b c h w 
+While the next operation looks similar:
+```python
+y = rearrange(x, 'time c h w -> time (c h w)')
+```
+it gives reader important information: 
+this is not a batch of images we are processing, but rather a sequence (video). 
 
-reduction over time
+Semantic information makes code easier to read and maintain. 
 
 ### More checks
 
@@ -71,29 +77,58 @@ y = rearrange(x, 'b c h w -> b (c h w)')
 at least checks that there are four dimensions in input, 
 but you can also specify particular dimensions. 
 That's opposed to just writing comments about shapes since 
-[comments dont work](https://medium.freecodecamp.org/code-comments-the-good-the-bad-and-the-ugly-be9cc65fbf83)   
+[comments don't work](https://medium.freecodecamp.org/code-comments-the-good-the-bad-and-the-ugly-be9cc65fbf83)
+as we know   
 ```python
+y = x.view(x.shape[0], -1) # x: (batch, 256, 19, 19)
 y = rearrange(x, 'b c h w -> b (c h w)', c=256, h=19, w=19)
 ```
 
-### Result is strictly determined:
+### Result is strictly determined
 
 Below we have at least two ways to define depth-to-space operation
 ```python
 # depth to space
-rearrange('b c (h h2) (w w2) -> b (c h2 w2) h w', h2=2, w2=2)
-rearrange('b c (h h2) (w w2) -> b (h2 w2 c) h w', h2=2, w2=2)
+rearrange(x, 'b c (h h2) (w w2) -> b (c h2 w2) h w', h2=2, w2=2)
+rearrange(x, 'b c (h h2) (w w2) -> b (h2 w2 c) h w', h2=2, w2=2)
 ```
-there are at least four more. Which one is used by the framework?
+there are at least four more ways to do it. Which one is used by the framework?
 
-This may have no difference, and it can make a difference 
-(e.g. if you use grouped convolutions on the next stage)
+Usually this makes no difference, but it can make a big difference 
+(e.g. if you use grouped convolutions on the next stage), and you'd 
+like to specify this in your code.
 
 <!-- TODO same with 1d elements -->
 
-### Uniformity:
-2d max-pooling is defined in the same way as 1d and 3d
-space-to-depth ot width-to-height have the same motion
+### Uniformity
+
+```python
+reduce(x, 'b c (x dx) -> b c x', 'max', dx=2)
+reduce(x, 'b c (x dx) (y dx) -> b c x y', 'max', dx=2, dy=3)
+reduce(x, 'b c (x dx) (y dx) (z dz)-> b c x y z', 'max', dx=2, dy=3, dz=4)
+```
+This examples demonstrated that there is no need for separate operations for 1d/2d/3d pooling, 
+those all are defined in a uniform way. 
+
+
+Space-to-depth and depth-to space are defined in many frameworks. How about width-to-height?
+```python
+rearrange(x, 'b c h (w w2) -> b c (h w2) w', w2=2)
+```
+
+### Framework independent behavior
+
+Even simple functions may be determined differently
+
+```python
+y = x.flatten() # or flatten(x)
+```
+
+Suppose `x` shape was `(3, 4, 5)`, then `y` has shape ...
+- numpy, cupy, chainer: `(60,)`
+- keras, tensorflow.layers, mxnet and gluon: `(3, 20)`
+- pytorch: no such function
+
 
 ## Installation
 
@@ -103,7 +138,7 @@ Plain and simple:
 $ pip install einops
 ```
 
-The only dependency `einops` has is `numpy`. 
+`einops` has no mandatory dependencies (but don't forget that ). 
 To obtain the latest version use 
 ```bash
 pip install https://github.com/arogozhnikov/einops/archive/master.zip
@@ -118,8 +153,8 @@ pip install https://github.com/arogozhnikov/einops/archive/master.zip
 - [cupy](https://cupy.chainer.org/)
 - [chainer](https://chainer.org/)
 - [gluon](https://mxnet.apache.org/)
-- [mxnet](https://gluon.mxnet.io/)
 - [tensorflow](https://www.tensorflow.org/)
+- [mxnet](https://gluon.mxnet.io/) (experimental)
 - and [keras](https://keras.io/) (experimental)
 
 ## Contributing 
@@ -129,7 +164,7 @@ Best ways to contribute are
 - spread the word about `einops`
 - prepare a guide/post specifically for your favorite deep learning framework
 - if you have an interesting use case, not yet covered by documentation, let me know
-
+- use `einops` notion in your paper to strictly define an operation you're using
 
 ## Supported python versions
 
