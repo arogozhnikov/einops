@@ -12,6 +12,7 @@ _ellipsis = '…'  # NB, this is a single unicode symbol. String is used as it i
 
 
 def _product(sequence):
+    # minimalistic product that works both with numbers and symbols
     result = 1
     for element in sequence:
         result *= element
@@ -404,7 +405,7 @@ def reduce(tensor, pattern: str, reduction: str, **axes_lengths: int):
             message += '\n Input tensor shape: {}. '.format(get_backend(tensor).shape(tensor))
         else:
             message += '\n Input is list. '
-        message += 'Additionally given: {}.'.format(axes_lengths)
+        message += 'Additional info: {}.'.format(axes_lengths)
         raise EinopsError(message + '\n {}'.format(e))
 
 
@@ -499,6 +500,7 @@ def parse_shape(x, pattern: str):
     return result
 
 
+# not sure this one is needed in the public API
 def _enumerate_directions(x):
     """
     For an n-dimensional tensor, returns tensors to enumerate each axis.
