@@ -2,7 +2,7 @@ logo here
 
 # einops
 
-A new flavour of deep learning ops for pytorch, chainer, gluon, tensorflow and others.
+A new flavour of deep learning ops for pytorch, tensorflow, chainer, gluon, and [others](#supported-frameworks).
 
 ## About
 
@@ -31,6 +31,7 @@ Usually it is more convenient to use layers to build models, not operations
 ```python
 from torch.nn import Sequential, Conv2d, MaxPool2d, Linear, ReLU
 from einops.layers.torch import Rearrange
+
 model = Sequential(
     Conv2d(3, 6, kernel_size=5),
     MaxPool2d(kernel_size=2),
@@ -54,16 +55,17 @@ Layers are available for `keras`, `torch`, `mxnet` and `gluon`.
 y = x.view(x.shape[0], -1)
 y = rearrange(x, 'b c h w -> b (c h w)')
 ```
-while these two lines are doing the same job in the same context,
+while these two lines are doing the same job in some context,
 second one provides information about input and output.
 Readability also counts.
 
-While the next operation looks similar:
+The next operation looks similar:
 ```python
 y = rearrange(x, 'time c h w -> time (c h w)')
 ```
 it gives reader important information: 
-this is not a batch of images we are processing, but rather a sequence (video). 
+this is not an independent batch of images we are processing, 
+but rather a sequence (video). 
 
 Semantic information makes code easier to read and maintain. 
 
@@ -74,7 +76,7 @@ Back to the same example:
 y = x.view(x.shape[0], -1) # x: (batch, 256, 19, 19)
 y = rearrange(x, 'b c h w -> b (c h w)')
 ```
-at least checks that there are four dimensions in input, 
+second line checks that there are four dimensions in input, 
 but you can also specify particular dimensions. 
 That's opposed to just writing comments about shapes since 
 [comments don't work](https://medium.freecodecamp.org/code-comments-the-good-the-bad-and-the-ugly-be9cc65fbf83)
@@ -138,14 +140,17 @@ Plain and simple:
 $ pip install einops
 ```
 
-`einops` has no mandatory dependencies (but don't forget that ). 
-To obtain the latest version use 
+`einops` has no mandatory dependencies.
+ 
+To obtain the latest github version 
 ```bash
 pip install https://github.com/arogozhnikov/einops/archive/master.zip
 ```
 
 
-## Working with ...
+## Supported frameworks
+
+Einops works with ...
 
 - [numpy](http://www.numpy.org/)
 - [pytorch](https://pytorch.org/)
@@ -162,12 +167,14 @@ pip install https://github.com/arogozhnikov/einops/archive/master.zip
 Best ways to contribute are
 
 - spread the word about `einops`
-- prepare a guide/post specifically for your favorite deep learning framework
-- if you have an interesting use case, not yet covered by documentation, let me know
-- use `einops` notion in your paper to strictly define an operation you're using
+- *prepare a guide/post* for your favorite deep learning framework
+- translating examples in languages other than English is also a good idea 
+- if you have an educative example, not yet covered by documentation and examples, let me know
+- use `einops` notion in your papers to strictly define an operation you're using
 
 ## Supported python versions
 
 `einops` works with python 3.5 or later. 
 
-There is nothing specific to python 3 in the code, just we need to move further.
+There is nothing specific to python 3 in the code, 
+we simply need to move further and I decided not to support python 2.
