@@ -98,7 +98,7 @@ class TransformRecipe:
                  input_composite_axes: List[Tuple[List[int], List[int]]],
                  # each dimension in input can help to reconstruct or verify one of dimensions
                  output_composite_axes: List[List[int]],  # ids of axes as they appear in result
-                 reduction_type: str = 'none',
+                 reduction_type: str = 'rearrange',
                  reduced_elementary_axes: Tuple[int] = (),
                  ellipsis_positions: Tuple[int, int] = (math.inf, math.inf),
                  ):
@@ -291,7 +291,7 @@ def _prepare_transformation_recipe(pattern: str, reduction: str, axes_lengths: T
     identifiers_rght, composite_axes_rght = parse_expression(right)
 
     # checking that both have similar letters
-    if reduction == 'none':
+    if reduction == 'rearrange':
         difference = set.symmetric_difference(identifiers_left, identifiers_rght)
         if len(difference) > 0:
             raise EinopsError('Identifiers only on one side of expression (should be on both): {}'.format(difference))
@@ -454,7 +454,7 @@ def rearrange(tensor, pattern, **axes_lengths):
         if len(tensor) == 0:
             raise TypeError("Rearrange can't be applied to an empty list")
         tensor = get_backend(tensor[0]).stack_on_zeroth_dimension(tensor)
-    return reduce(tensor, pattern, reduction='none', **axes_lengths)
+    return reduce(tensor, pattern, reduction='rearrange', **axes_lengths)
 
 
 # TODO rewrite and test

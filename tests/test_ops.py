@@ -50,14 +50,14 @@ def test_ellipsis_ops_numpy():
         all_rearrange_patterns.extend(pattern_pairs)
 
 
-def check_op_against_numpy(backend, numpy_input, pattern, axes_lengths, reduction='none', is_symbolic=False):
+def check_op_against_numpy(backend, numpy_input, pattern, axes_lengths, reduction='rearrange', is_symbolic=False):
     """
     Helper to test result of operation (rearrange or transpose) against numpy
-    if reduction == 'none', rearrange is tested, otherwise
+    if reduction == 'rearrange', rearrange op is tested, otherwise reduce
     """
 
     def operation(x):
-        if reduction == 'none':
+        if reduction == 'rearrange':
             return rearrange(x, pattern, **axes_lengths)
         else:
             return reduce(x, pattern, reduction, **axes_lengths)
@@ -240,7 +240,7 @@ def test_reduction_symbolic():
 def test_reduction_stress_imperatives():
     for backend in imp_op_backends:
         print('Stress-testing reduction for ', backend.framework_name)
-        for reduction in _reductions + ('none',):
+        for reduction in _reductions + ('rearrange',):
             dtype = 'int64'
             coincide = numpy.array_equal
             if reduction in ['mean', 'prod']:
@@ -249,7 +249,7 @@ def test_reduction_stress_imperatives():
             for n_axes in range(7):
                 shape = numpy.random.randint(2, 4, size=n_axes)
                 permutation = numpy.random.permutation(n_axes)
-                skipped = 0 if reduction == 'none' else numpy.random.randint(n_axes + 1)
+                skipped = 0 if reduction == 'rearrange' else numpy.random.randint(n_axes + 1)
                 left = ' '.join(f'x{i}' for i in range(n_axes))
                 right = ' '.join(f'x{i}' for i in permutation[skipped:])
                 pattern = left + '->' + right
