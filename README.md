@@ -1,19 +1,20 @@
 <div align="center">
-  <img src="https://www.tensorflow.org/images/tf_logo_transp.png"><br><br>
+  <img src="http://arogozhnikov.github.io/images/einops/einops_logo_350x350.png" alt="einops package logo" />
+  <br><br>
 </div>
-
-einops_logo_350x350.png
-
-logo here
 
 # einops
 
-A new flavour of deep learning ops for pytorch, tensorflow, chainer, gluon, and [others](#supported-frameworks).
+A new flavour of deep learning ops for numpy, pytorch, tensorflow, chainer, gluon, and [others](#supported-frameworks).
 
-## About
+`einops` introduces a new way to manipulate tensors, 
+providing safer, more readable and semantically richer code.
 
-`einops` introduces a new way to manipulate tensors, which is better seen in examples.
-
+<video controls autoplay>
+    <source src="http://arogozhnikov.github.io/images/einops/einops-video-12fps-finegrained-800x600.mp4" type="video/mp4">
+    <!-- <source src="movie.ogg" type="video/ogg"> -->
+    Your browser does not support the video tag.
+</video> 
 
 
 ## Examples
