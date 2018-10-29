@@ -1,3 +1,9 @@
+<div align="center">
+  <img src="https://www.tensorflow.org/images/tf_logo_transp.png"><br><br>
+</div>
+
+einops_logo_350x350.png
+
 logo here
 
 # einops
@@ -45,6 +51,14 @@ model = Sequential(
 ```
 
 Layers are available for `keras`, `torch`, `mxnet` and `gluon`. 
+
+## Naming
+
+`einops` stays for Einstein-Inspired Notion for operations 
+(though "Einstein operations" sounds simpler and more attractive).
+
+Notion was loosely inspired by Einstein summation (in particular by `einsum` operation).
+
 
 ## Why using `einops` notion
 
