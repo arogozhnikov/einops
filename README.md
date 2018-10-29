@@ -10,11 +10,11 @@ A new flavour of deep learning ops for numpy, pytorch, tensorflow, chainer, gluo
 `einops` introduces a new way to manipulate tensors, 
 providing safer, more readable and semantically richer code.
 
-<video controls autoplay>
-    <source src="http://arogozhnikov.github.io/images/einops/einops-video-12fps-finegrained-800x600.mp4" type="video/mp4">
-    <!-- <source src="movie.ogg" type="video/ogg"> -->
-    Your browser does not support the video tag.
-</video> 
+<div align="center">
+  <img src="http://arogozhnikov.github.io/images/einops/einops_video.gif" alt="einops package logo" />
+  <br><br>
+</div>
+
 
 
 ## Examples
