@@ -23,11 +23,11 @@ providing safer, more readable and semantically richer code.
     - part1: [einops fundamentals](https://github.com/arogozhnikov/einops/blob/master/docs/1-einops-basics.ipynb) 
     - part2: [einops for deep learning](https://github.com/arogozhnikov/einops/blob/master/docs/2-einops-for-deep-learning.ipynb)
     - part3: TBD 
-
 - [API micro-reference](#API)
 - [Installation](#Installation)
 - [Naming](#Naming-and-terminology)
 - [Why using einops](#Why-using-einops-notation)
+- [Contributing](#Contributing)
 
 ## API 
 
@@ -120,13 +120,13 @@ y = rearrange(x, 'b c h w -> b (c h w)')
 ```
 while these two lines are doing the same job in some context,
 second one provides information about input and output.
-Readability also counts.
+In other words, `einops` focuses on interface: *what is input and output*, not *how* output is computed.
 
-The next operation looks similar:
+The next operation looks similar to previous two:
 ```python
 y = rearrange(x, 'time c h w -> time (c h w)')
 ```
-it gives reader important information: 
+It gives reader a hint: 
 this is not an independent batch of images we are processing, 
 but rather a sequence (video). 
 
