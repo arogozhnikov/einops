@@ -14,6 +14,7 @@ providing safer, more readable and semantically richer code.
 <div align="center">
   <br><br>
   <img src="http://arogozhnikov.github.io/images/einops/einops_video.gif" alt="einops package logo" />
+  <br>
   <small><a href='http://arogozhnikov.github.io/images/einops/einops_video.mp4'>This video in better quality.</a></small>
   <br><br>
 </div>
@@ -36,7 +37,7 @@ Tutorials are the most convenient way to see `einops` in action
 - part2: [einops for deep learning](https://github.com/arogozhnikov/einops/blob/master/docs/2-einops-for-deep-learning.ipynb)
 - part3: TBD 
 
-(Tutorials are working as a documentation too.)
+Tutorials work as a documentation too. 
 
 ## Installation
 
