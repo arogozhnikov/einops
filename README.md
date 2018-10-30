@@ -14,11 +14,10 @@ providing safer, more readable and semantically richer code.
 <div align="center">
   <br><br>
   <img src="http://arogozhnikov.github.io/images/einops/einops_video.gif" alt="einops package logo" />
+  <small><a href='http://arogozhnikov.github.io/images/einops/einops_video.mp4'>This video in better quality.</a></small>
   <br><br>
 </div>
 </a>
-
-[This video in better quality.](http://arogozhnikov.github.io/images/einops/einops_video.mp4)
 
 - [Tutorials](#Documentation--tutorials) 
 - [API micro-reference](#API)
@@ -81,7 +80,7 @@ numpy_tensor = asnumpy(input_tensor)
 parse_shape(input_tensor, pattern)
 ```
 
-And two layers (separate version for each framework) with the same API.
+And two layers (`einops` keeps separate version for each framework) with the same API.
 
 ```python
 from einops.layers.chainer import Rearrange, Reduce
@@ -90,7 +89,7 @@ from einops.layers.keras import Rearrange, Reduce
 from einops.layers.torch import Rearrange, Reduce
 ```
 
-`Einops` layers are behaving in the same way as operations, and have same parameters 
+Layers are behaving in the same way as operations and have same parameters 
 (for the exception of first argument, which should be passed during call)
 
 ```python
@@ -103,7 +102,8 @@ layer = Reduce(pattern, reduction, **axes_lengths)
 x = layer(x)
 ```
 
-Usually it is more convenient to use layers, not operations, to build models
+Usually it is more convenient to use layers, not operations, to build models. <br />
+Example of usage within a model:
 ```python
 # example given for pytorch, but code in other frameworks is almost identical  
 from torch.nn import Sequential, Conv2d, MaxPool2d, Linear, ReLU
