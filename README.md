@@ -20,7 +20,7 @@ providing safer, more readable and semantically richer code.
 
 [This video in better quality.](http://arogozhnikov.github.io/images/einops/einops_video.mp4)
 
-- [Tutorials](#Documentation-Tutorials) 
+- [Tutorials](#Documentation--tutorials) 
 - [API micro-reference](#API)
 - [Installation](#Installation)
 - [Naming](#Naming-and-terminology)
