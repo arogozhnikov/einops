@@ -361,7 +361,7 @@ def _prepare_transformation_recipe(pattern: str, reduction: str, axes_lengths: T
 
 def reduce(tensor, pattern: str, reduction: str, **axes_lengths: int):
     """
-    einops.reduce provides combination of reordering and reduction using reader-friendly notion.
+    einops.reduce provides combination of reordering and reduction using reader-friendly notation.
     
     Examples for reduce operation:
     
