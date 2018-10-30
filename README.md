@@ -41,23 +41,17 @@ Tutorials are the most convenient way to see `einops` in action
 
 ## Installation
 
+Plain and simple:
+```bash
+pip install einops
+```
+
 `einops` has no mandatory dependencies.
  
 To obtain the latest github version 
 ```bash
 pip install https://github.com/arogozhnikov/einops/archive/master.zip
 ```
-
-pypi release will follow soon.
-
-
-<!--
-Plain and simple:
-```bash
-pip install einops
-```
--->
-
 
 ## API 
 
