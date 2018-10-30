@@ -19,15 +19,15 @@ providing safer, more readable and semantically richer code.
 
 [This video in better quality.](http://arogozhnikov.github.io/images/einops/einops_video.mp4)
 
-- **Guides** consists of two guides
-    - [einops fundamentals](TODO) 
-    - [einops for deep learning](TODO) 
+- **Tutorials** are the most convenient way to see `einops` in action
+    - part1: [einops fundamentals](https://github.com/arogozhnikov/einops/blob/master/docs/1-einops-basics.ipynb) 
+    - part2: [einops for deep learning](https://github.com/arogozhnikov/einops/blob/master/docs/2-einops-for-deep-learning.ipynb)
+    - part3: TBD 
 
 - [API micro-reference](#API)
-- 
+- [Installation](#Installation)
 - [Naming](#Naming-and-terminology)
-- [Reasons to use einops](#Why-using-einops-notation)
-
+- [Why using einops](#Why-using-einops-notation)
 
 ## API 
 
@@ -172,7 +172,7 @@ reduce(x, 'b c (x dx) -> b c x', 'max', dx=2)
 reduce(x, 'b c (x dx) (y dx) -> b c x y', 'max', dx=2, dy=3)
 reduce(x, 'b c (x dx) (y dx) (z dz)-> b c x y z', 'max', dx=2, dy=3, dz=4)
 ```
-These examples demonstrated that there is no need for separate operations for 1d/2d/3d pooling, 
+These examples demonstrated that we don't use separate operations for 1d/2d/3d pooling, 
 those all are defined in a uniform way. 
 
 Space-to-depth and depth-to space are defined in many frameworks. But how about width-to-height?
@@ -231,7 +231,6 @@ Best ways to contribute are
 - spread the word about `einops`
 - *prepare a guide/post* for your favorite deep learning framework
 - translating examples in languages other than English is also a good idea 
-- if you have an educative example, not yet covered by documentation and examples, let me know
 - use `einops` notation in your papers to strictly define an operation you're using
 
 ## Supported python versions
@@ -239,4 +238,5 @@ Best ways to contribute are
 `einops` works with python 3.5 or later. 
 
 There is nothing specific to python 3 in the code, 
-we simply need to move further and I decided not to support python 2.
+we simply [need to move further](http://github.com/arogozhnikov/python3_with_pleasure) 
+and I decided not to support python 2.
