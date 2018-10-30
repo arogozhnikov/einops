@@ -28,6 +28,28 @@ providing safer, more readable and semantically richer code.
 - [Naming](#Naming-and-terminology)
 - [Why using einops](#Why-using-einops-notation)
 - [Contributing](#Contributing)
+- [github repository](https://github.com/arogozhnikov/einops)
+
+
+## Installation
+
+`einops` has no mandatory dependencies.
+ 
+To obtain the latest github version 
+```bash
+pip install https://github.com/arogozhnikov/einops/archive/master.zip
+```
+
+pypi release will follow soon.
+
+
+<!--
+Plain and simple:
+```bash
+pip install einops
+```
+-->
+
 
 ## API 
 
@@ -194,22 +216,6 @@ Suppose `x` shape was `(3, 4, 5)`, then `y` has shape ...
 - pytorch: no such function
 
 
-## Installation
-
-Plain and simple:
-
-```bash
-$ pip install einops
-```
-
-`einops` has no mandatory dependencies.
- 
-To obtain the latest github version 
-```bash
-pip install https://github.com/arogozhnikov/einops/archive/master.zip
-```
-
-
 ## Supported frameworks
 
 Einops works with ...
@@ -229,7 +235,7 @@ Einops works with ...
 Best ways to contribute are
 
 - spread the word about `einops`
-- *prepare a guide/post* for your favorite deep learning framework
+- **prepare a guide/post/tutorial** for your favorite deep learning framework
 - translating examples in languages other than English is also a good idea 
 - use `einops` notation in your papers to strictly define an operation you're using
 
