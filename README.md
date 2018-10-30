@@ -12,6 +12,7 @@ providing safer, more readable and semantically richer code.
 
 <a href='http://arogozhnikov.github.io/images/einops/einops_video.mp4' >
 <div align="center">
+  <br><br>
   <img src="http://arogozhnikov.github.io/images/einops/einops_video.gif" alt="einops package logo" />
   <br><br>
 </div>
@@ -19,10 +20,7 @@ providing safer, more readable and semantically richer code.
 
 [This video in better quality.](http://arogozhnikov.github.io/images/einops/einops_video.mp4)
 
-- **Tutorials** are the most convenient way to see `einops` in action
-    - part1: [einops fundamentals](https://github.com/arogozhnikov/einops/blob/master/docs/1-einops-basics.ipynb) 
-    - part2: [einops for deep learning](https://github.com/arogozhnikov/einops/blob/master/docs/2-einops-for-deep-learning.ipynb)
-    - part3: TBD 
+- [Tutorials](#Documentation-Tutorials) 
 - [API micro-reference](#API)
 - [Installation](#Installation)
 - [Naming](#Naming-and-terminology)
@@ -30,6 +28,16 @@ providing safer, more readable and semantically richer code.
 - [Contributing](#Contributing)
 - [github repository](https://github.com/arogozhnikov/einops)
 
+
+## Documentation / Tutorials
+
+Tutorials are the most convenient way to see `einops` in action
+
+- part1: [einops fundamentals](https://github.com/arogozhnikov/einops/blob/master/docs/1-einops-basics.ipynb) 
+- part2: [einops for deep learning](https://github.com/arogozhnikov/einops/blob/master/docs/2-einops-for-deep-learning.ipynb)
+- part3: TBD 
+
+(Tutorials are working as a documentation too.)
 
 ## Installation
 
