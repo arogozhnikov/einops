@@ -138,8 +138,8 @@ def test_rearrange_numpy_element_wise():
     for n_axes in range(1, 10):
         input = numpy.arange(2 ** n_axes).reshape([2] * n_axes)
         permutation = numpy.random.permutation(n_axes)
-        left_expression = ' '.join(f'i{axis}' for axis in range(n_axes))
-        right_expression = ' '.join(f'i{axis}' for axis in permutation)
+        left_expression = ' '.join('i' + str(axis) for axis in range(n_axes))
+        right_expression = ' '.join('i' + str(axis) for axis in permutation)
         expression = left_expression + ' -> ' + right_expression
         result = rearrange(input, expression)
 
@@ -149,8 +149,8 @@ def test_rearrange_numpy_element_wise():
     for n_axes in range(1, 10):
         input = numpy.arange(2 ** n_axes).reshape([2] * n_axes)
         permutation = numpy.random.permutation(n_axes)
-        left_expression = ' '.join(f'i{axis}' for axis in range(n_axes)[::-1])
-        right_expression = ' '.join(f'i{axis}' for axis in permutation[::-1])
+        left_expression = ' '.join('i' + str(axis) for axis in range(n_axes)[::-1])
+        right_expression = ' '.join('i' + str(axis) for axis in permutation[::-1])
         expression = left_expression + ' -> ' + right_expression
         result = rearrange(input, expression)
         assert result.shape == input.shape
@@ -250,8 +250,8 @@ def test_reduction_stress_imperatives():
                 shape = numpy.random.randint(2, 4, size=n_axes)
                 permutation = numpy.random.permutation(n_axes)
                 skipped = 0 if reduction == 'rearrange' else numpy.random.randint(n_axes + 1)
-                left = ' '.join(f'x{i}' for i in range(n_axes))
-                right = ' '.join(f'x{i}' for i in permutation[skipped:])
+                left = ' '.join('x' + str(i) for i in range(n_axes))
+                right = ' '.join('x' + str(i) for i in permutation[skipped:])
                 pattern = left + '->' + right
                 x = numpy.arange(1, 1 + numpy.prod(shape), dtype=dtype).reshape(shape)
                 if reduction == 'prod':
@@ -268,8 +268,6 @@ def test_reduction_stress_imperatives():
 
 
 def test_rearrange_examples():
-    # отрисовка набора изображений
-
     def test1(x):
         # transpose
         y = rearrange(x, 'b c h w -> b h w c')

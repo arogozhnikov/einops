@@ -1,3 +1,4 @@
+import sys
 import numpy
 
 import einops
@@ -12,8 +13,10 @@ __author__ = 'Alex Rogozhnikov'
 
 
 def test_doctests_examples():
-    testmod(einops.layers, raise_on_error=True, extraglobs=dict(np=numpy))
-    testmod(einops.einops, raise_on_error=True, extraglobs=dict(np=numpy))
+    if sys.version_info >= (3, 6):
+        # python 3.5 and lower do not keep ordered dictionaries
+        testmod(einops.layers, raise_on_error=True, extraglobs=dict(np=numpy))
+        testmod(einops.einops, raise_on_error=True, extraglobs=dict(np=numpy))
 
 
 def test_backends_installed():
