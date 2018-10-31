@@ -42,7 +42,7 @@ dependencies = [
     'nbformat',
 ]
 assert 0 == run('pip install {} --pre'.format(' '.join(dependencies)))
-
+# install einops
 assert 0 == run('pip install -e .')
 
 

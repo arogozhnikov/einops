@@ -3,8 +3,8 @@ python:
   - "3.5"
   - "3.6"
 install:
-  - travis_retry pip install pip -q
-  - travis_retry pip install numpy -q --upgrade
+  - travis_retry pip install pip -q --upgrade
+  - travis_retry pip install numpy>=1.15 -q --upgrade
   - travis_retry pip install jupyter -q
   - travis_retry pip install pillow nose -q
   - travis_retry pip install tensorflow -q
