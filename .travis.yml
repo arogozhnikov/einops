@@ -1,11 +1,13 @@
 language: python
 python:
   - "3.5"
-  - "3.7"
+  - "3.6"
 install:
   - travis_retry pip install pip -q
   - travis_retry pip install matplotlib jupyter ipython -q
   - travis_retry pip install numpy -q
-  - travis_retry pip install tensorflow torch mxnet
+  - travis_retry pip install tensorflow -q
+  - travis_retry pip install torch -q
+  - travis_retry pip install mxnet -q
 script:
   - python test.py
