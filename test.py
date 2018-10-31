@@ -10,13 +10,12 @@ def run(cmd, **env):
     # keeps printing output when testing
     cmd = cmd.split(' ') if isinstance(cmd, str) else cmd
     p = Popen(cmd, stdout=sys.stdout, stderr=sys.stderr, bufsize=10,
-              universal_newlines=True, cwd=Path(__file__).parent, env={**os.environ, **env})
+              universal_newlines=True, cwd=str(Path(__file__).parent), env={**os.environ, **env})
     p.communicate()
     return p.returncode
 
 
 dependencies = [
-    'nose',
     'numpy',
     'mxnet',
     'torch',
