@@ -1,5 +1,6 @@
 <div align="center">
-  <img src="http://arogozhnikov.github.io/images/einops/einops_logo_350x350.png" alt="einops package logo" />
+  <img src="http://arogozhnikov.github.io/images/einops/einops_logo_350x350.png" 
+  alt="einops package logo" />
   <br><br>
 </div>
 
@@ -13,7 +14,7 @@ providing safer, more readable and semantically richer code. See examples:
 <a href='http://arogozhnikov.github.io/images/einops/einops_video.mp4' >
 <div align="center">
   <br><br>
-  <img src="http://arogozhnikov.github.io/images/einops/einops_video.gif" alt="einops package logo" />
+  <img src="http://arogozhnikov.github.io/images/einops/einops_video.gif" alt="einops package examples" />
   <br>
   <small><a href='http://arogozhnikov.github.io/images/einops/einops_video.mp4'>This video in better quality.</a></small>
   <br><br>
@@ -44,9 +45,8 @@ Plain and simple:
 pip install einops
 ```
 
-`einops` has no mandatory dependencies.
+`einops` has no mandatory dependencies. To obtain the latest github version 
 
-To obtain the latest github version 
 ```bash
 pip install https://github.com/arogozhnikov/einops/archive/master.zip
 ```
@@ -55,7 +55,7 @@ pip install https://github.com/arogozhnikov/einops/archive/master.zip
 
 `einops` API is very minimalistic and powerful.
 
-Two operations provided (see [einops tutorial]() for examples)
+Two operations provided (see [einops tutorial](https://github.com/arogozhnikov/einops/blob/master/docs/) for examples)
 ```python
 from einops import rearrange, reduce
 # rearrange elements according to pattern
@@ -77,11 +77,9 @@ Layers are behaving in the same way as operations and have same parameters
 
 ```python
 layer = Rearrange(pattern, **axes_lengths)
-# applying to tensor
-x = layer(x)
-
 layer = Reduce(pattern, reduction, **axes_lengths)
-# applying to tensor
+
+# later apply to a tensor / variable
 x = layer(x)
 ```
 
@@ -228,7 +226,7 @@ Best ways to contribute are
 - spread the word about `einops`
 - **prepare a guide/post/tutorial** for your favorite deep learning framework
 - translating examples in languages other than English is also a good idea 
-- use `einops` notation in your papers to strictly define an operation you're using
+- use `einops` notation in your papers to strictly define used operations
 
 ## Supported python versions
 
