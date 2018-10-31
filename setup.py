@@ -22,15 +22,4 @@ setup(
     install_requires=[
         # no run-time or installation-time dependencies
     ],
-    tests_require=[
-        'nose',
-        'numpy',
-        'mxnet',
-        'torch',
-        'tensorflow',
-        'cupy',  # may fail, requires cuda
-        'chainer',
-        'keras',
-    ],
-    test_suite='nose.collector',
 )
