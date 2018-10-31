@@ -583,7 +583,5 @@ def test_pytorch_yolo_fragment():
                       stride_h=stride_h, stride_w=stride_w, anchors=anchors)
     result2 = new_way(input=input, num_anchors=num_anchors, num_classes=num_classes,
                       stride_h=stride_h, stride_w=stride_w, anchors=anchors)
-    print(result1.reshape(-1) - result2.reshape(-1))
     result1 = result1.reshape(result2.shape)
-    print(result1.shape, result2.shape)
     assert torch.allclose(result1, result2)
