@@ -245,7 +245,9 @@ class TorchBackend(AbstractBackend):
 
     def from_numpy(self, x):
         variable = self.torch.from_numpy(x)
-        variable.requires_grad = True
+        if self.is_float_type(variable):
+            # attach grad only to floating types
+            variable.requires_grad = True
         return variable
 
     def to_numpy(self, x):

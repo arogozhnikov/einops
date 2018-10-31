@@ -1,3 +1,10 @@
+"""
+Usage: python test.py
+1. Installs part of dependencies
+2. Installs current version of einops in editable mode
+3. Runs tests
+"""
+
 import sys
 import os
 from subprocess import Popen, PIPE
@@ -9,12 +16,22 @@ __author__ = 'Alex Rogozhnikov'
 def run(cmd, **env):
     # keeps printing output when testing
     cmd = cmd.split(' ') if isinstance(cmd, str) else cmd
-    p = Popen(cmd, stdout=sys.stdout, stderr=sys.stderr, bufsize=10,
-              universal_newlines=True, cwd=str(Path(__file__).parent), env={**os.environ, **env})
+    p = Popen(cmd, stdout=sys.stdout, stderr=sys.stderr,
+              cwd=str(Path(__file__).parent), env={**os.environ, **env})
     p.communicate()
     return p.returncode
 
 
+# check we have nvidia-smi
+output, _ = Popen('which nvidia-smi'.split(' '), stdout=PIPE).communicate()
+have_cuda = b'nvidia' in output
+
+# install cupy
+if have_cuda:
+    return_code = run('pip install cupy --pre')
+    assert return_code == 0
+
+# install dependencies
 dependencies = [
     'numpy',
     'mxnet',
@@ -24,19 +41,13 @@ dependencies = [
     'keras',
     'nbformat',
 ]
-
-# check we have nvidia-smi
-output, _ = Popen('which nvidia-smi'.split(' '), stdout=PIPE).communicate()
-have_cuda = b'nvidia' in output
-
-if have_cuda:
-    return_code = run('pip install cupy --pre')
-    assert return_code == 0
-
 assert 0 == run('pip install {} --pre'.format(' '.join(dependencies)))
 
+assert 0 == run('pip install -e .')
+
+
 # we need to run tests twice
-# -once for tensorflow eager
+# - once for tensorflow eager
 return_code1 = run('nosetests tests -vds', TF_EAGER='1', EINOPS_SKIP_CUPY='0' if have_cuda else '1')
 print('\n' * 5)
 # - and once for symbolic tensorflow

@@ -559,8 +559,8 @@ def test_pytorch_yolo_fragment():
         anchor_sizes = rearrange(anchors, 'anchor dim -> dim () anchor () ()')
 
         _, _, _, in_h, in_w = raw_predictions.shape
-        grid_h = rearrange(torch.arange(in_h), 'h -> () () h ()').to(input.device)
-        grid_w = rearrange(torch.arange(in_w), 'w -> () () () w').to(input.device)
+        grid_h = rearrange(torch.arange(in_h).float(), 'h -> () () h ()').to(input.device)
+        grid_w = rearrange(torch.arange(in_w).float(), 'w -> () () () w').to(input.device)
 
         predicted_bboxes = torch.zeros_like(raw_predictions)
         predicted_bboxes[0] = (raw_predictions[0].sigmoid() + grid_h) * stride_h  # center y
