@@ -21,10 +21,13 @@ def test_backends_installed():
     This test will fail if some of backends are not installed or can't be imported
     Other tests will just work
     """
+    from . import skip_cupy
     errors = []
     for backend_type in AbstractBackend.__subclasses__():
-        # instantiate
+        if skip_cupy and backend_type.framework_name == 'cupy':
+            continue
         try:
+            # instantiate
             backend_type()
         except Exception as e:
             errors.append(e)
@@ -77,7 +80,6 @@ def test_parse_shape_imperative():
         x = numpy.zeros([10, 20, 30, 40])
         parsed1 = parse_shape(x, 'a b c d')
         parsed2 = parse_shape(backend.from_numpy(x), 'a b c d')
-        print(parsed2)
         assert parsed1 == parsed2 == dict(a=10, b=20, c=30, d=40)
         assert parsed1 != dict(a=1, b=20, c=30, d=40) != parsed2
 

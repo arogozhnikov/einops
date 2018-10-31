@@ -311,24 +311,24 @@ class ChainerBackend(AbstractBackend):
 
     def __init__(self):
         import chainer
-        import cupy
+        import numpy
+        self.numpy = numpy
         self.chainer = chainer
-        self.cupy = cupy
 
     def is_appropriate_type(self, tensor):
         return isinstance(tensor, self.chainer.Variable)
 
     def from_numpy(self, x):
-        # return self.chainer.Variable(self.cupy.asarray(x, dtype='float32'))
         return self.chainer.Variable(x.astype('float32'))
 
     def to_numpy(self, x):
         if isinstance(x, self.chainer.Variable):
             x = x.data
-        return self.cupy.asnumpy(x)
+        return x
 
     def arange(self, start, stop):
-        return self.cupy.arange(start, stop)
+        # TODO cupy / numpy?
+        return self.numpy.arange(start, stop)
 
     def reduce(self, x, operation, axes):
         return getattr(self.chainer.functions, operation)(x, axis=axes)

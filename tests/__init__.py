@@ -11,6 +11,10 @@ logging.getLogger('tensorflow').disabled = True
 logging.getLogger('matplotlib').disabled = True
 
 assert os.environ.get('TF_EAGER', '') in ['', '1', '0']
+assert os.environ.get('EINOPS_SKIP_CUPY', '') in ['', '1', '0']
+skip_cupy = os.environ.get('EINOPS_SKIP_CUPY', '') == '1'
+
+
 if os.environ.get('TF_EAGER', '') == '1':
     try:
         import tensorflow
@@ -36,13 +40,14 @@ def collect_test_backends(symbolic=False, layers=False):
     if not symbolic:
         if not layers:
             backend_types = [backends.NumpyBackend,
-                             backends.CupyBackend,
                              backends.TorchBackend,
                              backends.GluonBackend,
                              backends.ChainerBackend,
                              ]
             if tf_running_eagerly:
                 backend_types += [backends.TensorflowBackend]
+            if not skip_cupy:
+                backend_types += [backends.CupyBackend]
         else:
             backend_types = [backends.TorchBackend,
                              backends.GluonBackend,
