@@ -371,45 +371,6 @@ def test_rearrange_examples():
         x = x + rearrange(y, 'b (dt c) t -> b c (t dt)', dt=2)
         return x
 
-    def tensor_train_example_numpy():
-        # kept here just for a collection, only tested for numpy
-        # https://arxiv.org/pdf/1509.06569.pdf, (5)
-        x = numpy.ones([3, 4, 5, 6])
-        rank = 4
-        # creating appropriate Gs
-        Gs = [numpy.ones([d, d, rank, rank]) for d in x.shape]
-        Gs[0] = Gs[0][:, :, :1, :]
-        Gs[-1] = Gs[-1][:, :, :, :1]
-
-        # einsum way
-        y = x.reshape((1,) + x.shape)
-        for G in Gs:
-            # taking partial results left-to-right
-            # y = numpy.einsum('i j alpha beta, alpha i ...  -> beta ... j', G, y)
-            y = numpy.einsum('i j a b, a i ...  -> b ... j', G, y)
-        y1 = y.reshape(-1)
-
-        # alternative way
-        y = x.reshape(-1)
-        for G in Gs:
-            i, j, alpha, beta = G.shape
-            y = rearrange(y, '(i rest alpha) -> rest (alpha i)', alpha=alpha, i=i)
-            y = y @ rearrange(G, 'i j alpha beta -> (alpha i) (j beta)')
-            y = rearrange(y, 'rest (beta j) -> (beta rest j)', beta=beta, j=j)
-        y2 = y
-        assert numpy.allclose(y1, y2)
-
-        # yet another way
-        y = x
-        for G in Gs:
-            i, j, alpha, beta = G.shape
-            y = rearrange(y, 'i ... (j alpha) -> ... j (alpha i)', alpha=alpha, i=i)
-            y = y @ rearrange(G, 'i j alpha beta -> (alpha i) (j beta)')
-        y3 = y.reshape(-1)
-        assert numpy.allclose(y1, y3)
-
-    tensor_train_example_numpy()
-
     # mock for convolution that works for all backends
     convolve_mock = lambda x: x
 
@@ -501,6 +462,47 @@ def test_gradients_imperatives():
         for name1, grad1 in results.items():
             for name2, grad2 in results.items():
                 assert numpy.allclose(grad1, grad2), [name1, name2, 'provided different gradients']
+
+
+def tensor_train_example_numpy():
+    # kept here just for a collection, only tested for numpy
+    # https://arxiv.org/pdf/1509.06569.pdf, (5)
+    x = numpy.ones([3, 4, 5, 6])
+    rank = 4
+    if numpy.__version__ < '1.15.0':
+        # numpy.einsum fails here, skip test
+        return
+    # creating appropriate Gs
+    Gs = [numpy.ones([d, d, rank, rank]) for d in x.shape]
+    Gs[0] = Gs[0][:, :, :1, :]
+    Gs[-1] = Gs[-1][:, :, :, :1]
+
+    # einsum way
+    y = x.reshape((1,) + x.shape)
+    for G in Gs:
+        # taking partial results left-to-right
+        # y = numpy.einsum('i j alpha beta, alpha i ...  -> beta ... j', G, y)
+        y = numpy.einsum('i j a b, a i ...  -> b ... j', G, y)
+    y1 = y.reshape(-1)
+
+    # alternative way
+    y = x.reshape(-1)
+    for G in Gs:
+        i, j, alpha, beta = G.shape
+        y = rearrange(y, '(i rest alpha) -> rest (alpha i)', alpha=alpha, i=i)
+        y = y @ rearrange(G, 'i j alpha beta -> (alpha i) (j beta)')
+        y = rearrange(y, 'rest (beta j) -> (beta rest j)', beta=beta, j=j)
+    y2 = y
+    assert numpy.allclose(y1, y2)
+
+    # yet another way
+    y = x
+    for G in Gs:
+        i, j, alpha, beta = G.shape
+        y = rearrange(y, 'i ... (j alpha) -> ... j (alpha i)', alpha=alpha, i=i)
+        y = y @ rearrange(G, 'i j alpha beta -> (alpha i) (j beta)')
+    y3 = y.reshape(-1)
+    assert numpy.allclose(y1, y3)
 
 
 def test_pytorch_yolo_fragment():
