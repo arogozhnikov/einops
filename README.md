@@ -112,7 +112,7 @@ parse_shape(input_tensor, pattern)
 ## Naming and terminology
 
 `einops` stays for Einstein-Inspired Notation for operations 
-(though "Einstein operations" sounds simpler and more attractive).
+(though "Einstein operations" is more attractive and easier to remember).
 
 Notation was loosely inspired by Einstein summation (in particular by `numpy.einsum` operation).
 

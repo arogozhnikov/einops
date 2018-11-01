@@ -138,8 +138,8 @@ def test_rearrange_numpy_element_wise():
     for n_axes in range(1, 10):
         input = numpy.arange(2 ** n_axes).reshape([2] * n_axes)
         permutation = numpy.random.permutation(n_axes)
-        left_expression = ' '.join(f'i{axis}' for axis in range(n_axes))
-        right_expression = ' '.join(f'i{axis}' for axis in permutation)
+        left_expression = ' '.join('i' + str(axis) for axis in range(n_axes))
+        right_expression = ' '.join('i' + str(axis) for axis in permutation)
         expression = left_expression + ' -> ' + right_expression
         result = rearrange(input, expression)
 
@@ -149,8 +149,8 @@ def test_rearrange_numpy_element_wise():
     for n_axes in range(1, 10):
         input = numpy.arange(2 ** n_axes).reshape([2] * n_axes)
         permutation = numpy.random.permutation(n_axes)
-        left_expression = ' '.join(f'i{axis}' for axis in range(n_axes)[::-1])
-        right_expression = ' '.join(f'i{axis}' for axis in permutation[::-1])
+        left_expression = ' '.join('i' + str(axis) for axis in range(n_axes)[::-1])
+        right_expression = ' '.join('i' + str(axis) for axis in permutation[::-1])
         expression = left_expression + ' -> ' + right_expression
         result = rearrange(input, expression)
         assert result.shape == input.shape
@@ -250,8 +250,8 @@ def test_reduction_stress_imperatives():
                 shape = numpy.random.randint(2, 4, size=n_axes)
                 permutation = numpy.random.permutation(n_axes)
                 skipped = 0 if reduction == 'rearrange' else numpy.random.randint(n_axes + 1)
-                left = ' '.join(f'x{i}' for i in range(n_axes))
-                right = ' '.join(f'x{i}' for i in permutation[skipped:])
+                left = ' '.join('x' + str(i) for i in range(n_axes))
+                right = ' '.join('x' + str(i) for i in permutation[skipped:])
                 pattern = left + '->' + right
                 x = numpy.arange(1, 1 + numpy.prod(shape), dtype=dtype).reshape(shape)
                 if reduction == 'prod':
@@ -268,8 +268,6 @@ def test_reduction_stress_imperatives():
 
 
 def test_rearrange_examples():
-    # отрисовка набора изображений
-
     def test1(x):
         # transpose
         y = rearrange(x, 'b c h w -> b h w c')
@@ -373,45 +371,6 @@ def test_rearrange_examples():
         x = x + rearrange(y, 'b (dt c) t -> b c (t dt)', dt=2)
         return x
 
-    def tensor_train_example_numpy():
-        # kept here just for a collection, only tested for numpy
-        # https://arxiv.org/pdf/1509.06569.pdf, (5)
-        x = numpy.ones([3, 4, 5, 6])
-        rank = 4
-        # creating appropriate Gs
-        Gs = [numpy.ones([d, d, rank, rank]) for d in x.shape]
-        Gs[0] = Gs[0][:, :, :1, :]
-        Gs[-1] = Gs[-1][:, :, :, :1]
-
-        # einsum way
-        y = x.reshape((1,) + x.shape)
-        for G in Gs:
-            # taking partial results left-to-right
-            # y = numpy.einsum('i j alpha beta, alpha i ...  -> beta ... j', G, y)
-            y = numpy.einsum('i j a b, a i ...  -> b ... j', G, y)
-        y1 = y.reshape(-1)
-
-        # alternative way
-        y = x.reshape(-1)
-        for G in Gs:
-            i, j, alpha, beta = G.shape
-            y = rearrange(y, '(i rest alpha) -> rest (alpha i)', alpha=alpha, i=i)
-            y = y @ rearrange(G, 'i j alpha beta -> (alpha i) (j beta)')
-            y = rearrange(y, 'rest (beta j) -> (beta rest j)', beta=beta, j=j)
-        y2 = y
-        assert numpy.allclose(y1, y2)
-
-        # yet another way
-        y = x
-        for G in Gs:
-            i, j, alpha, beta = G.shape
-            y = rearrange(y, 'i ... (j alpha) -> ... j (alpha i)', alpha=alpha, i=i)
-            y = y @ rearrange(G, 'i j alpha beta -> (alpha i) (j beta)')
-        y3 = y.reshape(-1)
-        assert numpy.allclose(y1, y3)
-
-    tensor_train_example_numpy()
-
     # mock for convolution that works for all backends
     convolve_mock = lambda x: x
 
@@ -505,6 +464,47 @@ def test_gradients_imperatives():
                 assert numpy.allclose(grad1, grad2), [name1, name2, 'provided different gradients']
 
 
+def tensor_train_example_numpy():
+    # kept here just for a collection, only tested for numpy
+    # https://arxiv.org/pdf/1509.06569.pdf, (5)
+    x = numpy.ones([3, 4, 5, 6])
+    rank = 4
+    if numpy.__version__ < '1.15.0':
+        # numpy.einsum fails here, skip test
+        return
+    # creating appropriate Gs
+    Gs = [numpy.ones([d, d, rank, rank]) for d in x.shape]
+    Gs[0] = Gs[0][:, :, :1, :]
+    Gs[-1] = Gs[-1][:, :, :, :1]
+
+    # einsum way
+    y = x.reshape((1,) + x.shape)
+    for G in Gs:
+        # taking partial results left-to-right
+        # y = numpy.einsum('i j alpha beta, alpha i ...  -> beta ... j', G, y)
+        y = numpy.einsum('i j a b, a i ...  -> b ... j', G, y)
+    y1 = y.reshape(-1)
+
+    # alternative way
+    y = x.reshape(-1)
+    for G in Gs:
+        i, j, alpha, beta = G.shape
+        y = rearrange(y, '(i rest alpha) -> rest (alpha i)', alpha=alpha, i=i)
+        y = y @ rearrange(G, 'i j alpha beta -> (alpha i) (j beta)')
+        y = rearrange(y, 'rest (beta j) -> (beta rest j)', beta=beta, j=j)
+    y2 = y
+    assert numpy.allclose(y1, y2)
+
+    # yet another way
+    y = x
+    for G in Gs:
+        i, j, alpha, beta = G.shape
+        y = rearrange(y, 'i ... (j alpha) -> ... j (alpha i)', alpha=alpha, i=i)
+        y = y @ rearrange(G, 'i j alpha beta -> (alpha i) (j beta)')
+    y3 = y.reshape(-1)
+    assert numpy.allclose(y1, y3)
+
+
 def test_pytorch_yolo_fragment():
     if not any(b.framework_name == 'torch' for b in collect_test_backends(symbolic=False, layers=False)):
         return
@@ -559,8 +559,8 @@ def test_pytorch_yolo_fragment():
         anchor_sizes = rearrange(anchors, 'anchor dim -> dim () anchor () ()')
 
         _, _, _, in_h, in_w = raw_predictions.shape
-        grid_h = rearrange(torch.arange(in_h), 'h -> () () h ()').to(input.device)
-        grid_w = rearrange(torch.arange(in_w), 'w -> () () () w').to(input.device)
+        grid_h = rearrange(torch.arange(in_h).float(), 'h -> () () h ()').to(input.device)
+        grid_w = rearrange(torch.arange(in_w).float(), 'w -> () () () w').to(input.device)
 
         predicted_bboxes = torch.zeros_like(raw_predictions)
         predicted_bboxes[0] = (raw_predictions[0].sigmoid() + grid_h) * stride_h  # center y
