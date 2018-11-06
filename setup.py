@@ -17,8 +17,8 @@ setup(
         'Intended Audience :: Science/Research',
         'Programming Language :: Python :: 3 ',
     ],
-    keywords='deep learning, neural networks, tensor manipulation, scientific computations',
-
+    keywords='deep learning, neural networks, tensor manipulation, machine learning, '
+             'scientific computations, einops',
     install_requires=[
         # no run-time or installation-time dependencies
     ],
