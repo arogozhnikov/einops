@@ -45,7 +45,8 @@ Plain and simple:
 pip install einops
 ```
 
-`einops` has no mandatory dependencies. To obtain the latest github version 
+`einops` has no mandatory dependencies (code examples also require jupyter, pillow + backends). 
+To obtain the latest github version 
 
 ```bash
 pip install https://github.com/arogozhnikov/einops/archive/master.zip
@@ -53,15 +54,15 @@ pip install https://github.com/arogozhnikov/einops/archive/master.zip
 
 ## API 
 
-`einops` API is very minimalistic and powerful.
+`einops` has minimalistic and powerful API.
 
 Two operations provided (see [einops tutorial](https://github.com/arogozhnikov/einops/blob/master/docs/) for examples)
 ```python
 from einops import rearrange, reduce
-# rearrange elements according to pattern
-output_tensor = rearrange(input_tensor, pattern, **axes_lengths)
+# rearrange elements according to the pattern
+output_tensor = rearrange(input_tensor, 't b c -> b c t')
 # combine rearrangement and reduction
-output_tensor = reduce(input_tensor, pattern, reduction, **axes_lengths)
+output_tensor = reduce(input_tensor, 'b c (h h2) (w w2) -> b h w c', 'mean', h2=2, w2=2)
 ```
 And two corresponding layers (`einops` keeps separate version for each framework) with the same API.
 
@@ -79,7 +80,7 @@ Layers are behaving in the same way as operations and have same parameters
 layer = Rearrange(pattern, **axes_lengths)
 layer = Reduce(pattern, reduction, **axes_lengths)
 
-# later apply to a tensor / variable
+# apply created layer to a tensor / variable
 x = layer(x)
 ```
 
@@ -93,7 +94,8 @@ model = Sequential(
     Conv2d(3, 6, kernel_size=5),
     MaxPool2d(kernel_size=2),
     Conv2d(6, 16, kernel_size=5),
-    Reduce('b c (h h2) (w w2) -> b (c h w)', 'max', h2=2, w2=2), # combined pooling and flattening
+    # combined pooling and flattening
+    Reduce('b c (h h2) (w w2) -> b (c h w)', 'max', h2=2, w2=2), 
     Linear(16*5*5, 120), 
     ReLU(),
     Linear(120, 10), 
@@ -105,8 +107,8 @@ Additionally two auxiliary functions provided
 from einops import asnumpy, parse_shape
 # einops.asnumpy converts tensors of imperative frameworks to numpy
 numpy_tensor = asnumpy(input_tensor)
-# einops.parse_shape returns a shape in the form of a dictionary, axis name mapped to its length 
-parse_shape(input_tensor, pattern)
+# einops.parse_shape gives a shape of axes of interest 
+parse_shape(input_tensor, 'batch _ h w') # e.g {'batch': 64, 'h': 128, 'w': 160}
 ```
 
 ## Naming and terminology

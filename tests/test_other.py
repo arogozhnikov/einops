@@ -22,7 +22,7 @@ def test_doctests_examples():
 def test_backends_installed():
     """
     This test will fail if some of backends are not installed or can't be imported
-    Other tests will just work
+    Other tests will just work and only test installed backends.
     """
     from . import skip_cupy
     errors = []
