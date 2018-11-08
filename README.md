@@ -4,7 +4,7 @@
   <br><br>
 </div>
 
-# einops
+# einops [![Build Status](https://travis-ci.org/arogozhnikov/einops.svg?branch=master)](https://travis-ci.org/arogozhnikov/einops)
 
 A new flavour of deep learning operations for numpy, pytorch, tensorflow, chainer, gluon, and [others](#supported-frameworks).
 
