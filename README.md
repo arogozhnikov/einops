@@ -4,7 +4,8 @@
   <br><br>
 </div>
 
-# einops [![Build Status](https://travis-ci.org/arogozhnikov/einops.svg?branch=master)](https://travis-ci.org/arogozhnikov/einops)
+# einops 
+[![Build Status](https://travis-ci.org/arogozhnikov/einops.svg?branch=master)](https://travis-ci.org/arogozhnikov/einops)  [![PyPI version](https://badge.fury.io/py/einops.svg)](https://badge.fury.io/py/einops)
 
 Flexible and powerful tensor operations for readable and reliable code. 
 Supports numpy, pytorch, tensorflow, and [others](#supported-frameworks).
