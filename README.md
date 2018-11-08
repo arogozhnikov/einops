@@ -1,6 +1,6 @@
 <div align="center">
   <img src="http://arogozhnikov.github.io/images/einops/einops_logo_350x350.png" 
-  alt="einops package logo" />
+  alt="einops package logo" width="250" height="250" />
   <br><br>
 </div>
 
@@ -73,8 +73,8 @@ from einops.layers.keras import Rearrange, Reduce
 from einops.layers.torch import Rearrange, Reduce
 ```
 
-Layers are behaving in the same way as operations and have same parameters 
-(for the exception of first argument, which should be passed during call)
+Layers behave similarly to operations and have same parameters 
+(for the exception of first argument, which is passed during call)
 
 ```python
 layer = Rearrange(pattern, **axes_lengths)
@@ -94,8 +94,9 @@ model = Sequential(
     Conv2d(3, 6, kernel_size=5),
     MaxPool2d(kernel_size=2),
     Conv2d(6, 16, kernel_size=5),
-    # combined pooling and flattening
-    Reduce('b c (h h2) (w w2) -> b (c h w)', 'max', h2=2, w2=2), 
+    MaxPool2d(kernel_size=2),
+    # flattening
+    Rearrange('b c h w -> b (c h w)'),  
     Linear(16*5*5, 120), 
     ReLU(),
     Linear(120, 10), 
