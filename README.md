@@ -6,10 +6,9 @@
 
 # einops
 
-A new flavour of deep learning operations for numpy, pytorch, tensorflow, chainer, gluon, and [others](#supported-frameworks).
-
-`einops` introduces a new way to manipulate tensors, 
-providing safer, more readable and semantically richer code. See examples:
+Flexible and powerful tensor operations for readable and reliable code. 
+Supports numpy, pytorch, tensorflow, and [others](#supported-frameworks).
+Examples: 
 
 <a href='http://arogozhnikov.github.io/images/einops/einops_video.mp4' >
 <div align="center">
@@ -27,7 +26,7 @@ providing safer, more readable and semantically richer code. See examples:
 - [Naming](#Naming-and-terminology)
 - [Why using einops](#Why-using-einops-notation)
 - [Contributing](#Contributing)
-- [github repository](https://github.com/arogozhnikov/einops)
+- [Github repository (for issues/questions)](https://github.com/arogozhnikov/einops)
 
 
 ## Tutorial / Documentation 
