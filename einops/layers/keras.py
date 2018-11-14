@@ -1,6 +1,6 @@
 from keras.engine import Layer
 
-from ..backends import UnknownSize
+from .._backends import UnknownSize
 from . import RearrangeMixin, ReduceMixin
 
 __author__ = 'Alex Rogozhnikov'

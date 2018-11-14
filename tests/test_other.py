@@ -6,7 +6,7 @@ import einops.layers
 
 from doctest import testmod
 from einops.einops import (rearrange, parse_shape, _optimize_transformation, _check_elementary_axis_name)
-from einops.backends import AbstractBackend
+from einops._backends import AbstractBackend
 from . import collect_test_backends
 
 __author__ = 'Alex Rogozhnikov'
