@@ -1,6 +1,6 @@
 import os
 
-from einops import backends
+from einops import _backends
 
 __author__ = 'Alex Rogozhnikov'
 
@@ -39,28 +39,28 @@ def collect_test_backends(symbolic=False, layers=False):
 
     if not symbolic:
         if not layers:
-            backend_types = [backends.NumpyBackend,
-                             backends.TorchBackend,
-                             backends.GluonBackend,
-                             backends.ChainerBackend,
+            backend_types = [_backends.NumpyBackend,
+                             _backends.TorchBackend,
+                             _backends.GluonBackend,
+                             _backends.ChainerBackend,
                              ]
             if tf_running_eagerly:
-                backend_types += [backends.TensorflowBackend]
+                backend_types += [_backends.TensorflowBackend]
             if not skip_cupy:
-                backend_types += [backends.CupyBackend]
+                backend_types += [_backends.CupyBackend]
         else:
-            backend_types = [backends.TorchBackend,
-                             backends.GluonBackend,
-                             backends.ChainerBackend]
+            backend_types = [_backends.TorchBackend,
+                             _backends.GluonBackend,
+                             _backends.ChainerBackend]
     else:
         if not layers:
-            backend_types = [backends.MXNetBackend]
+            backend_types = [_backends.MXNetBackend]
             if not tf_running_eagerly:
-                backend_types += [backends.TensorflowBackend]
+                backend_types += [_backends.TensorflowBackend]
         else:
-            backend_types = [backends.MXNetBackend]
+            backend_types = [_backends.MXNetBackend]
             if not tf_running_eagerly:
-                backend_types += [backends.KerasBackend]
+                backend_types += [_backends.KerasBackend]
 
     result = []
     for backend_type in backend_types:

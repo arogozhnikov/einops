@@ -5,7 +5,7 @@ from typing import Tuple, List, Set
 
 import math
 
-from .backends import get_backend
+from ._backends import get_backend
 
 _reductions = ('min', 'max', 'sum', 'mean', 'prod')
 _ellipsis = '…'  # NB, this is a single unicode symbol. String is used as it is not a list, but can be iterated
