@@ -26,6 +26,7 @@ Examples:
 - [Installation](#Installation)
 - [Naming](#Naming-and-terminology)
 - [Why using einops](#Why-using-einops-notation)
+- [Supported frameworks](#Supported-frameworks)
 - [Contributing](#Contributing)
 - [Github repository (for issues/questions)](https://github.com/arogozhnikov/einops)
 
