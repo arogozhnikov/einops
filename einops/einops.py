@@ -457,19 +457,6 @@ def rearrange(tensor, pattern, **axes_lengths):
     return reduce(tensor, pattern, reduction='rearrange', **axes_lengths)
 
 
-# TODO rewrite and test
-def _check_shapes(*shapes: List[dict], **lengths):
-    for shape in shapes:
-        assert isinstance(shape, dict)
-        for axis_name, axis_length in shape.items():
-            assert isinstance(axis_length, int)
-            if axis_name in lengths:
-                # TODO symbolic frameworks?
-                assert lengths[axis_name] == axis_length
-            else:
-                lengths[axis_name] = axis_length
-
-
 def parse_shape(x, pattern: str):
     """
     Parse a tensor shape to dictionary mapping axes names to their lengths.
