@@ -208,6 +208,7 @@ Suppose `x` shape was `(3, 4, 5)`, then `y` has shape ...
 - keras, tensorflow.layers, mxnet and gluon: `(3, 20)`
 - pytorch: no such function
 
+<!-- TODO examples for depth-to-space and pixel shuffle? transpose vs permute? -->
 
 ## Supported frameworks
 
