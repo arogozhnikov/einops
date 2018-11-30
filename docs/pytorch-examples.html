@@ -75,7 +75,7 @@
 .highlight .il { color: #666666 } /* Literal.Number.Integer.Long */
     .leftright-cells {
         display: flex;
-        width: 1200px;
+        width: 1400px;
         margin: 10px auto;
         justify-content: center;
     }
@@ -106,11 +106,11 @@
 <h1>Writing better code with pytorch and einops</h1>
 <p><br /><br /></p>
 <h2>Rewriting building blocks of deep learning</h2>
-<p>Below are fragments of code taken from official tutorials and popular repositories 
+<p>Below are some fragments of code taken from official tutorials and popular repositories 
 (fragments taken for educational purposes, sometimes shortened). 
-For each fragment an enhanced version proposed (on the right) with comments.</p>
-<p>In most examples, <code>einops</code> operations were used to make things less complicated.
-But you'll also find some common recommendations and practices to improve code.</p>
+For each fragment an enhanced version proposed with comments.</p>
+<p>In most examples, <code>einops</code> was used to make things less complicated.
+But you'll also find some common recommendations and practices to improve the code.</p>
 <p><strong>Left</strong>: as it was, <strong>Right</strong>: improved version</p></div><div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="c1"># start from importing some stuff</span>
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">torch.nn</span> <span class="kn">as</span> <span class="nn">nn</span> 
@@ -144,8 +144,10 @@ But you'll also find some common recommendations and practices to improve code.<
 </div><div><div class="highlight"><pre><span></span><span class="n">conv_net_new</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
     <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">5</span><span class="p">),</span>
     <span class="n">nn</span><span class="o">.</span><span class="n">MaxPool2d</span><span class="p">(</span><span class="n">kernel_size</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span>
+    <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
     <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">5</span><span class="p">),</span>
     <span class="n">nn</span><span class="o">.</span><span class="n">MaxPool2d</span><span class="p">(</span><span class="n">kernel_size</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span>
+    <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
     <span class="n">nn</span><span class="o">.</span><span class="n">Dropout2d</span><span class="p">(),</span>
     <span class="n">Rearrange</span><span class="p">(</span><span class="s1">&#39;b c h w -&gt; b (c h w)&#39;</span><span class="p">),</span>
     <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">320</span><span class="p">,</span> <span class="mi">50</span><span class="p">),</span>
@@ -157,14 +159,14 @@ But you'll also find some common recommendations and practices to improve code.<
 </pre></div>
 </div></div> <div class='markdown-cell'><p>Reasons to prefer new code:</p>
 <ul>
-<li>in the original code if input size is changed and occasionally number of elements is divisible by 16, we'll get something senseless after reshaping<ul>
+<li>in the original code if input size is changed and batch size is divisible by 16 (that's usualy so), we'll get something senseless after reshaping<ul>
 <li>new code explicitly drops error in this case</li>
 </ul>
 </li>
 <li>we won't forget to use dropout with flag self.training with new version</li>
 <li>code is straightforward to read and analyze</li>
 <li>sequential makes printing / saving / passing trivial. And there is no need in your code to load a model</li>
-<li>redundant relu after max-pooling was removed</li>
+<li>... and we could also add inplace for ReLU</li>
 </ul></div><div class='markdown-cell'><h1>Super-resolution</h1>
 <!-- minified https://github.com/pytorch/examples/tree/master/super_resolution, withour initialization --></div><div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">SuperResolutionNetOld</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">upscale_factor</span><span class="p">):</span>
@@ -728,18 +730,17 @@ But you'll also find some common recommendations and practices to improve code.<
         <span class="n">emb</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">embedding</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="s1">&#39;t b c -&gt; b c t&#39;</span><span class="p">)</span>
         <span class="n">pooled</span> <span class="o">=</span> <span class="p">[</span><span class="nb">reduce</span><span class="p">(</span><span class="n">conv</span><span class="p">(</span><span class="n">emb</span><span class="p">),</span> <span class="s1">&#39;b c t -&gt; b c&#39;</span><span class="p">,</span> <span class="s1">&#39;max&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">conv</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">convs</span><span class="p">]</span>
         <span class="n">concatenated</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span><span class="n">pooled</span><span class="p">,</span> <span class="s1">&#39;filter b c -&gt; b (filter c)&#39;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fc</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">(</span><span class="n">concatenated</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fc</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="n">concatenated</span><span class="p">)))</span>
 </pre></div>
 </div></div> <div class='markdown-cell'><ul>
 <li>Original code misuses Conv2d, while Conv1d is the right choice</li>
 <li>Fixed code can work with any number of filter_sizes (and won't fail)</li>
-<li>ReLU before max-pooling was removed, but this could have some role</li>
 <li>First line in new code does nothing, but was added for simplicity</li>
 </ul></div><div class='markdown-cell'><h1>Highway convolutions</h1>
 <ul>
 <li>Highway convolutions are common in TTS systems. Code below makes splitting a bit more explicit.</li>
 <li>Splitting policy may eventually turn out to be important if input had previously groups over channel axes (group convolutions or bidirectional LSTMs/GRUs)</li>
-<li>Same applies to GLU and gates units in general</li>
+<li>Same applies to GLU and gated units in general</li>
 </ul></div><div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">HighwayConv1dOld</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Conv1d</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">):</span>
         <span class="n">L</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">HighwayConv1dOld</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
@@ -1302,10 +1303,10 @@ You can try yourself. </p>
 <li>reliable: does what expected and does not fail. Explicitly fails for wrong inputs</li>
 <li>readaility counts</li>
 <li>maintainable and modifiable</li>
-<li>reusable: understanding and modifying code for a particular case should be easier than writing from scratch</li>
-<li>fast: in my measurements, proposed versions were has speed similar to original code</li>
+<li>reusable: understanding and modifying code should be easier than writing from scratch</li>
+<li>fast: in my measurements, proposed versions have speed similar to the original code</li>
 </ul>
-<p>I've tried to demonstrate how one can improve these criteria for deep learning code. And <code>einops</code> helps a lot.</p></div><div class='markdown-cell'><h1>Links</h1>
+<p>I've tried to demonstrate how you can improve these criteria for deep learning code. And <code>einops</code> helps you a lot.</p></div><div class='markdown-cell'><h1>Links</h1>
 <ul>
 <li><a href="http://github.com/pytorch/pytorch">pytorch</a> and <a href="https://github.com/arogozhnikov/einops">einops</a></li>
 <li>significant part of the code was taken from official <a href="https://github.com/pytorch/examples">examples</a> and <a href="https://github.com/pytorch/tutorials">tutorials</a></li>

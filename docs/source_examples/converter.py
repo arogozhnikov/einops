@@ -35,7 +35,7 @@ styles = HtmlFormatter().get_style_defs('.highlight')
 styles += '''
     .leftright-cells {
         display: flex;
-        width: 1200px;
+        width: 1400px;
         margin: 10px auto;
         justify-content: center;
     }
@@ -55,6 +55,20 @@ styles += '''
     body {
         padding: 50px;
     }
+'''
+
+meta_tags = '''
+<meta property="og:title" content="Writing better code with pytorch and einops">
+<meta property="og:description" content="Learning by example: rewriting and fixing popular code fragments">
+<meta property="og:image" content="">
+<meta property="og:url" content="https://arogozhnikov.github.io/einops/pytorch-examples.html">
+<meta name="twitter:card" content="summary_large_image">
+
+
+<!--  Non-Essential, But Recommended -->
+
+<meta property="og:site_name" content="Writing better code with pytorch and einops">
+<meta name="twitter:image:alt" content="Learning by example: rewriting and fixing popular code fragments">
 '''
 
 result = f'''
