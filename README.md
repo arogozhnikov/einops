@@ -37,7 +37,7 @@ Tutorial is the most convenient way to see `einops` in action (and right now wor
 
 - part 1: [einops fundamentals](https://github.com/arogozhnikov/einops/blob/master/docs/1-einops-basics.ipynb) 
 - part 2: [einops for deep learning](https://github.com/arogozhnikov/einops/blob/master/docs/2-einops-for-deep-learning.ipynb)
-- part 3: TBD  
+- part 3: [real code fragments improved with einops](https://arogozhnikov.github.io/einops/pytorch-examples.html) (so far only for pytorch)   
 
 ## Installation
 
