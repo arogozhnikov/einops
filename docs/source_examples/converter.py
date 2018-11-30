@@ -24,7 +24,7 @@ for cell in notebook['cells']:
         if source.startswith('#right'):
             content += "<div class='leftright-cells'>{}</div> ".format(cache)
             cache = ''
-        
+
     elif cell['cell_type'] == 'markdown':
         content += "<div class='markdown-cell'>{}</div>".format(markdown.markdown(cell['source']))
     else:
@@ -60,7 +60,7 @@ styles += '''
 meta_tags = '''
 <meta property="og:title" content="Writing better code with pytorch and einops">
 <meta property="og:description" content="Learning by example: rewriting and fixing popular code fragments">
-<meta property="og:image" content="">
+<meta property="og:image" content="http://arogozhnikov.github.io/images/einops/einops_logo_350x350.png">
 <meta property="og:url" content="https://arogozhnikov.github.io/einops/pytorch-examples.html">
 <meta name="twitter:card" content="summary_large_image">
 
