@@ -1,10 +1,14 @@
+"""
+just run this script with python converter.py .
+It will convert pytorch.ipynb to html page docs/pytorch-examples.html
+
+"""
 import nbformat
 import markdown
 
 from pygments import highlight
 from pygments.lexers import PythonLexer
 from pygments.formatters import HtmlFormatter
-from pygments.styles import friendly
 
 notebook = nbformat.read('Pytorch.ipynb', as_version=nbformat.NO_CONVERT)
 
@@ -53,13 +57,6 @@ styles += '''
     }
 '''
 
-logo = '''
-<div align="center">
-  <img src="http://arogozhnikov.github.io/images/einops/einops_logo_350x350.png" 
-  alt="einops package logo" width="250" height="250" style='padding: 50px;' />
-</div>
-'''
-
 result = f'''
 <!DOCTYPE html>
 <html lang="en">
@@ -69,7 +66,6 @@ result = f'''
     <style>{styles}</style>
   </head>
   <body>
-    {logo}
     {content}
   </body>
 </html>
