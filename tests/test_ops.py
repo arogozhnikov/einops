@@ -382,7 +382,7 @@ def test_rearrange_examples():
              ]
 
     for backend in imp_op_backends:
-        print('testing examples for ', backend.framework_name)
+        print('testing source_examples for ', backend.framework_name)
         for test in tests:
             x = numpy.arange(10 * 20 * 30 * 40).reshape([10, 20, 30, 40])
             result1 = test(x)
@@ -585,3 +585,40 @@ def test_pytorch_yolo_fragment():
                       stride_h=stride_h, stride_w=stride_w, anchors=anchors)
     result1 = result1.reshape(result2.shape)
     assert torch.allclose(result1, result2)
+
+
+def test_tiling_imperatives():
+    for backend in imp_op_backends:
+        print('Tiling tests for ', backend.framework_name)
+        input = numpy.arange(2 * 3 * 5, dtype='int64').reshape([2, 1, 3, 1, 5])
+        test_cases = [
+            (1, 1, 1, 1, 1),
+            (1, 2, 1, 3, 1),
+            (3, 1, 1, 4, 1),
+        ]
+        for repeats in test_cases:
+            expected = numpy.tile(input, repeats)
+            converted = backend.from_numpy(input)
+            repeated = backend.tile(converted, repeats)
+            result = backend.to_numpy(repeated)
+            assert numpy.array_equal(result, expected)
+
+
+def test_tiling_symbolic():
+    for backend in sym_op_backends:
+        print('Tiling tests for ', backend.framework_name)
+        input = numpy.arange(2 * 3 * 5, dtype='int64').reshape([2, 1, 3, 1, 5])
+        test_cases = [
+            (1, 1, 1, 1, 1),
+            (1, 2, 1, 3, 1),
+            (3, 1, 1, 4, 1),
+        ]
+        for repeats in test_cases:
+            expected = numpy.tile(input, repeats)
+            sym = backend.create_symbol(input.shape)
+            result = backend.eval_symbol(backend.tile(sym, repeats), [[sym, input]])
+            assert numpy.array_equal(result, expected)
+
+            sym = backend.create_symbol([None] * len(input.shape))
+            result = backend.eval_symbol(backend.tile(sym, repeats), [[sym, input]])
+            assert numpy.array_equal(result, expected)

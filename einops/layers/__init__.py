@@ -12,7 +12,7 @@ class RearrangeMixin:
     :param pattern: str, rearrangement pattern
     :param axes_lengths: any additional specification of dimensions
 
-    See einops.rearrange for examples.
+    See einops.rearrange for source_examples.
     """
 
     def __init__(self, pattern, **axes_lengths):
@@ -50,7 +50,7 @@ class ReduceMixin:
     :param reduction: one of available reductions ('min', 'max', 'sum', 'mean', 'prod'), case-sensitive
     :param axes_lengths: any additional specification of dimensions
 
-    See einops.reduce for examples.
+    See einops.reduce for source_examples.
     """
 
     def __init__(self, pattern, reduction, **axes_lengths):

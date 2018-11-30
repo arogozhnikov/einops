@@ -448,7 +448,7 @@ def rearrange(tensor, pattern, **axes_lengths):
     :return: tensor of the same type as input. If possible, a view to the original tensor is returned.
 
     When composing axes, C-order enumeration used (consecutive elements have different last axis)
-    More examples and explanations can be found in the einops guide.
+    More source_examples and explanations can be found in the einops guide.
     """
     if isinstance(tensor, list):
         if len(tensor) == 0:
