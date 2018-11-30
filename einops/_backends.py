@@ -84,6 +84,9 @@ class AbstractBackend:
     def stack_on_zeroth_dimension(self, tensors: list):
         raise NotImplementedError()
 
+    def tile(self, x, repeats):
+        raise NotImplementedError()
+
     def is_float_type(self, x):
         # some backends (torch) can't compute average for non-floating types.
         # Decided to drop average for all backends if type is not floating
@@ -137,6 +140,9 @@ class NumpyBackend(AbstractBackend):
     def stack_on_zeroth_dimension(self, tensors: list):
         return self.np.stack(tensors)
 
+    def tile(self, x, repeats):
+        return self.np.tile(x, repeats)
+
     def is_float_type(self, x):
         return x.dtype in ('float16', 'float32', 'float64', 'float128')
 
@@ -169,6 +175,9 @@ class GluonBackend(AbstractBackend):
 
     def stack_on_zeroth_dimension(self, tensors: list):
         return self.mx.nd.stack(*tensors)
+
+    def tile(self, x, repeats):
+        return self.mx.nd.tile(x, repeats)
 
     def is_float_type(self, x):
         return 'float' in str(x.dtype)
@@ -225,6 +234,9 @@ class MXNetBackend(AbstractBackend):
     def stack_on_zeroth_dimension(self, tensors: list):
         return self.mx.symbol.stack(*tensors)
 
+    def tile(self, x, repeats):
+        return self.mx.symbol.tile(x, repeats)
+
     def is_float_type(self, x):
         return 'float' in str(x.infer_type()[1][0])
 
@@ -274,6 +286,9 @@ class TorchBackend(AbstractBackend):
     def stack_on_zeroth_dimension(self, tensors: list):
         return self.torch.stack(tensors)
 
+    def tile(self, x, repeats):
+        return x.repeat(repeats)
+
     def is_float_type(self, x):
         return x.dtype in [self.torch.float16, self.torch.float32, self.torch.float64]
 
@@ -303,6 +318,9 @@ class CupyBackend(AbstractBackend):
 
     def stack_on_zeroth_dimension(self, tensors: list):
         return self.cupy.stack(tensors)
+
+    def tile(self, x, repeats):
+        return self.cupy.tile(x, repeats)
 
     def is_float_type(self, x):
         return x.dtype in ('float16', 'float32', 'float64', 'float128')
@@ -337,6 +355,9 @@ class ChainerBackend(AbstractBackend):
 
     def stack_on_zeroth_dimension(self, tensors: list):
         return self.chainer.functions.stack(tensors)
+
+    def tile(self, x, repeats):
+        return self.chainer.functions.tile(x, repeats)
 
     def is_float_type(self, x):
         return x.dtype in ('float16', 'float32', 'float64', 'float128')
@@ -394,6 +415,9 @@ class TensorflowBackend(AbstractBackend):
     def stack_on_zeroth_dimension(self, tensors: list):
         return self.tf.stack(tensors)
 
+    def tile(self, x, repeats):
+        return self.tf.tile(x, repeats)
+
     def is_float_type(self, x):
         return x.dtype in ('float16', 'float32', 'float64', 'float128')
 
@@ -435,6 +459,9 @@ class KerasBackend(AbstractBackend):
 
     def stack_on_zeroth_dimension(self, tensors: list):
         return self.K.stack(tensors)
+
+    def tile(self, x, repeats):
+        return self.K.tile(x, repeats)
 
     def is_float_type(self, x):
         return 'float' in self.K.dtype(x)
