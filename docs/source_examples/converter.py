@@ -76,9 +76,9 @@ result = f'''
 <html lang="en">
   <head>
     <meta charset="utf-8">
+    {meta_tags}
     <title>Writing better code with pytorch+einops</title>
     <style>{styles}</style>
-    {meta_tags}
   </head>
   <body>
     {content}
