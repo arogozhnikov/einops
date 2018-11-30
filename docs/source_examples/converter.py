@@ -78,6 +78,7 @@ result = f'''
     <meta charset="utf-8">
     <title>Writing better code with pytorch+einops</title>
     <style>{styles}</style>
+    {meta_tags}
   </head>
   <body>
     {content}
