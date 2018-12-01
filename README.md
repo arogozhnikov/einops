@@ -91,7 +91,7 @@ Example of using layers within a model:
 ```python
 # example given for pytorch, but code in other frameworks is almost identical  
 from torch.nn import Sequential, Conv2d, MaxPool2d, Linear, ReLU
-from einops.layers.torch import Reduce
+from einops.layers.torch import Rearrange
 
 model = Sequential(
     Conv2d(3, 6, kernel_size=5),
