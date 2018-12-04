@@ -1,16 +1,3 @@
-<div align="center">
-  <img src="http://arogozhnikov.github.io/images/einops/einops_logo_350x350.png" 
-  alt="einops package logo" width="250" height="250" />
-  <br><br>
-</div>
-
-# einops 
-[![Build Status](https://travis-ci.org/arogozhnikov/einops.svg?branch=master)](https://travis-ci.org/arogozhnikov/einops)  [![PyPI version](https://badge.fury.io/py/einops.svg)](https://badge.fury.io/py/einops)
-
-Flexible and powerful tensor operations for readable and reliable code. 
-Supports numpy, pytorch, tensorflow, and [others](#supported-frameworks).
-Examples: 
-
 <a href='http://arogozhnikov.github.io/images/einops/einops_video.mp4' >
 <div align="center">
   <br><br>
@@ -20,6 +7,19 @@ Examples:
   <br><br>
 </div>
 </a>
+
+# einops 
+[![Build Status](https://travis-ci.org/arogozhnikov/einops.svg?branch=master)](https://travis-ci.org/arogozhnikov/einops)  [![PyPI version](https://badge.fury.io/py/einops.svg)](https://badge.fury.io/py/einops)
+
+Flexible and powerful tensor operations for readable and reliable code. 
+Supports numpy, pytorch, tensorflow, and [others](#supported-frameworks).
+
+
+<!--<div align="center">
+  <img src="http://arogozhnikov.github.io/images/einops/einops_logo_350x350.png" 
+  alt="einops package logo" width="250" height="250" />
+  <br><br>
+</div> -->
 
 ## Contents
 
