@@ -1,6 +1,5 @@
 <a href='http://arogozhnikov.github.io/images/einops/einops_video.mp4' >
 <div align="center">
-  <br><br>
   <img src="http://arogozhnikov.github.io/images/einops/einops_video.gif" alt="einops package examples" />
   <br>
   <small><a href='http://arogozhnikov.github.io/images/einops/einops_video.mp4'>This video in better quality.</a></small>
