@@ -241,11 +241,11 @@ def test_torch_layer():
         assert torch.allclose(model1(input), model2(input))
 
         # tracing (freezing)
-        model3 = torch.jit.trace(input)(model2)
+        model3 = torch.jit.trace(model2, example_inputs=input)
         assert torch.allclose(model1(input), model3(input))
         assert torch.allclose(model1(input + 1), model3(input + 1))
 
-        model4 = torch.jit.trace(input, optimize=True)(model2)
+        model4 = torch.jit.trace(model2, example_inputs=input, optimize=True)
         assert torch.allclose(model1(input), model4(input))
         assert torch.allclose(model1(input + 1), model4(input + 1))
 
