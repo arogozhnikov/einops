@@ -73,6 +73,7 @@ from einops.layers.chainer import Rearrange, Reduce
 from einops.layers.gluon import Rearrange, Reduce
 from einops.layers.keras import Rearrange, Reduce
 from einops.layers.torch import Rearrange, Reduce
+from einops.layers.tensorflow import Rearrange, Reduce
 ```
 
 Layers behave similarly to operations and have same parameters 
@@ -223,12 +224,13 @@ Einops works with ...
 - [gluon](https://mxnet.apache.org/)
 - [tensorflow](https://www.tensorflow.org/)
 - [mxnet](https://gluon.mxnet.io/) (experimental)
-- and [keras](https://keras.io/) (experimental)
+- [keras](https://keras.io/) and [tf.keras](https://www.tensorflow.org/guide/keras) (both experimental)
 
 ## Contributing 
 
 Best ways to contribute are
 
+- test and share your feedback. Experimental APIs currently require third-party testing. 
 - spread the word about `einops`
 - **prepare a guide/post/tutorial** for your favorite deep learning framework
 - translating examples in languages other than English is also a good idea 
@@ -240,4 +242,4 @@ Best ways to contribute are
 
 There is nothing specific to python 3 in the code, 
 we simply [need to move further](http://github.com/arogozhnikov/python3_with_pleasure) 
-and I decided not to support python 2.
+and the decision is not to support python 2.
