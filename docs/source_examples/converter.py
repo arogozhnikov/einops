@@ -22,7 +22,7 @@ for cell in notebook['cells']:
             trimmed_source = source[source.index('\n') + 1:]
             cache += "<div>{}</div>".format(highlight(trimmed_source, PythonLexer(), HtmlFormatter()))
         if source.startswith('#right'):
-            content += "<div class='leftright-cells'>{}</div> ".format(cache)
+            content += "<div class='leftright-wrapper'><div class='leftright-cells'>{}</div></div> ".format(cache)
             cache = ''
 
     elif cell['cell_type'] == 'markdown':
@@ -33,27 +33,28 @@ for cell in notebook['cells']:
 styles = HtmlFormatter().get_style_defs('.highlight')
 
 styles += '''
-    .leftright-cells {
-        display: flex;
-        width: 1400px;
-        margin: 10px auto;
-        justify-content: center;
+    body {
+        padding: 50px 10px;
     }
-    .leftright-cells > div{
+    .leftright-wrapper {
+        text-align: center;
+        overflow-x: scroll;
+    }
+    .leftright-cells {
+        display: inline-flex;
+        text-align: left;
+    }
+    .leftright-cells > div {
         padding: 0px 10px;
-        flex-grow: 1;
-        flex-basis: 0;
+        min-width: 350px;
     }
     .markdown-cell{
-        width: 700px;
+        max-width: 700px;
         margin: 0px auto;
     }
     h1 {
         text-align: center;
         padding: 10px 0px 0px;
-    }
-    body {
-        padding: 50px;
     }
 '''
 

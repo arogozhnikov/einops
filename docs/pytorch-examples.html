@@ -86,27 +86,28 @@
 .highlight .vi { color: #19177C } /* Name.Variable.Instance */
 .highlight .vm { color: #19177C } /* Name.Variable.Magic */
 .highlight .il { color: #666666 } /* Literal.Number.Integer.Long */
-    .leftright-cells {
-        display: flex;
-        width: 1400px;
-        margin: 10px auto;
-        justify-content: center;
+    body {
+        padding: 50px 10px;
     }
-    .leftright-cells > div{
+    .leftright-wrapper {
+        text-align: center;
+        overflow-x: scroll;
+    }
+    .leftright-cells {
+        display: inline-flex;
+        text-align: left;
+    }
+    .leftright-cells > div {
         padding: 0px 10px;
-        flex-grow: 1;
-        flex-basis: 0;
+        min-width: 350px;
     }
     .markdown-cell{
-        width: 700px;
+        max-width: 700px;
         margin: 0px auto;
     }
     h1 {
         text-align: center;
         padding: 10px 0px 0px;
-    }
-    body {
-        padding: 50px;
     }
 </style>
   </head>
@@ -116,15 +117,15 @@
   alt="einops package logo" width="150" height="150" style='padding: 50px;' />
 </div>
 
-<h1>Writing better code with pytorch and einops</h1>
+<h1>Writing a better code with pytorch and einops</h1>
 <p><br /><br /></p>
 <h2>Rewriting building blocks of deep learning</h2>
 <p>Below are some fragments of code taken from official tutorials and popular repositories 
 (fragments taken for educational purposes, sometimes shortened). 
 For each fragment an enhanced version proposed with comments.</p>
 <p>In most examples, <code>einops</code> was used to make things less complicated.
-But you'll also find some common recommendations and practices to improve the code.</p>
-<p><strong>Left</strong>: as it was, <strong>Right</strong>: improved version</p></div><div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="c1"># start from importing some stuff</span>
+But you'll also find some common recommendations and practices to improve your code.</p>
+<p><strong>Left</strong>: as it was, <strong>Right</strong>: improved version</p></div><div class='leftright-wrapper'><div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="c1"># start from importing some stuff</span>
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">torch.nn</span> <span class="kn">as</span> <span class="nn">nn</span> 
 <span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="kn">as</span> <span class="nn">F</span>
@@ -134,7 +135,7 @@ But you'll also find some common recommendations and practices to improve the co
 <span class="kn">from</span> <span class="nn">einops</span> <span class="kn">import</span> <span class="n">rearrange</span><span class="p">,</span> <span class="nb">reduce</span><span class="p">,</span> <span class="n">asnumpy</span><span class="p">,</span> <span class="n">parse_shape</span>
 <span class="kn">from</span> <span class="nn">einops.layers.torch</span> <span class="kn">import</span> <span class="n">Rearrange</span><span class="p">,</span> <span class="n">Reduce</span>
 </pre></div>
-</div></div> <div class='markdown-cell'><h1>Simple ConvNet</h1></div><div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Net</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+</div></div></div> <div class='markdown-cell'><h1>Simple ConvNet</h1></div><div class='leftright-wrapper'><div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Net</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">Net</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">conv1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
@@ -170,18 +171,18 @@ But you'll also find some common recommendations and practices to improve the co
     <span class="n">nn</span><span class="o">.</span><span class="n">LogSoftmax</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 <span class="p">)</span>
 </pre></div>
-</div></div> <div class='markdown-cell'><p>Reasons to prefer new code:</p>
+</div></div></div> <div class='markdown-cell'><p>Reasons to prefer new implementation:</p>
 <ul>
-<li>in the original code if input size is changed and batch size is divisible by 16 (that's usualy so), we'll get something senseless after reshaping<ul>
-<li>new code explicitly drops error in this case</li>
+<li>in the original code (to the left) if input size is changed and batch size is divisible by 16 (that's usualy so), we'll get something senseless after reshaping<ul>
+<li>new code will explicitly raise an error in this case</li>
 </ul>
 </li>
 <li>we won't forget to use dropout with flag self.training with new version</li>
 <li>code is straightforward to read and analyze</li>
-<li>sequential makes printing / saving / passing trivial. And there is no need in your code to load a model</li>
+<li>sequential makes printing / saving / passing trivial. And there is no need in your code to load a model (which also has a number of benefits)</li>
 <li>... and we could also add inplace for ReLU</li>
 </ul></div><div class='markdown-cell'><h1>Super-resolution</h1>
-<!-- minified https://github.com/pytorch/examples/tree/master/super_resolution, withour initialization --></div><div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">SuperResolutionNetOld</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<!-- minified https://github.com/pytorch/examples/tree/master/super_resolution, withour initialization --></div><div class='leftright-wrapper'><div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">SuperResolutionNetOld</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">upscale_factor</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">SuperResolutionNetOld</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
@@ -211,7 +212,7 @@ But you'll also find some common recommendations and practices to improve the co
         <span class="n">Rearrange</span><span class="p">(</span><span class="s1">&#39;b (h2 w2) h w -&gt; b (h h2) (w w2)&#39;</span><span class="p">,</span> <span class="n">h2</span><span class="o">=</span><span class="n">upscale_factor</span><span class="p">,</span> <span class="n">w2</span><span class="o">=</span><span class="n">upscale_factor</span><span class="p">),</span>
     <span class="p">)</span>
 </pre></div>
-</div></div> <div class='markdown-cell'><p>Here is the difference:</p>
+</div></div></div> <div class='markdown-cell'><p>Here is the difference:</p>
 <ul>
 <li>no need in special instruction pixel_shuffle (and result is transferrable between frameworks)</li>
 <li>output doesn't contain a fake axis (and we could do the same for the input)</li>
@@ -219,12 +220,12 @@ But you'll also find some common recommendations and practices to improve the co
 <li>and all the benefits of nn.Sequential again</li>
 </ul></div><div class='markdown-cell'><h1>Restyling Gram matrix for style transfer</h1></div><div class='markdown-cell'><!-- from https://github.com/pytorch/examples/blob/29c2ed8ca6dc36fc78a3e74a5908615619987863/fast_neural_style/neural_style/utils.py#L21-L26 -->
 
-<p>Original code is already good - its first line shows expected tensor shape</p>
+<p>Original code is already good - first line shows what kind of input is expected</p>
 <ul>
 <li>einsum operation should be read like:</li>
 <li>for each batch and for each pair of channels, we sum over h and w.</li>
 <li>I've also changed normalization, because that's how Gram matrix is defined, otherwise we should call it normalized Gram matrix or alike</li>
-</ul></div><div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">gram_matrix_old</span><span class="p">(</span><span class="n">y</span><span class="p">):</span>
+</ul></div><div class='leftright-wrapper'><div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">gram_matrix_old</span><span class="p">(</span><span class="n">y</span><span class="p">):</span>
     <span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">ch</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">)</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
     <span class="n">features</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">ch</span><span class="p">,</span> <span class="n">w</span> <span class="o">*</span> <span class="n">h</span><span class="p">)</span>
     <span class="n">features_t</span> <span class="o">=</span> <span class="n">features</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
@@ -235,9 +236,9 @@ But you'll also find some common recommendations and practices to improve the co
     <span class="n">b</span><span class="p">,</span> <span class="n">ch</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">shape</span>
     <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;bchw,bdhw-&gt;bcd&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">y</span><span class="p">,</span> <span class="n">y</span><span class="p">])</span> <span class="o">/</span> <span class="p">(</span><span class="n">h</span> <span class="o">*</span> <span class="n">w</span><span class="p">)</span>
 </pre></div>
-</div></div> <div class='markdown-cell'><p>It would be great to use just <code>'b c1 h w,b c2 h w-&gt;b c1 c2'</code>, but einsum supports only one-letter axes</p></div><div class='markdown-cell'><h1>Recurrent model</h1>
+</div></div></div> <div class='markdown-cell'><p>It would be great to use just <code>'b c1 h w,b c2 h w-&gt;b c1 c2'</code>, but einsum supports only one-letter axes</p></div><div class='markdown-cell'><h1>Recurrent model</h1>
 <p>All we did here is just made information about shapes explicit to skip deciphering</p>
-<!-- simplified version of https://github.com/pytorch/examples/blob/master/word_language_model/model.py --></div><div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">RNNModelOld</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<!-- simplified version of https://github.com/pytorch/examples/blob/master/word_language_model/model.py --></div><div class='leftright-wrapper'><div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">RNNModelOld</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Container module with an encoder, a recurrent module, and a decoder.&quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ntoken</span><span class="p">,</span> <span class="n">ninp</span><span class="p">,</span> <span class="n">nhid</span><span class="p">,</span> <span class="n">nlayers</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">RNNModel</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -271,8 +272,8 @@ But you'll also find some common recommendations and practices to improve the co
         <span class="n">decoded</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">decoder</span><span class="p">(</span><span class="n">output</span><span class="p">),</span> <span class="s1">&#39;(t b) token -&gt; t b token&#39;</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="n">b</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">decoded</span><span class="p">,</span> <span class="n">hidden</span>
 </pre></div>
-</div></div> <div class='markdown-cell'><h1>Channel shuffle (from shufflenet)</h1>
-<!-- from https://github.com/jaxony/ShuffleNet/blob/master/model.py --></div><div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">channel_shuffle_old</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">groups</span><span class="p">):</span>
+</div></div></div> <div class='markdown-cell'><h1>Channel shuffle (from shufflenet)</h1>
+<!-- from https://github.com/jaxony/ShuffleNet/blob/master/model.py --></div><div class='leftright-wrapper'><div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">channel_shuffle_old</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">groups</span><span class="p">):</span>
     <span class="n">batchsize</span><span class="p">,</span> <span class="n">num_channels</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
 
     <span class="n">channels_per_group</span> <span class="o">=</span> <span class="n">num_channels</span> <span class="o">//</span> <span class="n">groups</span>
@@ -294,7 +295,7 @@ But you'll also find some common recommendations and practices to improve the co
 </div><div><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">channel_shuffle_new</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">groups</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">rearrange</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s1">&#39;b (c1 c2) h w -&gt; b (c2 c1) h w&#39;</span><span class="p">,</span> <span class="n">c1</span><span class="o">=</span><span class="n">groups</span><span class="p">)</span>
 </pre></div>
-</div></div> <div class='markdown-cell'><p>While progress is obvious, this is not the limit. As you'll see below, we don't even need to write these couple of lines.</p></div><div class='markdown-cell'><h1>Shufflenet</h1></div><div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+</div></div></div> <div class='markdown-cell'><p>While progress is obvious, this is not the limit. As you'll see below, we don't even need to write these couple of lines.</p></div><div class='markdown-cell'><h1>Shufflenet</h1></div><div class='leftright-wrapper'><div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
 
 <span class="k">def</span> <span class="nf">channel_shuffle</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">groups</span><span class="p">):</span>
     <span class="n">batchsize</span><span class="p">,</span> <span class="n">num_channels</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
@@ -465,18 +466,18 @@ But you'll also find some common recommendations and practices to improve the co
             <span class="n">combined</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">right</span><span class="p">(</span><span class="n">x</span><span class="p">)],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="n">combined</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 </pre></div>
-</div></div> <div class='markdown-cell'><p>Rewriting the code helped to identify:</p>
+</div></div></div> <div class='markdown-cell'><p>Rewriting the code helped to identify:</p>
 <ul>
-<li>There is no sense in doing reshuffling and not using groups in the first 
-  (indeed, I in the paper it is not so). However, this is equivalent model.</li>
-<li>It is also strange that first convolution may be not grouped, while last convolution is always grouped
+<li>There is no sense in doing reshuffling and not using groups in the first convolution
+  (indeed, in the paper it is not so). However, result is an equivalent model.</li>
+<li>It is also strange that the first convolution may be not grouped, while the last convolution is always grouped
   (and that is different from the paper)</li>
 </ul>
 <p>Other comments:</p>
 <ul>
-<li>You've probably noticed that there is an identity layer for pytorch introduced here</li>
+<li>There is an identity layer for pytorch introduced here</li>
 <li>The last thing left is get rid of conv1x1 and conv3x3 in the code - those are not better than standard</li>
-</ul></div><div class='markdown-cell'><h1>Simplifying ResNet</h1></div><div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">ResNetOld</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+</ul></div><div class='markdown-cell'><h1>Simplifying ResNet</h1></div><div class='leftright-wrapper'><div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">ResNetOld</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block</span><span class="p">,</span> <span class="n">layers</span><span class="p">,</span> <span class="n">num_classes</span><span class="o">=</span><span class="mi">1000</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">inplanes</span> <span class="o">=</span> <span class="mi">64</span>
@@ -578,13 +579,13 @@ But you'll also find some common recommendations and practices to improve the co
             <span class="n">m</span><span class="o">.</span><span class="n">bias</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">zero_</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">resnet</span>
 </pre></div>
-</div></div> <div class='markdown-cell'><p>Things that were changed</p>
+</div></div></div> <div class='markdown-cell'><p>Changes:</p>
 <ul>
 <li>explicit check for input shape</li>
-<li>no views and simple sequential structure, output is just nn.Sequential, so can always be saved/passed</li>
-<li>no need in AvgPool and additional views, this place is much clearer</li>
+<li>no views and simple sequential structure, output is just nn.Sequential, so can always be saved/passed/etc</li>
+<li>no need in AvgPool and additional views, this place is much clearer now</li>
 <li><code>make_layer</code> doesn't use internal state (that's quite faulty place)</li>
-</ul></div><div class='markdown-cell'><h1>Improving RNN language modelling</h1></div><div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">RNNOld</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+</ul></div><div class='markdown-cell'><h1>Improving RNN language modelling</h1></div><div class='leftright-wrapper'><div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">RNNOld</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vocab_size</span><span class="p">,</span> <span class="n">embedding_dim</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="p">,</span> <span class="n">output_dim</span><span class="p">,</span> <span class="n">n_layers</span><span class="p">,</span> <span class="n">bidirectional</span><span class="p">,</span> <span class="n">dropout</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         
@@ -639,12 +640,12 @@ But you'll also find some common recommendations and practices to improve the co
         <span class="c1"># take the final layer&#39;s hidden</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fc</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">(</span><span class="n">hidden</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
 </pre></div>
-</div></div> <div class='markdown-cell'><ul>
+</div></div></div> <div class='markdown-cell'><ul>
 <li>original code misbehaves for non-bidirectional models</li>
-<li>and fails when bidirectional = False, and there is only one layer</li>
+<li>... and fails when bidirectional = False, and there is only one layer</li>
 <li>modification of the code shows both how hidden is structured and how it is modified</li>
 </ul></div><div class='markdown-cell'><h1>Writing FastText faster</h1>
-<!-- from # https://github.com/bentrevett/pytorch-sentiment-analysis/blob/master/3%20-%20Faster%20Sentiment%20Analysis.ipynb --></div><div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">FastTextOld</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<!-- from # https://github.com/bentrevett/pytorch-sentiment-analysis/blob/master/3%20-%20Faster%20Sentiment%20Analysis.ipynb --></div><div class='leftright-wrapper'><div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">FastTextOld</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vocab_size</span><span class="p">,</span> <span class="n">embedding_dim</span><span class="p">,</span> <span class="n">output_dim</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         
@@ -678,13 +679,13 @@ But you'll also find some common recommendations and practices to improve the co
         <span class="n">Rearrange</span><span class="p">(</span><span class="s1">&#39;b c -&gt; b c&#39;</span><span class="p">),</span>
     <span class="p">)</span>
 </pre></div>
-</div></div> <div class='markdown-cell'><p>Some comments on new code:</p>
+</div></div></div> <div class='markdown-cell'><p>Some comments on new code:</p>
 <ul>
 <li>first and last operations do nothing and can be removed</li>
 <li>but were put to explicitly show expected input and output</li>
 <li>this also gives you a flexibility of changing interface by editing a single line. Should you need to accept inputs as (batch, time), 
   you just change first line to <code>Rearrange('b t -&gt; t b'),</code></li>
-</ul></div><div class='markdown-cell'><h1>CNNs for text classification</h1></div><div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">CNNOld</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+</ul></div><div class='markdown-cell'><h1>CNNs for text classification</h1></div><div class='leftright-wrapper'><div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">CNNOld</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vocab_size</span><span class="p">,</span> <span class="n">embedding_dim</span><span class="p">,</span> <span class="n">n_filters</span><span class="p">,</span> <span class="n">filter_sizes</span><span class="p">,</span> <span class="n">output_dim</span><span class="p">,</span> <span class="n">dropout</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">embedding</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span><span class="n">vocab_size</span><span class="p">,</span> <span class="n">embedding_dim</span><span class="p">)</span>
@@ -745,7 +746,7 @@ But you'll also find some common recommendations and practices to improve the co
         <span class="n">concatenated</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span><span class="n">pooled</span><span class="p">,</span> <span class="s1">&#39;filter b c -&gt; b (filter c)&#39;</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fc</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="n">concatenated</span><span class="p">)))</span>
 </pre></div>
-</div></div> <div class='markdown-cell'><ul>
+</div></div></div> <div class='markdown-cell'><ul>
 <li>Original code misuses Conv2d, while Conv1d is the right choice</li>
 <li>Fixed code can work with any number of filter_sizes (and won't fail)</li>
 <li>First line in new code does nothing, but was added for simplicity</li>
@@ -754,7 +755,7 @@ But you'll also find some common recommendations and practices to improve the co
 <li>Highway convolutions are common in TTS systems. Code below makes splitting a bit more explicit.</li>
 <li>Splitting policy may eventually turn out to be important if input had previously groups over channel axes (group convolutions or bidirectional LSTMs/GRUs)</li>
 <li>Same applies to GLU and gated units in general</li>
-</ul></div><div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">HighwayConv1dOld</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Conv1d</span><span class="p">):</span>
+</ul></div><div class='leftright-wrapper'><div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">HighwayConv1dOld</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Conv1d</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">):</span>
         <span class="n">L</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">HighwayConv1dOld</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
         <span class="n">H1</span><span class="p">,</span> <span class="n">H2</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">chunk</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>  <span class="c1"># chunk at the feature dim</span>
@@ -768,8 +769,8 @@ But you'll also find some common recommendations and practices to improve the co
         <span class="n">torch</span><span class="o">.</span><span class="n">sigmoid_</span><span class="p">(</span><span class="n">H1</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">H1</span> <span class="o">*</span> <span class="n">H2</span> <span class="o">+</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">H1</span><span class="p">)</span> <span class="o">*</span> <span class="n">inputs</span>
 </pre></div>
-</div></div> <div class='markdown-cell'><h1>Tacotron's CBHG module</h1>
-<!-- https://github.com/r9y9/tacotron_pytorch/blob/master/tacotron_pytorch/tacotron.py --></div><div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">CBHG_Old</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+</div></div></div> <div class='markdown-cell'><h1>Tacotron's CBHG module</h1>
+<!-- https://github.com/r9y9/tacotron_pytorch/blob/master/tacotron_pytorch/tacotron.py --></div><div class='leftright-wrapper'><div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">CBHG_Old</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;CBHG module: a recurrent neural network composed of:</span>
 <span class="sd">        - 1-d convolution banks</span>
 <span class="sd">        - Highway networks + residual connections</span>
@@ -801,7 +802,7 @@ But you'll also find some common recommendations and practices to improve the co
         <span class="bp">self</span><span class="o">.</span><span class="n">gru</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">GRU</span><span class="p">(</span>
             <span class="n">in_dim</span><span class="p">,</span> <span class="n">in_dim</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">batch_first</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">bidirectional</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 </pre></div>
-</div></div> <div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">forward_old</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">):</span>
+</div></div></div> <div class='leftright-wrapper'><div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">forward_old</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">):</span>
     <span class="c1"># (B, T_in, in_dim)</span>
     <span class="n">x</span> <span class="o">=</span> <span class="n">inputs</span>
 
@@ -862,8 +863,8 @@ But you'll also find some common recommendations and practices to improve the co
 
     <span class="k">return</span> <span class="n">outputs</span>    
 </pre></div>
-</div></div> <div class='markdown-cell'><p>There is still a large room for improvements, but in this example only forward function was changed</p></div><div class='markdown-cell'><h1>Simple attention</h1>
-<p>Good news: there is no more need to guess order of dimensions. Neither for inputs nor for outputs</p></div><div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Attention</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+</div></div></div> <div class='markdown-cell'><p>There is still a large room for improvements, but in this example only forward function was changed</p></div><div class='markdown-cell'><h1>Simple attention</h1>
+<p>Good news: there is no more need to guess order of dimensions. Neither for inputs nor for outputs</p></div><div class='leftright-wrapper'><div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Attention</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">Attention</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
     
@@ -880,7 +881,7 @@ But you'll also find some common recommendations and practices to improve the co
     <span class="n">R</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;bct,btl-&gt;bcl&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">V</span><span class="p">,</span> <span class="n">A</span><span class="p">])</span>
     <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">R</span><span class="p">,</span> <span class="n">Q</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 </pre></div>
-</div></div> <div class='markdown-cell'><h1>Transformer's attention needs more attention</h1></div><div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">ScaledDotProductAttention</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+</div></div></div> <div class='markdown-cell'><h1>Transformer's attention needs more attention</h1></div><div class='leftright-wrapper'><div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">ScaledDotProductAttention</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39; Scaled Dot-Product Attention &#39;&#39;&#39;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">temperature</span><span class="p">,</span> <span class="n">attn_dropout</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
@@ -994,7 +995,7 @@ But you'll also find some common recommendations and practices to improve the co
         <span class="k">return</span> <span class="n">output</span><span class="p">,</span> <span class="n">attn</span>
     
 </pre></div>
-</div></div> <div class='markdown-cell'><p>Benefits of new implementation</p>
+</div></div></div> <div class='markdown-cell'><p>Benefits of new implementation</p>
 <ul>
 <li>we have one module, not two</li>
 <li>now code does not fail for None mask</li>
@@ -1002,8 +1003,8 @@ But you'll also find some common recommendations and practices to improve the co
   Try erasing comments and deciphering what happens there</li>
 </ul></div><div class='markdown-cell'><h1>Self-attention GANs</h1>
 <p>SAGANs are currently SotA for image generation, and can be simplified using same tricks.
-If torch.einsum supported non-one letter axes, we could improve this solution further.</p>
-<!-- from  https://github.com/heykeetae/Self-Attention-GAN/blob/master/sagan_models.py --></div><div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Self_Attn_Old</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<!-- If torch.einsum supported non-one letter axes, we could improve this solution further. --></p>
+<!-- from  https://github.com/heykeetae/Self-Attention-GAN/blob/master/sagan_models.py --></div><div class='leftright-wrapper'><div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Self_Attn_Old</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; Self attention Layer&quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">in_dim</span><span class="p">,</span><span class="n">activation</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">Self_Attn_Old</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -1059,12 +1060,12 @@ If torch.einsum supported non-one letter axes, we could improve this solution fu
                                          <span class="o">**</span><span class="n">parse_shape</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s1">&#39;b c h w&#39;</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">out</span><span class="p">,</span> <span class="n">attention</span>
 </pre></div>
-</div></div> <div class='markdown-cell'><h1>Improving time sequence prediction</h1>
+</div></div></div> <div class='markdown-cell'><h1>Improving time sequence prediction</h1>
 <!-- https://github.com/pytorch/examples/blob/master/time_sequence_prediction/train.py -->
 
 <p>While this example was considered to be simplistic, I had to analyze surrounding code to understand what kind of input was expected.
 You can try yourself. </p>
-<p>One minor change done is now the code works with any dtype, not only double; and new code supports using GPU.</p></div><div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">SequencePredictionOld</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<p>Additionally now the code works with any dtype, not only double; and new code supports using GPU.</p></div><div class='leftright-wrapper'><div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">SequencePredictionOld</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">SequencePredictionOld</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lstm1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LSTMCell</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">51</span><span class="p">)</span>
@@ -1118,8 +1119,8 @@ You can try yourself. </p>
             <span class="n">outputs</span> <span class="o">+=</span> <span class="p">[</span><span class="n">output</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">rearrange</span><span class="p">(</span><span class="n">outputs</span><span class="p">,</span> <span class="s1">&#39;t b () -&gt; b t&#39;</span><span class="p">)</span>
 </pre></div>
-</div></div> <div class='markdown-cell'><h1>Transforming spacial transformer network (STN)</h1>
-<!-- modified version of https://pytorch.org/tutorials/intermediate/spatial_transformer_tutorial.html --></div><div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">SpacialTransformOld</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+</div></div></div> <div class='markdown-cell'><h1>Transforming spacial transformer network (STN)</h1>
+<!-- modified version of https://pytorch.org/tutorials/intermediate/spatial_transformer_tutorial.html --></div><div class='leftright-wrapper'><div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">SpacialTransformOld</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">Net</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
@@ -1184,13 +1185,13 @@ You can try yourself. </p>
         <span class="n">grid</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">affine_grid</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">compute_theta</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">())</span>
         <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">grid_sample</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">grid</span><span class="p">)</span>
 </pre></div>
-</div></div> <div class='markdown-cell'><ul>
+</div></div></div> <div class='markdown-cell'><ul>
 <li>new code will give reasonable errors when passed image size is different from expected</li>
 <li>if batch size is divisible by 18, whatever you input in the old code, it'll fail no sooner than affine_grid.</li>
 </ul></div><div class='markdown-cell'><h1>Improving GLOW</h1>
 <p>That's a good old depth-to-space written manually!</p>
 <p>Since GLOW is revertible, it will frequently rely on <code>rearrange</code>-like operations.</p>
-<!-- from https://github.com/chaiyujin/glow-pytorch/blob/master/glow/modules.py --></div><div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">unsqueeze2d_old</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">factor</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+<!-- from https://github.com/chaiyujin/glow-pytorch/blob/master/glow/modules.py --></div><div class='leftright-wrapper'><div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">unsqueeze2d_old</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">factor</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
     <span class="k">assert</span> <span class="n">factor</span> <span class="o">&gt;=</span> <span class="mi">1</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">factor</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
     <span class="n">factor2</span> <span class="o">=</span> <span class="n">factor</span> <span class="o">**</span> <span class="mi">2</span>
     <span class="k">if</span> <span class="n">factor</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
@@ -1227,14 +1228,14 @@ You can try yourself. </p>
 <span class="k">def</span> <span class="nf">squeeze2d_new</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">factor</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">rearrange</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="s1">&#39;b c (h h2) (w w2) -&gt; b (c h2 w2) h w&#39;</span><span class="p">,</span> <span class="n">h2</span><span class="o">=</span><span class="n">factor</span><span class="p">,</span> <span class="n">w2</span><span class="o">=</span><span class="n">factor</span><span class="p">)</span>
 </pre></div>
-</div></div> <div class='markdown-cell'><ul>
+</div></div></div> <div class='markdown-cell'><ul>
 <li>term <code>squeeze</code> isn't very helpful: which dimension is squeezed? There is <code>torch.squeeze</code>, but it's very different.</li>
 <li>in fact, we could skip creating functions completely</li>
 </ul></div><div class='markdown-cell'><h1>Detecting problems in YOLO detection</h1>
 <!-- mixture of 
     # https://github.com/BobLiu20/YOLOv3_PyTorch/blob/c6b483743598b5f64d520d81e7e5f47ba936d4c9/nets/yolo_loss.py#L28-L44
     # https://github.com/BobLiu20/YOLOv3_PyTorch/blob/c6b483743598b5f64d520d81e7e5f47ba936d4c9/nets/yolo_loss.py#L70-L92
---></div><div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">YOLO_prediction_old</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="n">num_anchors</span><span class="p">,</span> <span class="n">anchors</span><span class="p">,</span> <span class="n">stride_h</span><span class="p">,</span> <span class="n">stride_w</span><span class="p">):</span>
+--></div><div class='leftright-wrapper'><div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">YOLO_prediction_old</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="n">num_anchors</span><span class="p">,</span> <span class="n">anchors</span><span class="p">,</span> <span class="n">stride_h</span><span class="p">,</span> <span class="n">stride_w</span><span class="p">):</span>
     <span class="n">bs</span> <span class="o">=</span> <span class="nb">input</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
     <span class="n">in_h</span> <span class="o">=</span> <span class="nb">input</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
     <span class="n">in_w</span> <span class="o">=</span> <span class="nb">input</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
@@ -1293,7 +1294,7 @@ You can try yourself. </p>
     <span class="c1"># merging all predicted bboxes for each image</span>
     <span class="k">return</span> <span class="n">rearrange</span><span class="p">(</span><span class="n">predicted_bboxes</span><span class="p">,</span> <span class="s1">&#39;prediction b anchor h w -&gt; b (anchor h w) prediction&#39;</span><span class="p">)</span>
 </pre></div>
-</div></div> <div class='markdown-cell'><p>We changed and fixed a lot:</p>
+</div></div></div> <div class='markdown-cell'><p>We changed and fixed a lot:</p>
 <ul>
 <li>new code won't fail if input is not on the first GPU</li>
 <li>old code has wrong grid_x and grid_y for non-square images</li>
@@ -1304,27 +1305,27 @@ You can try yourself. </p>
 </li>
 </ul></div><div class='markdown-cell'><h1>Simpler output for a bunch of pictures</h1>
 <p>Next time you need to output drawings of you generative models, you can use this trick</p>
-<!-- # from https://pytorch.org/tutorials/beginner/dcgan_faces_tutorial.html --></div><div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="n">device</span> <span class="o">=</span> <span class="s1">&#39;cpu&#39;</span>
+<!-- # from https://pytorch.org/tutorials/beginner/dcgan_faces_tutorial.html --></div><div class='leftright-wrapper'><div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="n">device</span> <span class="o">=</span> <span class="s1">&#39;cpu&#39;</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">vutils</span><span class="o">.</span><span class="n">make_grid</span><span class="p">(</span><span class="n">fake_batch</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)[:</span><span class="mi">64</span><span class="p">],</span> <span class="n">padding</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span><span class="o">.</span><span class="n">cpu</span><span class="p">(),(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">)))</span>
 </pre></div>
-</div></div> <div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="n">padded</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">pad</span><span class="p">(</span><span class="n">fake_batch</span><span class="p">[:</span><span class="mi">64</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+</div></div></div> <div class='leftright-wrapper'><div class='leftright-cells'><div><div class="highlight"><pre><span></span><span class="n">padded</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">pad</span><span class="p">(</span><span class="n">fake_batch</span><span class="p">[:</span><span class="mi">64</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">rearrange</span><span class="p">(</span><span class="n">padded</span><span class="p">,</span> <span class="s1">&#39;(b1 b2) c h w -&gt; (b1 h) (b2 w) c&#39;</span><span class="p">,</span> <span class="n">b1</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span><span class="o">.</span><span class="n">cpu</span><span class="p">())</span>
 </pre></div>
-</div></div> <div class='markdown-cell'><h1>Instead of conclusion</h1>
-<p>Better code is a vague term; to be specific, things that are expected from code are:</p>
+</div></div></div> <div class='markdown-cell'><h1>Instead of conclusion</h1>
+<p>Better code is a vague term; to be specific, code is expected to be:</p>
 <ul>
 <li>reliable: does what expected and does not fail. Explicitly fails for wrong inputs</li>
-<li>readaility counts</li>
 <li>maintainable and modifiable</li>
 <li>reusable: understanding and modifying code should be easier than writing from scratch</li>
 <li>fast: in my measurements, proposed versions have speed similar to the original code</li>
+<li>readability counts, as a mean to achieve previous goals</li>
 </ul>
-<p>I've tried to demonstrate how you can improve these criteria for deep learning code. And <code>einops</code> helps you a lot.</p></div><div class='markdown-cell'><h1>Links</h1>
+<p>Provided examples show how to improve these criteria for deep learning code. And <code>einops</code> helps a lot.</p></div><div class='markdown-cell'><h1>Links</h1>
 <ul>
 <li><a href="http://github.com/pytorch/pytorch">pytorch</a> and <a href="https://github.com/arogozhnikov/einops">einops</a></li>
-<li>significant part of the code was taken from official <a href="https://github.com/pytorch/examples">examples</a> and <a href="https://github.com/pytorch/tutorials">tutorials</a></li>
-<li>(references for other code are given in source of this html, if you're really curious)</li>
-<li>einops has a <a href="https://github.com/arogozhnikov/einops/tree/master/docs">tutorial</a> if you want a gentle introduction</li>
+<li>significant part of the code was taken from the official <a href="https://github.com/pytorch/examples">examples</a> and <a href="https://github.com/pytorch/tutorials">tutorials</a></li>
+<li>(references for other code are given in source of this html)</li>
+<li>einops has a <a href="https://github.com/arogozhnikov/einops/tree/master/docs">tutorial</a> for a more gentle introduction</li>
 </ul></div>
   </body>
 </html>
