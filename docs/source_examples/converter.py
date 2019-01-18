@@ -38,7 +38,7 @@ styles += '''
     }
     .leftright-wrapper {
         text-align: center;
-        overflow-x: scroll;
+        overflow-x: auto;
     }
     .leftright-cells {
         display: inline-flex;
