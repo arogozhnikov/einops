@@ -300,7 +300,7 @@ def _prepare_transformation_recipe(pattern: str, reduction: str, axes_lengths: T
         if len(difference) > 0:
             raise EinopsError('Unexpected identifiers on the right side of expression: {}'.format(difference))
     else:
-        raise EinopsError('Unknown reduction {}'.format(reduction))
+        raise EinopsError('Unknown reduction {}. Expect one of {}.'.format(reduction, _reductions))
 
     # parsing all dimensions to find out lengths
     known_lengths = OrderedDict()
