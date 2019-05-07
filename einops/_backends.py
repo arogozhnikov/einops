@@ -400,8 +400,13 @@ class TensorflowBackend(AbstractBackend):
     def shape(self, x):
         if self.tf.executing_eagerly():
             return tuple(int(d) for d in x.shape)
-        else:
-            return tuple(self.tf.unstack(self.tf.shape(x)))
+        else: 
+            static_shape = x.shape.as_list()
+            tf_shape = self.tf.shape(x)
+
+            # use the static shape where known, otherwise use the TF shape
+            shape = [s or tf_shape[dim] for dim, s in enumerate(static_shape)]
+            return tuple(shape)
 
     def reduce(self, x, operation, axes):
         return getattr(self.tf, 'reduce_' + operation)(x, axis=axes)
