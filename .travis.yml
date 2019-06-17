@@ -1,17 +1,10 @@
+services:
+  - docker
 dist: xenial
 language: python
 python:
-  - "3.5"
-  - "3.6"
   - "3.7"
 install:
-  - travis_retry pip install pip -q --upgrade
-  - travis_retry pip install numpy -q --upgrade
-  - travis_retry pip install jupyter -q
-  - travis_retry pip install pillow nose -q
-  - travis_retry pip install tensorflow -q
-  - travis_retry pip install torch -q
-  - travis_retry pip install mxnet -q
-  - pip freeze
+  - docker pull python:3.7-stretch
 script:
-  - python test.py
+  - docker run -it `pwd`:/einops/ python:3.7-stretch bash -c 'python /einops/test.py'
