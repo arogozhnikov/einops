@@ -28,7 +28,7 @@ have_cuda = b'nvidia' in output
 
 # install cupy
 if have_cuda:
-    return_code = run('pip install cupy --pre')
+    return_code = run('pip install cupy --pre --progress-bar off')
     assert return_code == 0
 
 # install dependencies
@@ -40,8 +40,12 @@ dependencies = [
     'chainer',
     'keras',
     'nbformat',
+    'nbconvert',
+    'jupyter',
+    'pillow',
+    'nose',
 ]
-assert 0 == run('pip install {} --pre'.format(' '.join(dependencies)))
+assert 0 == run('pip install {} --pre --progress-bar off'.format(' '.join(dependencies)))
 # install einops
 assert 0 == run('pip install -e .')
 
