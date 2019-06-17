@@ -7,4 +7,4 @@ python:
 install:
   - docker pull python:3.7-stretch
 script:
-  - docker run -it `pwd`:/einops/ python:3.7-stretch bash -c 'python /einops/test.py'
+  - docker run -it --rm -v $(pwd):/einops/ python:3.7-stretch bash -c 'python /einops/test.py'
