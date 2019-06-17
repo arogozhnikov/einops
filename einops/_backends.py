@@ -379,7 +379,7 @@ class TensorflowBackend(AbstractBackend):
 
     def from_numpy(self, x):
         assert self.tf.executing_eagerly()
-        return self.tf.contrib.eager.Variable(x)
+        return self.tf.convert_to_tensor(x)
 
     def to_numpy(self, x):
         assert self.tf.executing_eagerly()
