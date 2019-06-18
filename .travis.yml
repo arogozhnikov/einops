@@ -1,10 +1,14 @@
 services:
   - docker
 dist: xenial
-language: python
-python:
-  - "3.7"
+language: generic
+matrix:
+  include:
+  - name: python3.5
+    env: DOCKERIMAGE=python:3.5-stretch
+  - name: python3.7
+    env: DOCKERIMAGE=python:3.7-stretch
 install:
-  - docker pull python:3.7-stretch
+  - docker pull $DOCKERIMAGE
 script:
-  - docker run -it --rm -v $(pwd):/einops/ python:3.7-stretch bash -c 'python /einops/test.py'
+  - docker run -it --rm -v $(pwd):/einops/ $DOCKERIMAGE bash -c 'python /einops/test.py'
