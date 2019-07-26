@@ -28,7 +28,15 @@ def get_backend(tensor):
         if backend.is_appropriate_type(tensor):
             return backend
 
-    for BackendSubclass in AbstractBackend.__subclasses__():
+    # Find backend subclasses recursively
+    backend_subclasses = []
+    backends = AbstractBackend.__subclasses__()
+    while backends:
+        backend = backends.pop()
+        backends += backend.__subclasses__()
+        backend_subclasses.append(backend)
+
+    for BackendSubclass in backend_subclasses:
         if _debug_importing:
             print('Testing for subclass of ', BackendSubclass)
         if BackendSubclass.framework_name not in _backends:
@@ -145,6 +153,23 @@ class NumpyBackend(AbstractBackend):
 
     def is_float_type(self, x):
         return x.dtype in ('float16', 'float32', 'float64', 'float128')
+
+
+class JaxBackend(NumpyBackend):
+    framework_name = 'jax'
+
+    def __init__(self):
+        super(JaxBackend, self).__init__()
+        self.onp = self.np
+
+        import jax.numpy
+        self.np = jax.numpy
+
+    def from_numpy(self, x):
+        return self.np.asarray(x)
+
+    def to_numpy(self, x):
+        return self.onp.asarray(x)
 
 
 class GluonBackend(AbstractBackend):
