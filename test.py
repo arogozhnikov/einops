@@ -5,7 +5,6 @@ Usage: python test.py
 3. Runs tests
 """
 
-import sys
 import os
 from subprocess import Popen, PIPE
 from pathlib import Path
@@ -39,6 +38,8 @@ dependencies = [
     'tensorflow',
     'chainer',
     'keras',
+    'jax',
+    'jaxlib',
     'nbformat',
     'nbconvert',
     'jupyter',

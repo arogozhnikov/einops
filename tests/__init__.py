@@ -1,6 +1,7 @@
 import os
 
 from einops import _backends
+import warnings
 
 __author__ = 'Alex Rogozhnikov'
 
@@ -40,6 +41,7 @@ def collect_test_backends(symbolic=False, layers=False):
     if not symbolic:
         if not layers:
             backend_types = [_backends.NumpyBackend,
+                             _backends.JaxBackend,
                              _backends.TorchBackend,
                              _backends.GluonBackend,
                              _backends.ChainerBackend,
@@ -67,5 +69,5 @@ def collect_test_backends(symbolic=False, layers=False):
         try:
             result.append(backend_type())
         except ImportError:
-            pass
+            warnings.warn('backend could not be initialized for tests: ', backend_type)
     return result
