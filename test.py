@@ -15,8 +15,7 @@ __author__ = 'Alex Rogozhnikov'
 def run(cmd, **env):
     # keeps printing output when testing
     cmd = cmd.split(' ') if isinstance(cmd, str) else cmd
-    p = Popen(cmd, stdout=sys.stdout, stderr=sys.stderr,
-              cwd=str(Path(__file__).parent), env={**os.environ, **env})
+    p = Popen(cmd, cwd=str(Path(__file__).parent), env={**os.environ, **env})
     p.communicate()
     return p.returncode
 
@@ -53,9 +52,9 @@ assert 0 == run('pip install -e .')
 
 # we need to run tests twice
 # - once for tensorflow eager
-return_code1 = run('nosetests tests -vds', TF_EAGER='1', EINOPS_SKIP_CUPY='0' if have_cuda else '1')
+return_code1 = run('python -m nose tests -vds', TF_EAGER='1', EINOPS_SKIP_CUPY='0' if have_cuda else '1')
 print('\n' * 5)
 # - and once for symbolic tensorflow
-return_code2 = run('nosetests tests -vds', TF_EAGER='0', EINOPS_SKIP_CUPY='0' if have_cuda else '1')
+return_code2 = run('python -m nose tests -vds', TF_EAGER='0', EINOPS_SKIP_CUPY='0' if have_cuda else '1')
 
 assert return_code1 == 0 and return_code2 == 0
