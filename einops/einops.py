@@ -21,9 +21,7 @@ def _product(sequence):
 
 class EinopsError(RuntimeError):
     """ Runtime error thrown by einops """
-
-    def __init__(self, *args, **kargs):
-        super().__init__(*args, **kargs)
+    pass
 
 
 def _reduce_axes(tensor, reduction_type: str, reduced_axes: Tuple[int], backend):
