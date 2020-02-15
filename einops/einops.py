@@ -12,7 +12,7 @@ _ellipsis = '…'  # NB, this is a single unicode symbol. String is used as it i
 
 
 def _product(sequence):
-    # minimalistic product that works both with numbers and symbols
+    # minimalistic product that works both with numbers and symbols. Supports empty lists
     result = 1
     for element in sequence:
         result *= element
@@ -36,10 +36,10 @@ def _reduce_axes(tensor, reduction_type: str, reduced_axes: Tuple[int], backend)
 
 
 def _optimize_transformation(init_shapes, reduced_axes, axes_reordering, final_shapes):
-    # TODO current transformations are optimal under the assumption of C-order, maybe account for strides?
     # TODO this method is very slow
     assert len(axes_reordering) + len(reduced_axes) == len(init_shapes)
     # joining consecutive axes that will be reduced
+    # possibly we can skip this if all backends can optimize this (not sure)
     reduced_axes = tuple(sorted(reduced_axes))
     for i in range(len(reduced_axes) - 1)[::-1]:
         if reduced_axes[i] + 1 == reduced_axes[i + 1]:
@@ -90,6 +90,9 @@ def _optimize_transformation(init_shapes, reduced_axes, axes_reordering, final_s
 
 
 class TransformRecipe:
+    """
+    Recipe describes actual computation pathway, and can be applied
+    """
     def __init__(self,
                  elementary_axes_lengths: List,
                  # list of expressions (or just sizes) for elementary axes as they appear in left expression

@@ -1,6 +1,6 @@
 """
 Usage: python test.py
-1. Installs part of dependencies
+1. Installs part of dependencies (make sure `which pip` points to correct location)
 2. Installs current version of einops in editable mode
 3. Runs tests
 """
@@ -24,7 +24,7 @@ def run(cmd, **env):
 output, _ = Popen('which nvidia-smi'.split(' '), stdout=PIPE).communicate()
 have_cuda = b'nvidia' in output
 
-# install cupy
+# install cupy. It can't be installed without cuda available (with compilers).
 if have_cuda:
     return_code = run('pip install cupy --pre --progress-bar off')
     assert return_code == 0
