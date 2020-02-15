@@ -25,7 +25,7 @@ Supports numpy, pytorch, tensorflow, and [others](#supported-frameworks).
 - [Tutorial](#Tutorial--Documentation) 
 - [API micro-reference](#API)
 - [Installation](#Installation)
-- [Naming](#Naming-and-terminology)
+- [Naming](#Naming)
 - [Why using einops](#Why-using-einops-notation)
 - [Supported frameworks](#Supported-frameworks)
 - [Contributing](#Contributing)
@@ -115,16 +115,12 @@ numpy_tensor = asnumpy(input_tensor)
 parse_shape(input_tensor, 'batch _ h w') # e.g {'batch': 64, 'h': 128, 'w': 160}
 ```
 
-## Naming and terminology
+## Naming
 
 `einops` stays for Einstein-Inspired Notation for operations 
 (though "Einstein operations" is more attractive and easier to remember).
 
 Notation was loosely inspired by Einstein summation (in particular by `numpy.einsum` operation).
-
-- Terms `tensor` and `ndarray` are equivalently used and refer to multidimensional array 
-- Terms `axis` and `dimension` are also equivalent
-
 
 ## Why using `einops` notation
 
@@ -223,18 +219,19 @@ Einops works with ...
 - [chainer](https://chainer.org/)
 - [gluon](https://mxnet.apache.org/)
 - [tensorflow](https://www.tensorflow.org/)
+- [keras](https://keras.io/) and [tf.keras](https://www.tensorflow.org/guide/keras)
 - [mxnet](https://gluon.mxnet.io/) (experimental)
-- [keras](https://keras.io/) and [tf.keras](https://www.tensorflow.org/guide/keras) (both experimental)
+- [jax](https://github.com/google/jax) (experimental)
 
 ## Contributing 
 
 Best ways to contribute are
 
-- test and share your feedback. Experimental APIs currently require third-party testing. 
+- share your feedback. Experimental APIs currently require third-party testing.
 - spread the word about `einops`
-- **prepare a guide/post/tutorial** for your favorite deep learning framework
+- if you like explaining things, alternative tutorials can be helpful
 - translating examples in languages other than English is also a good idea 
-- use `einops` notation in your papers to strictly define used operations
+- finally, use `einops` notation in your papers to strictly define used operations!
 
 ## Supported python versions
 
