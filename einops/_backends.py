@@ -183,6 +183,8 @@ class GluonBackend(AbstractBackend):
         return isinstance(tensor, self.mx.nd.NDArray)
 
     def from_numpy(self, x):
+        if len(x.shape) == 0:
+            x = x[None]  # poor support of scalars in mxnet, otherwise mxnet can't attach gradients
         var = self.mx.nd.array(x, dtype=x.dtype)
         var.attach_grad()
         return var
