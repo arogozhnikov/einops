@@ -167,6 +167,8 @@ class TransformRecipe:
                     unknown_axis, = unknown_axes
                     axes_lengths[unknown_axis] = length // known_product
 
+        # at this point all axes_lengths are computed (either have values or variables, but not Nones)
+
         init_shapes = axes_lengths
         reduced_axes_lengths = [dim for i, dim in enumerate(axes_lengths) if i not in self.reduced_elementary_axes]
         final_shapes = []
@@ -175,10 +177,7 @@ class TransformRecipe:
                 final_shapes.extend(ellipsis_shape)
             else:
                 lengths = [reduced_axes_lengths[elementary_axis] for elementary_axis in grouping]
-                if any(l is None for l in lengths):
-                    final_shapes.append(None)
-                else:
-                    final_shapes.append(_product(lengths))
+                final_shapes.append(_product(lengths))
         reduced_axes = self.reduced_elementary_axes
         axes_reordering = self.final_axes_grouping_flat
         if optimize:
