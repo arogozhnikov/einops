@@ -2,12 +2,12 @@
 Backends in `einops` are organized to meet the following requirements
 - backends are not imported unless those are actually needed, because
     - backends may not be installed
-    - importing all backends will drive to significant memory footprint
+    - importing all available backends will drive to significant memory footprint
     - backends may by present but installed with errors (but never used),
       importing may drive to crashes
 - backend should be either symbolic or imperative (tensorflow is for both, but that causes problems)
     - this determines which methods (from_numpy/to_numpy or create_symbol/eval_symbol) should be defined
-- if backend can't (temporarily) provide symbols for shapes, UnknownSize objects are used
+- if backend can't (temporarily) provide symbols for shape dimensions, UnknownSize objects are used
 """
 
 import sys
@@ -73,8 +73,8 @@ class AbstractBackend:
         raise NotImplementedError("framework doesn't support symbolic computations")
 
     def arange(self, start, stop):
-        # TODO arange should return tensors on a particular device?
-        raise NotImplementedError("framework doesn't arange")
+        # supplementary method used only in testing, so should implement CPU version
+        raise NotImplementedError("framework doesn't implement arange")
 
     def shape(self, x):
         """shape should return a tuple with integers or "shape symbols" (which will evaluate to actual size)"""
@@ -374,7 +374,6 @@ class ChainerBackend(AbstractBackend):
         return x
 
     def arange(self, start, stop):
-        # TODO cupy / numpy?
         return self.numpy.arange(start, stop)
 
     def reduce(self, x, operation, axes):
