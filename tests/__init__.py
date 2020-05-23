@@ -69,5 +69,5 @@ def collect_test_backends(symbolic=False, layers=False):
         try:
             result.append(backend_type())
         except ImportError:
-            warnings.warn('backend could not be initialized for tests: ', backend_type)
+            warnings.warn('backend could not be initialized for tests: {}'.format(backend_type))
     return result
