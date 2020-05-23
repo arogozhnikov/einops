@@ -31,7 +31,7 @@ class RearrangeMixin:
     def recipe(self) -> TransformRecipe:
         try:
             hashable_lengths = tuple(sorted(self.axes_lengths.items()))
-            return _prepare_transformation_recipe(self.pattern, reduction='rearrange', axes_lengths=hashable_lengths)
+            return _prepare_transformation_recipe(self.pattern, operation='rearrange', axes_lengths=hashable_lengths)
         except EinopsError as e:
             raise EinopsError(' Error while preparing {!r}\n {}'.format(self, e))
 
@@ -70,7 +70,7 @@ class ReduceMixin:
     def recipe(self) -> TransformRecipe:
         try:
             hashable_lengths = tuple(sorted(self.axes_lengths.items()))
-            return _prepare_transformation_recipe(self.pattern, reduction=self.reduction, axes_lengths=hashable_lengths)
+            return _prepare_transformation_recipe(self.pattern, operation=self.reduction, axes_lengths=hashable_lengths)
         except EinopsError as e:
             raise EinopsError(' Error while preparing {!r}\n {}'.format(self, e))
 
