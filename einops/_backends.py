@@ -19,7 +19,7 @@ _backends = {}
 _debug_importing = False
 
 
-def get_backend(tensor):
+def get_backend(tensor) -> 'AbstractBackend':
     """
     Takes a correct backend (e.g. numpy backend if tensor is numpy.ndarray) for a tensor.
     If needed, imports package and creates backend
@@ -92,7 +92,18 @@ class AbstractBackend:
     def stack_on_zeroth_dimension(self, tensors: list):
         raise NotImplementedError()
 
+    def add_axis(self, x, new_position):
+        raise NotImplementedError()
+
+    def add_axes(self, x, n_axes, pos2len):
+        repeats = [1] * n_axes
+        for axis_position, axis_length in pos2len.items():
+            x = self.add_axis(x, axis_position)
+            repeats[axis_position] = axis_length
+        return self.tile(x, tuple(repeats))
+
     def tile(self, x, repeats):
+        """repeats is a number of  """
         raise NotImplementedError()
 
     def is_float_type(self, x):
@@ -154,6 +165,9 @@ class NumpyBackend(AbstractBackend):
     def is_float_type(self, x):
         return x.dtype in ('float16', 'float32', 'float64', 'float128')
 
+    def add_axis(self, x, new_position):
+        return self.np.expand_dims(x, new_position)
+
 
 class JaxBackend(NumpyBackend):
     framework_name = 'jax'
@@ -205,6 +219,9 @@ class GluonBackend(AbstractBackend):
 
     def tile(self, x, repeats):
         return self.mx.nd.tile(x, repeats)
+
+    def add_axis(self, x, new_position):
+        return self.mx.nd.expand_dims(x, new_position)
 
     def is_float_type(self, x):
         return 'float' in str(x.dtype)
@@ -264,6 +281,9 @@ class MXNetBackend(AbstractBackend):
     def tile(self, x, repeats):
         return self.mx.symbol.tile(x, repeats)
 
+    def add_axis(self, x, new_position):
+        return self.mx.symbol.expand_dims(x, new_position)
+
     def is_float_type(self, x):
         return 'float' in str(x.infer_type()[1][0])
 
@@ -316,6 +336,9 @@ class TorchBackend(AbstractBackend):
     def tile(self, x, repeats):
         return x.repeat(repeats)
 
+    def add_axis(self, x, new_position):
+        return self.torch.unsqueeze(x, new_position)
+
     def is_float_type(self, x):
         return x.dtype in [self.torch.float16, self.torch.float32, self.torch.float64]
 
@@ -348,6 +371,9 @@ class CupyBackend(AbstractBackend):
 
     def tile(self, x, repeats):
         return self.cupy.tile(x, repeats)
+
+    def add_axis(self, x, new_position):
+        return self.cupy.expand_dims(x, new_position)
 
     def is_float_type(self, x):
         return x.dtype in ('float16', 'float32', 'float64', 'float128')
@@ -384,6 +410,9 @@ class ChainerBackend(AbstractBackend):
 
     def tile(self, x, repeats):
         return self.chainer.functions.tile(x, repeats)
+
+    def add_axis(self, x, new_position):
+        return self.chainer.functions.expand_dims(x, new_position)
 
     def is_float_type(self, x):
         return x.dtype in ('float16', 'float32', 'float64', 'float128')
@@ -426,7 +455,7 @@ class TensorflowBackend(AbstractBackend):
     def shape(self, x):
         if self.tf.executing_eagerly():
             return tuple(int(d) for d in x.shape)
-        else: 
+        else:
             static_shape = x.shape.as_list()
             tf_shape = self.tf.shape(x)
 
@@ -448,6 +477,9 @@ class TensorflowBackend(AbstractBackend):
 
     def tile(self, x, repeats):
         return self.tf.tile(x, repeats)
+
+    def add_axis(self, x, new_position):
+        return self.tf.expand_dims(x, new_position)
 
     def is_float_type(self, x):
         return x.dtype in ('float16', 'float32', 'float64', 'float128')
@@ -493,6 +525,9 @@ class KerasBackend(AbstractBackend):
 
     def tile(self, x, repeats):
         return self.K.tile(x, repeats)
+
+    def add_axis(self, x, new_position):
+        return self.K.expand_dims(x, new_position)
 
     def is_float_type(self, x):
         return 'float' in self.K.dtype(x)
