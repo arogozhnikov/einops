@@ -100,11 +100,11 @@ def test_rearrange_consistency_numpy():
     shape = [1, 2, 3, 5, 7, 11]
     x = numpy.arange(numpy.prod(shape)).reshape(shape)
     for pattern in [
-        'a b c d e f-> a b c d e f',
-        'b a c d e f-> a b d e f c',
-        'a b c d e f-> f e d c b a',
-        'a b c d e f-> (f e) d (c b a)',
-        'a b c d e f-> (f e d c b a)',
+        'a b c d e f -> a b c d e f',
+        'b a c d e f -> a b d e f c',
+        'a b c d e f -> f e d c b a',
+        'a b c d e f -> (f e) d (c b a)',
+        'a b c d e f -> (f e d c b a)',
     ]:
         result = rearrange(x, pattern)
         assert len(numpy.setdiff1d(x, result)) == 0
@@ -371,7 +371,7 @@ def test_rearrange_examples():
         x = x + rearrange(y, 'b (dt c) t -> b c (t dt)', dt=2)
         return x
 
-    # mock for convolution that works for all backends
+    # mock for convolution (works for all backends)
     convolve_mock = lambda x: x
 
     tests = [test1, test2, test3, test4, test5, test6, test7, test8, test9, test10, test11,
@@ -621,4 +621,63 @@ def test_tiling_symbolic():
 
             sym = backend.create_symbol([None] * len(input.shape))
             result = backend.eval_symbol(backend.tile(sym, repeats), [[sym, input]])
+            assert numpy.array_equal(result, expected)
+
+
+repeat_test_cases = [
+    # all assume that input has shape [2, 3, 5]
+    ('a b c -> c a b', dict()),
+    ('a b c -> (c copy a b)', dict(copy=2, a=2, b=3, c=5)),
+    ('a b c -> (a copy) b c ', dict(copy=1)),
+    ('a b c -> (c a) (copy1 b copy2)', dict(a=2, copy1=1, copy2=2)),
+    ('a ...  -> a ... copy', dict(copy=4)),
+    ('... c -> ... (copy1 c copy2)', dict(copy1=1, copy2=2)),
+    ('...  -> ... ', dict()),
+    (' ...  -> copy1 ... copy2 ', dict(copy1=2, copy2=3)),
+    ('a b c  -> copy1 a copy2 b c () ', dict(copy1=2, copy2=1)),
+]
+
+
+def test_repeat_numpy():
+    x = numpy.arange(2 * 3 * 5).reshape(2, 3, 5)
+    x1 = reduce(x, 'a b c -> copy a b c ', reduction='repeat', copy=1)
+    assert numpy.array_equal(x[None], x1)
+
+    def check_reversion(x, repeat_pattern, **sizes):
+        left, right = repeat_pattern.split('->')
+        reduce_pattern = right + '->' + left
+        repeated = reduce(x, repeat_pattern, reduction='repeat', **sizes)
+        reduced_min = reduce(repeated, reduce_pattern, reduction='min', **sizes)
+        reduced_max = reduce(repeated, reduce_pattern, reduction='max', **sizes)
+        assert numpy.array_equal(x, reduced_min)
+        assert numpy.array_equal(x, reduced_max)
+
+    for pattern, axis_dimensions in repeat_test_cases:
+        check_reversion(x, pattern, **axis_dimensions)
+
+
+def test_repeat_imperatives():
+    x = numpy.arange(2 * 3 * 5).reshape(2, 3, 5)
+    for backend in imp_op_backends:
+        print('Repeat tests for ', backend.framework_name)
+
+        for pattern, axis_dimensions in repeat_test_cases:
+            expected = reduce(x, pattern, reduction='repeat', **axis_dimensions)
+            converted = backend.from_numpy(x)
+            repeated = reduce(converted, pattern, reduction='repeat', **axis_dimensions)
+            result = backend.to_numpy(repeated)
+            assert numpy.array_equal(result, expected)
+
+
+def test_repeat_symbolic():
+    x = numpy.arange(2 * 3 * 5).reshape(2, 3, 5)
+
+    for backend in sym_op_backends:
+        print('Repeat tests for ', backend.framework_name)
+
+        for pattern, axis_dimensions in repeat_test_cases:
+            expected = reduce(x, pattern, reduction='repeat', **axis_dimensions)
+
+            sym = backend.create_symbol(x.shape)
+            result = backend.eval_symbol(reduce(sym, pattern, reduction='repeat', **axis_dimensions), [[sym, x]])
             assert numpy.array_equal(result, expected)
