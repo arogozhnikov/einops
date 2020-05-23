@@ -492,6 +492,43 @@ def rearrange(tensor, pattern, **axes_lengths):
     return reduce(tensor, pattern, reduction='rearrange', **axes_lengths)
 
 
+def repeat(tensor, pattern, **axes_lengths):
+    """
+    einops.repeat allows reordering elements and repeating them in arbitrary combinations.
+    This operation includes functionality of repeat, tile, broadcast functions.
+
+    Examples for repeat operation:
+    >>> # a grayscale image (of shape height x width)
+    >>> image = np.random.randn(30, 40)
+    >>> # change it to RGB format by repeating in each channel
+    >>> repeat(image, 'h w -> h w c', c=3).shape
+    (30, 40, 3)
+    >>> # repeat image 2 times along height (vertical axis)
+    >>> repeat(image, 'h w -> (repeat h) w', repeat=2).shape
+    (60, 40)
+    >>> # repeat image 2 time along height and 3 times along width
+    >>> repeat(image, 'h w -> h (repeat w)', repeat=3).shape
+    (30, 120)
+    >>> # convert each pixel to a small square 2x2. Upsample image by 2x
+    >>> repeat(image, 'h w -> (h h2) (w w2)', h2=2, w2=2).shape
+    (60, 80)
+    >>> # pixelate image first by downsampling by 2x, then upsampling
+    >>> downsampled = reduce(image, '(h h2) (w w2) -> h w', 'mean', h2=2, w2=2)
+    >>> repeat(downsampled, 'h w -> (h h2) (w w2)', h2=2, w2=2).shape
+    (30, 40)
+
+    :param tensor: tensor of any supported library (e.g. numpy.ndarray, tensorflow, pytorch, mxnet.ndarray).
+            list of tensors is also accepted, those should be of the same type and shape
+    :param pattern: string, rearrangement pattern
+    :param axes_lengths: any additional specifications for dimensions
+    :return: tensor of the same type as input. If possible, a view to the original tensor is returned.
+
+    When composing axes, C-order enumeration used (consecutive elements have different last axis)
+    Find more examples in einops tutorial.
+    """
+    return reduce(tensor, pattern, reduction='repeat', **axes_lengths)
+
+
 def parse_shape(x, pattern: str):
     """
     Parse a tensor shape to dictionary mapping axes names to their lengths.
