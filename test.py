@@ -31,7 +31,8 @@ if have_cuda:
 
 # install dependencies
 dependencies = [
-    'numpy',
+    # TODO remove numpy version
+    'numpy==1.18',
     'mxnet',
     'torch',
     'tensorflow',
