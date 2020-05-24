@@ -323,7 +323,7 @@ def _prepare_transformation_recipe(pattern: str, operation: str, axes_lengths: T
     elif operation in _reductions:
         difference = set.difference(identifiers_rght, identifiers_left)
         if len(difference) > 0:
-            raise EinopsError('Unexpected identifiers on the right side of {}: {}'.format(operation, difference))
+            raise EinopsError('Unexpected identifiers on the right side of reduce {}: {}'.format(operation, difference))
     else:
         raise EinopsError('Unknown reduction {}. Expect one of {}.'.format(operation, _reductions))
 
@@ -366,7 +366,7 @@ def _prepare_transformation_recipe(pattern: str, operation: str, axes_lengths: T
             ([axis_name2position[axis] for axis in known], [axis_name2position[axis] for axis in unknown]))
 
     axis_position_after_reduction = {}
-    for axis_name, position in axis_name2position.items():
+    for axis_name in itertools.chain(*composite_axes_left):
         if axis_name in identifiers_rght:
             axis_position_after_reduction[axis_name] = len(axis_position_after_reduction)
 
