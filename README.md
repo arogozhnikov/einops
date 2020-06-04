@@ -60,11 +60,13 @@ pip install https://github.com/arogozhnikov/einops/archive/master.zip
 
 Two operations provided (see [einops tutorial](https://github.com/arogozhnikov/einops/blob/master/docs/) for examples)
 ```python
-from einops import rearrange, reduce
+from einops import rearrange, reduce, repeat
 # rearrange elements according to the pattern
 output_tensor = rearrange(input_tensor, 't b c -> b c t')
 # combine rearrangement and reduction
 output_tensor = reduce(input_tensor, 'b c (h h2) (w w2) -> b h w c', 'mean', h2=2, w2=2)
+# copy along a new axis 
+output_tensor = repeat(input_tensor, 'h w -> h w c', c=3)
 ```
 And two corresponding layers (`einops` keeps separate version for each framework) with the same API.
 
@@ -131,7 +133,7 @@ Notation was loosely inspired by Einstein summation (in particular by `numpy.ein
 y = x.view(x.shape[0], -1)
 y = rearrange(x, 'b c h w -> b (c h w)')
 ```
-while these two lines are doing the same job in some context,
+while these two lines are doing the same job in *some* context,
 second one provides information about input and output.
 In other words, `einops` focuses on interface: *what is input and output*, not *how* output is computed.
 
@@ -155,7 +157,7 @@ y = rearrange(x, 'b c h w -> b (c h w)')
 second line checks that input has four dimensions, 
 but you can also specify particular dimensions. 
 That's opposed to just writing comments about shapes since 
-[comments don't work](https://medium.freecodecamp.org/code-comments-the-good-the-bad-and-the-ugly-be9cc65fbf83)
+[comments don't work and don't prevent mistakes](https://medium.freecodecamp.org/code-comments-the-good-the-bad-and-the-ugly-be9cc65fbf83)
 as we know   
 ```python
 y = x.view(x.shape[0], -1) # x: (batch, 256, 19, 19)
@@ -205,6 +207,24 @@ Suppose `x` shape was `(3, 4, 5)`, then `y` has shape ...
 - numpy, cupy, chainer: `(60,)`
 - keras, tensorflow.layers, mxnet and gluon: `(3, 20)`
 - pytorch: no such function
+
+### Independence of framework terminology
+
+Example: tile vs repeat causes lots of confusion. To copy image along width:
+```python
+np.tile(image, (1, 2))    # in numpy
+image.repeat(1, 2)        # pytorch's repeat ~ numpy's tile
+```
+
+With einops you don't need to decipher which axis was repeated:
+```python
+repeat(image, 'h w -> h (tile w)', tile=2)  # in numpy
+repeat(image, 'h w -> h (tile w)', tile=2)  # in pytorch
+repeat(image, 'h w -> h (tile w)', tile=2)  # in tf
+repeat(image, 'h w -> h (tile w)', tile=2)  # in jax
+repeat(image, 'h w -> h (tile w)', tile=2)  # in mxnet
+... (etc.)
+```
 
 <!-- TODO examples for depth-to-space and pixel shuffle? transpose vs permute? torch.repeat is numpy.tile -->
 
