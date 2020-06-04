@@ -320,6 +320,9 @@ def _prepare_transformation_recipe(pattern: str, operation: str, axes_lengths: T
         difference = set.difference(identifiers_left, identifiers_rght)
         if len(difference) > 0:
             raise EinopsError('Unexpected identifiers on the left side of repeat: {}'.format(difference))
+        axes_without_size = set.difference(identifiers_rght, {*identifiers_left, *(ax for ax, _ in axes_lengths)})
+        if len(axes_without_size) > 0:
+            raise EinopsError('Specify sizes for new axes in repeat: {}'.format(axes_without_size))
     elif operation in _reductions:
         difference = set.difference(identifiers_rght, identifiers_left)
         if len(difference) > 0:
