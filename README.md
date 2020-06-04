@@ -178,7 +178,6 @@ These details are ignored, since *usually* it makes no difference,
 but it can make a big difference (e.g. if you use grouped convolutions on the next stage), 
 and you'd like to specify this in your code.
 
-<!-- TODO add example with 1d elements? -->
 
 ### Uniformity
 
@@ -226,7 +225,7 @@ repeat(image, 'h w -> h (tile w)', tile=2)  # in mxnet
 ... (etc.)
 ```
 
-<!-- TODO examples for depth-to-space and pixel shuffle? transpose vs permute? torch.repeat is numpy.tile -->
+<!-- TODO examples for depth-to-space and pixel shuffle? transpose vs permute? -->
 
 ## Supported frameworks
 
@@ -247,16 +246,15 @@ Einops works with ...
 
 Best ways to contribute are
 
-- share your feedback. Experimental APIs currently require third-party testing.
 - spread the word about `einops`
-- if you like explaining things, alternative tutorials can be helpful
+- if you like explaining things, alternative tutorials would be very helpful
+  - some people grasp `einops` ideas immediately, while many others need help-by-example
 - translating examples in languages other than English is also a good idea 
-- finally, use `einops` notation in your papers to strictly define used operations!
+- use `einops` notation in your papers to strictly define used operations!
 
 ## Supported python versions
 
 `einops` works with python 3.5 or later. 
 
 There is nothing specific to python 3 in the code, 
-we simply [need to move further](http://github.com/arogozhnikov/python3_with_pleasure) 
-and the decision is not to support python 2.
+we simply [need to move further](http://github.com/arogozhnikov/python3_with_pleasure).
