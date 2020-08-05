@@ -58,7 +58,7 @@ pip install https://github.com/arogozhnikov/einops/archive/master.zip
 
 `einops` has a minimalistic yet powerful API.
 
-Two operations are provided (see [einops tutorial](https://github.com/arogozhnikov/einops/blob/master/docs/) for examples)
+Three operations are provided (see [einops tutorial](https://github.com/arogozhnikov/einops/blob/master/docs/) for examples)
 
 ```python
 from einops import rearrange, reduce, repeat
@@ -109,6 +109,7 @@ model = Sequential(
 )
 ```
 
+<!---
 Additionally two auxiliary functions provided
 ```python
 from einops import asnumpy, parse_shape
@@ -117,6 +118,7 @@ numpy_tensor = asnumpy(input_tensor)
 # einops.parse_shape gives a shape of axes of interest 
 parse_shape(input_tensor, 'batch _ h w') # e.g {'batch': 64, 'h': 128, 'w': 160}
 ```
+-->
 
 ## Naming
 
