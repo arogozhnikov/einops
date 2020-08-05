@@ -34,7 +34,7 @@ Supports numpy, pytorch, tensorflow, and [others](#supported-frameworks).
 
 ## Tutorial / Documentation 
 
-Tutorial is the most convenient way to see `einops` in action (and right now works as a documentation)
+Tutorials are the most convenient way to see `einops` in action (and right now works as a documentation)
 
 - part 1: [einops fundamentals](https://github.com/arogozhnikov/einops/blob/master/docs/1-einops-basics.ipynb) 
 - part 2: [einops for deep learning](https://github.com/arogozhnikov/einops/blob/master/docs/2-einops-for-deep-learning.ipynb)
@@ -56,9 +56,10 @@ pip install https://github.com/arogozhnikov/einops/archive/master.zip
 
 ## API 
 
-`einops` has minimalistic and powerful API.
+`einops` has a minimalistic yet powerful API.
 
-Two operations provided (see [einops tutorial](https://github.com/arogozhnikov/einops/blob/master/docs/) for examples)
+Two operations are provided (see [einops tutorial](https://github.com/arogozhnikov/einops/blob/master/docs/) for examples)
+
 ```python
 from einops import rearrange, reduce, repeat
 # rearrange elements according to the pattern
@@ -68,7 +69,7 @@ output_tensor = reduce(input_tensor, 'b c (h h2) (w w2) -> b h w c', 'mean', h2=
 # copy along a new axis 
 output_tensor = repeat(input_tensor, 'h w -> h w c', c=3)
 ```
-And two corresponding layers (`einops` keeps separate version for each framework) with the same API.
+And two corresponding layers (`einops` keeps a separate version for each framework) with the same API.
 
 ```python
 from einops.layers.chainer import Rearrange, Reduce
@@ -78,8 +79,8 @@ from einops.layers.torch import Rearrange, Reduce
 from einops.layers.tensorflow import Rearrange, Reduce
 ```
 
-Layers behave similarly to operations and have same parameters 
-(for the exception of first argument, which is passed during call)
+Layers behave similarly to operations and have the same parameters 
+(with the exception of the first argument, which is passed during call)
 
 ```python
 layer = Rearrange(pattern, **axes_lengths)
@@ -119,12 +120,12 @@ parse_shape(input_tensor, 'batch _ h w') # e.g {'batch': 64, 'h': 128, 'w': 160}
 
 ## Naming
 
-`einops` stays for Einstein-Inspired Notation for operations 
+`einops` stands for Einstein-Inspired Notation for operations 
 (though "Einstein operations" is more attractive and easier to remember).
 
 Notation was loosely inspired by Einstein summation (in particular by `numpy.einsum` operation).
 
-## Why using `einops` notation
+## Why use `einops` notation?!
 
 
 ### Semantic information (being verbose in expectations)
@@ -133,28 +134,30 @@ Notation was loosely inspired by Einstein summation (in particular by `numpy.ein
 y = x.view(x.shape[0], -1)
 y = rearrange(x, 'b c h w -> b (c h w)')
 ```
-while these two lines are doing the same job in *some* context,
-second one provides information about input and output.
-In other words, `einops` focuses on interface: *what is input and output*, not *how* output is computed.
+While these two lines are doing the same job in *some* context,
+the second one provides information about the input and output.
+In other words, `einops` focuses on interface: *what is the input and output*, not *how* the output is computed.
 
 The next operation looks similar:
+
 ```python
 y = rearrange(x, 'time c h w -> time (c h w)')
 ```
-But it gives reader a hint: 
+but it gives the reader a hint: 
 this is not an independent batch of images we are processing, 
 but rather a sequence (video). 
 
-Semantic information makes code easier to read and maintain. 
+Semantic information makes the code easier to read and maintain. 
 
 ### More checks
 
 Reconsider the same example:
+
 ```python
 y = x.view(x.shape[0], -1) # x: (batch, 256, 19, 19)
 y = rearrange(x, 'b c h w -> b (c h w)')
 ```
-second line checks that input has four dimensions, 
+The second line checks that the input has four dimensions, 
 but you can also specify particular dimensions. 
 That's opposed to just writing comments about shapes since 
 [comments don't work and don't prevent mistakes](https://medium.freecodecamp.org/code-comments-the-good-the-bad-and-the-ugly-be9cc65fbf83)
@@ -166,16 +169,16 @@ y = rearrange(x, 'b c h w -> b (c h w)', c=256, h=19, w=19)
 
 ### Result is strictly determined
 
-Below we have at least two ways to define depth-to-space operation
+Below we have at least two ways to define the depth-to-space operation
 ```python
 # depth-to-space
 rearrange(x, 'b c (h h2) (w w2) -> b (c h2 w2) h w', h2=2, w2=2)
 rearrange(x, 'b c (h h2) (w w2) -> b (h2 w2 c) h w', h2=2, w2=2)
 ```
-there are at least four more ways to do it. Which one is used by the framework?
+There are at least four more ways to do it. Which one is used by the framework?
 
 These details are ignored, since *usually* it makes no difference, 
-but it can make a big difference (e.g. if you use grouped convolutions on the next stage), 
+but it can make a big difference (e.g. if you use grouped convolutions in the next stage), 
 and you'd like to specify this in your code.
 
 <!-- TODO add example with 1d elements? -->
@@ -188,9 +191,10 @@ reduce(x, 'b c (x dx) (y dx) -> b c x y', 'max', dx=2, dy=3)
 reduce(x, 'b c (x dx) (y dx) (z dz)-> b c x y z', 'max', dx=2, dy=3, dz=4)
 ```
 These examples demonstrated that we don't use separate operations for 1d/2d/3d pooling, 
-those all are defined in a uniform way. 
+those are all defined in a uniform way. 
 
-Space-to-depth and depth-to space are defined in many frameworks. But how about width-to-height?
+Space-to-depth and depth-to space are defined in many frameworks but how about width-to-height?
+
 ```python
 rearrange(x, 'b c h (w w2) -> b c (h w2) w', w2=2)
 ```
@@ -203,14 +207,14 @@ Even simple functions are defined differently by different frameworks
 y = x.flatten() # or flatten(x)
 ```
 
-Suppose `x` shape was `(3, 4, 5)`, then `y` has shape ...
+Suppose `x`'s shape was `(3, 4, 5)`, then `y` has shape ...
 - numpy, cupy, chainer: `(60,)`
 - keras, tensorflow.layers, mxnet and gluon: `(3, 20)`
 - pytorch: no such function
 
 ### Independence of framework terminology
 
-Example: tile vs repeat causes lots of confusion. To copy image along width:
+Example: `tile` vs `repeat` causes lots of confusion. To copy image along width:
 ```python
 np.tile(image, (1, 2))    # in numpy
 image.repeat(1, 2)        # pytorch's repeat ~ numpy's tile
