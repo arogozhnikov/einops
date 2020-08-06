@@ -189,8 +189,8 @@ and you'd like to specify this in your code.
 
 ```python
 reduce(x, 'b c (x dx) -> b c x', 'max', dx=2)
-reduce(x, 'b c (x dx) (y dx) -> b c x y', 'max', dx=2, dy=3)
-reduce(x, 'b c (x dx) (y dx) (z dz)-> b c x y z', 'max', dx=2, dy=3, dz=4)
+reduce(x, 'b c (x dx) (y dy) -> b c x y', 'max', dx=2, dy=3)
+reduce(x, 'b c (x dx) (y dy) (z dz)-> b c x y z', 'max', dx=2, dy=3, dz=4)
 ```
 These examples demonstrated that we don't use separate operations for 1d/2d/3d pooling, 
 those are all defined in a uniform way. 
