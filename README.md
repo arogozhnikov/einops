@@ -20,6 +20,19 @@ Supports numpy, pytorch, tensorflow, and [others](#supported-frameworks).
   <br><br>
 </div> -->
 
+## Tweets 
+
+> In case you need convincing arguments for setting aside time to learn about einsum and einops...
+[Tim Rocktäschel, FAIR](https://twitter.com/_rockt/status/1230818967205425152)
+
+> Writing better code with PyTorch and einops 👌
+[Andrej Karpathy, AI at Tesla](https://twitter.com/karpathy/status/1290826075916779520)
+
+> Slowly but surely, einops is seeping in to every nook and cranny of my code. If you find yourself shuffling around bazillion dimensional tensors, this might change your life
+[Nasim Rahaman, MILA (Montreal)](https://twitter.com/nasim_rahaman/status/1216022614755463169)
+
+
+
 ## Contents
 
 - [Tutorial](#Tutorial--Documentation) 
@@ -47,18 +60,22 @@ Plain and simple:
 pip install einops
 ```
 
+<!--
 `einops` has no mandatory dependencies (code examples also require jupyter, pillow + backends). 
 To obtain the latest github version 
 
 ```bash
 pip install https://github.com/arogozhnikov/einops/archive/master.zip
 ```
+-->
 
 ## API 
 
 `einops` has minimalistic and powerful API.
 
-Two operations provided (see [einops tutorial](https://github.com/arogozhnikov/einops/blob/master/docs/) for examples)
+Three operations provided ([einops tutorial](https://github.com/arogozhnikov/einops/blob/master/docs/) 
+shows those cover stacking, reshape, transposition, squeeze/unsqueeze, repeat, tile, concatenate, view and numerous reductions)
+
 ```python
 from einops import rearrange, reduce, repeat
 # rearrange elements according to the pattern
@@ -108,6 +125,7 @@ model = Sequential(
 )
 ```
 
+<!--
 Additionally two auxiliary functions provided
 ```python
 from einops import asnumpy, parse_shape
@@ -116,6 +134,7 @@ numpy_tensor = asnumpy(input_tensor)
 # einops.parse_shape gives a shape of axes of interest 
 parse_shape(input_tensor, 'batch _ h w') # e.g {'batch': 64, 'h': 128, 'w': 160}
 ```
+-->
 
 ## Naming
 
@@ -233,11 +252,10 @@ Einops works with ...
 
 - [numpy](http://www.numpy.org/)
 - [pytorch](https://pytorch.org/)
-- [tensorflow eager](https://www.tensorflow.org/guide/eager)
+- [tensorflow](https://www.tensorflow.org/), including [eager mode](https://www.tensorflow.org/guide/eager)
 - [cupy](https://cupy.chainer.org/)
 - [chainer](https://chainer.org/)
 - [gluon](https://mxnet.apache.org/)
-- [tensorflow](https://www.tensorflow.org/)
 - [keras](https://keras.io/) and [tf.keras](https://www.tensorflow.org/guide/keras)
 - [mxnet](https://gluon.mxnet.io/) (experimental)
 - [jax](https://github.com/google/jax) (experimental)
@@ -249,12 +267,14 @@ Best ways to contribute are
 - spread the word about `einops`
 - if you like explaining things, alternative tutorials would be very helpful
   - some people grasp `einops` ideas immediately, while many others need help-by-example
-- translating examples in languages other than English is also a good idea 
+- translating examples in languages other than English is also a good idea
 - use `einops` notation in your papers to strictly define used operations!
 
 ## Supported python versions
 
 `einops` works with python 3.5 or later. 
 
+<!--
 There is nothing specific to python 3 in the code, 
 we simply [need to move further](http://github.com/arogozhnikov/python3_with_pleasure).
+-->
