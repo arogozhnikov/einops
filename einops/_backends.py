@@ -111,7 +111,7 @@ class AbstractBackend:
         # Decided to drop average for all backends if type is not floating
         raise NotImplementedError()
 
-    def layers(self, x):
+    def layers(self):
         raise NotImplementedError("backend does not provide layers")
 
     def __repr__(self):
