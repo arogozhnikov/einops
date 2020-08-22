@@ -20,6 +20,19 @@ Supports numpy, pytorch, tensorflow, and [others](#supported-frameworks).
   <br><br>
 </div> -->
 
+## Tweets 
+
+> In case you need convincing arguments for setting aside time to learn about einsum and einops...
+[Tim Rocktäschel, FAIR](https://twitter.com/_rockt/status/1230818967205425152)
+
+> Writing better code with PyTorch and einops 👌
+[Andrej Karpathy, AI at Tesla](https://twitter.com/karpathy/status/1290826075916779520)
+
+> Slowly but surely, einops is seeping in to every nook and cranny of my code. If you find yourself shuffling around bazillion dimensional tensors, this might change your life
+[Nasim Rahaman, MILA (Montreal)](https://twitter.com/nasim_rahaman/status/1216022614755463169)
+
+
+
 ## Contents
 
 - [Tutorial](#Tutorial--Documentation) 
@@ -47,18 +60,21 @@ Plain and simple:
 pip install einops
 ```
 
+<!--
 `einops` has no mandatory dependencies (code examples also require jupyter, pillow + backends). 
 To obtain the latest github version 
 
 ```bash
 pip install https://github.com/arogozhnikov/einops/archive/master.zip
 ```
+-->
 
 ## API 
 
 `einops` has a minimalistic yet powerful API.
 
-Three operations are provided (see [einops tutorial](https://github.com/arogozhnikov/einops/blob/master/docs/) for examples)
+Three operations provided ([einops tutorial](https://github.com/arogozhnikov/einops/blob/master/docs/) 
+shows those cover stacking, reshape, transposition, squeeze/unsqueeze, repeat, tile, concatenate, view and numerous reductions)
 
 ```python
 from einops import rearrange, reduce, repeat
@@ -183,7 +199,6 @@ These details are ignored, since *usually* it makes no difference,
 but it can make a big difference (e.g. if you use grouped convolutions in the next stage), 
 and you'd like to specify this in your code.
 
-<!-- TODO add example with 1d elements? -->
 
 ### Uniformity
 
@@ -232,7 +247,7 @@ repeat(image, 'h w -> h (tile w)', tile=2)  # in mxnet
 ... (etc.)
 ```
 
-<!-- TODO examples for depth-to-space and pixel shuffle? transpose vs permute? torch.repeat is numpy.tile -->
+<!-- TODO examples for depth-to-space and pixel shuffle? transpose vs permute? -->
 
 ## Supported frameworks
 
@@ -240,11 +255,10 @@ Einops works with ...
 
 - [numpy](http://www.numpy.org/)
 - [pytorch](https://pytorch.org/)
-- [tensorflow eager](https://www.tensorflow.org/guide/eager)
+- [tensorflow](https://www.tensorflow.org/), including [eager mode](https://www.tensorflow.org/guide/eager)
 - [cupy](https://cupy.chainer.org/)
 - [chainer](https://chainer.org/)
 - [gluon](https://mxnet.apache.org/)
-- [tensorflow](https://www.tensorflow.org/)
 - [keras](https://keras.io/) and [tf.keras](https://www.tensorflow.org/guide/keras)
 - [mxnet](https://gluon.mxnet.io/) (experimental)
 - [jax](https://github.com/google/jax) (experimental)
@@ -253,16 +267,17 @@ Einops works with ...
 
 Best ways to contribute are
 
-- share your feedback. Experimental APIs currently require third-party testing.
 - spread the word about `einops`
-- if you like explaining things, alternative tutorials can be helpful
-- translating examples in languages other than English is also a good idea 
-- finally, use `einops` notation in your papers to strictly define used operations!
+- if you like explaining things, alternative tutorials would be very helpful
+  - some people grasp `einops` ideas immediately, while many others need help-by-example
+- translating examples in languages other than English is also a good idea
+- use `einops` notation in your papers to strictly define used operations!
 
 ## Supported python versions
 
 `einops` works with python 3.5 or later. 
 
+<!--
 There is nothing specific to python 3 in the code, 
-we simply [need to move further](http://github.com/arogozhnikov/python3_with_pleasure) 
-and the decision is not to support python 2.
+we simply [need to move further](http://github.com/arogozhnikov/python3_with_pleasure).
+-->
