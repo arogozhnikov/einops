@@ -1,14 +1,18 @@
 import functools
 import itertools
+import keyword
+import math
+import warnings
 from collections import OrderedDict
 from typing import Tuple, List, Set, Dict
-
-import math
 
 from ._backends import get_backend
 
 _reductions = ('min', 'max', 'sum', 'mean', 'prod')
 _ellipsis = '…'  # NB, this is a single unicode symbol. String is used as it is not a list, but can be iterated
+
+_ellipsis_free = ' … '
+_ellipsis_parenthesized = '(…)'
 
 
 def _product(sequence):
@@ -213,7 +217,14 @@ def parse_expression(expression: str) -> Tuple[Set[str], List[CompositeAxis]]:
     """
     Parses an indexing expression (for a single tensor).
     Checks uniqueness of names, checks usage of '...' (allowed only once)
-    Returns set of all used identifiers and a list of axis groups.
+    Returns a set of all used identifiers and a list of axis groups.
+    Example:
+    # TODO return anonymous axes in examples
+    # TODO example with parenthesized ellipsis
+    >>> names, structure = parse_expression('axis100 axis_1 (part1 part2) ... () (singleElement)')
+    >>> assert names == {'axis100', 'axis_1', 'part1', 'part2', 'singleElement', '…'}
+    >>> assert structure == [['axis100'], ['axis_1'], ['part1', 'part2'], '…', [], ['singleElement']]
+
     """
     identifiers = set()
     composite_axes = []
@@ -229,7 +240,10 @@ def parse_expression(expression: str) -> Tuple[Set[str], List[CompositeAxis]]:
     def add_axis_name(x):
         if x is not None:
             if x in identifiers:
-                raise ValueError('Indexing expression contains duplicate dimension "{}"'.format(x))
+                raise EinopsError('Indexing expression contains duplicate dimension "{}"'.format(x))
+            is_axis_name, reason = _check_elementary_axis_name(x, return_reason=True)
+            if not is_axis_name:
+                raise EinopsError(f'Invalid axis identifier: {x}\n{reason}')
             identifiers.add(x)
             if bracket_group is None:
                 composite_axes.append([x])
@@ -255,18 +269,12 @@ def parse_expression(expression: str) -> Tuple[Set[str], List[CompositeAxis]]:
                     raise EinopsError('Brackets are not balanced')
                 composite_axes.append(bracket_group)
                 bracket_group = None
-        elif '0' <= char <= '9':
-            if current_identifier is None:
-                raise EinopsError("Axis name can't start with a digit")
-            current_identifier += char
-        elif 'a' <= char <= 'z':
+        elif str.isalnum(char) or char in ['_']:
             if current_identifier is None:
                 current_identifier = char
             else:
                 current_identifier += char
         else:
-            if 'A' <= char <= 'Z':
-                raise EinopsError("Only lower-case latin letters allowed in names, not '{}'".format(char))
             raise EinopsError("Unknown character '{}'".format(char))
 
     if bracket_group is not None:
@@ -275,29 +283,26 @@ def parse_expression(expression: str) -> Tuple[Set[str], List[CompositeAxis]]:
     return identifiers, composite_axes
 
 
-def _parse_composite_axis(composite_axis_name: str):
-    axes_names = [axis for axis in composite_axis_name.split(' ') if len(axis) > 0]
-    for axis in axes_names:
-        if axis == '_':
-            continue
-        assert 'a' <= axis[0] <= 'z'
-        for letter in axis:
-            assert str.isdigit(letter) or 'a' <= letter <= 'z'
-    return axes_names
-
-
-def _check_elementary_axis_name(name: str) -> bool:
+def _check_elementary_axis_name(name: str, return_reason=False):
     """
-    Valid elementary axes contain only lower latin letters and digits and start with a letter.
+    Valid axes names are python identifiers except keywords,
+    and additionally should not start or end with underscore
     """
-    if len(name) == 0:
-        return False
-    if not 'a' <= name[0] <= 'z':
-        return False
-    for letter in name:
-        if (not letter.isdigit()) and not ('a' <= letter <= 'z'):
-            return False
-    return True
+    if not str.isidentifier(name):
+        result = False, 'not a valid python identifier'
+    elif name[0] == '_' or name[-1] == '_':
+        result = False, 'axis name should should not start or end with underscore'
+    else:
+        if keyword.iskeyword(name):
+            warnings.warn(f"It is not recommended to use python keywords as axes names: {name}", RuntimeWarning)
+        if name in ['axis']:
+            warnings.warn("It is discouraged to use 'axis' as an axis name "
+                          "and will raise an error in future", FutureWarning)
+        result = True, None
+    if return_reason:
+        return result
+    else:
+        return result[0]
 
 
 # TODO parenthesis within brackets
@@ -345,7 +350,7 @@ def _prepare_transformation_recipe(pattern: str, operation: str, axes_lengths: T
             axis_name2known_length[axis_name] = None
             repeat_axes_names.append(axis_name)
 
-    axis_name2position = {name: position for position, name in enumerate(axis_name2known_length)}
+    axis_name2position: Dict[str, int] = {name: position for position, name in enumerate(axis_name2known_length)}
     reduced_axes = [position for axis, position in axis_name2position.items() if axis not in identifiers_rght]
 
     for elementary_axis, axis_length in axes_lengths:
