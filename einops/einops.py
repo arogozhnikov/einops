@@ -240,7 +240,7 @@ def parse_expression(expression: str) -> Tuple[Set[str], List[CompositeAxis]]:
                 raise EinopsError('Indexing expression contains duplicate dimension "{}"'.format(x))
             is_axis_name, reason = _check_elementary_axis_name(x, return_reason=True)
             if not is_axis_name:
-                raise EinopsError(f'Invalid axis identifier: {x}\n{reason}')
+                raise EinopsError('Invalid axis identifier: {}\n{}'.format(x, reason))
             identifiers.add(x)
             if bracket_group is None:
                 composite_axes.append([x])
@@ -291,7 +291,7 @@ def _check_elementary_axis_name(name: str, return_reason=False):
         result = False, 'axis name should should not start or end with underscore'
     else:
         if keyword.iskeyword(name):
-            warnings.warn(f"It is not recommended to use python keywords as axes names: {name}", RuntimeWarning)
+            warnings.warn("It is not recommended to use python keywords as axes names: {}".format(name), RuntimeWarning)
         if name in ['axis']:
             warnings.warn("It is discouraged to use 'axis' as an axis name "
                           "and will raise an error in future", FutureWarning)
@@ -347,7 +347,7 @@ def _prepare_transformation_recipe(pattern: str, operation: str, axes_lengths: T
             axis_name2known_length[axis_name] = None
             repeat_axes_names.append(axis_name)
 
-    axis_name2position: Dict[str, int] = {name: position for position, name in enumerate(axis_name2known_length)}
+    axis_name2position = {name: position for position, name in enumerate(axis_name2known_length)}
     reduced_axes = [position for axis, position in axis_name2position.items() if axis not in identifiers_rght]
 
     for elementary_axis, axis_length in axes_lengths:
