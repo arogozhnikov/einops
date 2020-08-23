@@ -11,9 +11,6 @@ from ._backends import get_backend
 _reductions = ('min', 'max', 'sum', 'mean', 'prod')
 _ellipsis = '…'  # NB, this is a single unicode symbol. String is used as it is not a list, but can be iterated
 
-_ellipsis_free = ' … '
-_ellipsis_parenthesized = '(…)'
-
 
 def _product(sequence):
     # minimalistic product that works both with numbers and symbols. Supports empty lists
