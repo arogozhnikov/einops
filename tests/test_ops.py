@@ -1,6 +1,7 @@
 import itertools
 
 import numpy
+from nose.tools import assert_raises
 
 from einops import EinopsError
 from einops.einops import (rearrange, reduce, parse_shape, _enumerate_directions, _reductions)
@@ -17,19 +18,35 @@ identity_patterns = [
     '... a b c d e -> ... a b c d e',
     'a ... e-> a ... e',
     'a ... -> a ... ',
+    'a ... c d e -> a (...) c d e',
 ]
 
 equivalent_rearrange_patterns = [
     ('a b c d e -> (a b) c d e', 'a b ... -> (a b) ... '),
     ('a b c d e -> a b (c d) e', '... c d e -> ... (c d) e'),
     ('a b c d e -> a b c d e', '... -> ... '),
+    ('a b c d e -> (a b c d e)', '... ->  (...)'),
+    ('a b c d e -> b (c d e) a', 'a b ... -> b (...) a'),
+    ('a b c d e -> b (a c d) e', 'a b ... e -> b (a ...) e'),
 ]
 
 equivalent_reduction_patterns = [
     ('a b c d e -> ', ' ... ->  '),
     ('a b c d e -> (e a)', 'a ... e -> (e a)'),
     ('a b c d e -> d (a e)', ' a b c d e ... -> d (a e) '),
+    ('a b c d e -> (a b)', ' ... c d e  -> (...) '),
 ]
+
+
+def test_collapsed_ellipsis_errors_out():
+    x = numpy.zeros([1, 1, 1, 1, 1])
+    rearrange(x, 'a b c d ... ->  a b c ... d')
+    with assert_raises(EinopsError):
+        rearrange(x, 'a b c d (...) ->  a b c ... d')
+
+    rearrange(x, '... ->  (...)')
+    with assert_raises(EinopsError):
+        rearrange(x, '(...) -> (...)')
 
 
 def test_ellipsis_ops_numpy():
@@ -173,7 +190,8 @@ def test_reduction_imperatives():
                 ['a b c d e -> ', {}, getattr(input, reduction)()],
                 ['... -> ', {}, getattr(input, reduction)()],
                 ['(a1 a2) ... (e1 e2) -> ', dict(a1=1, e2=2), getattr(input, reduction)()],
-                ['a b c d e -> (e c) a', {}, getattr(input, reduction)(axis=(1, 3)).transpose(2, 1, 0).reshape([-1, 2])],
+                ['a b c d e -> (e c) a', {},
+                 getattr(input, reduction)(axis=(1, 3)).transpose(2, 1, 0).reshape([-1, 2])],
                 ['a ... c d e -> (e c) a', {},
                  getattr(input, reduction)(axis=(1, 3)).transpose(2, 1, 0).reshape([-1, 2])],
                 ['a b c d e ... -> (e c) a', {},
