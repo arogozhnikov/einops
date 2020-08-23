@@ -1,6 +1,6 @@
 import sys
 import numpy
-import pytest
+from nose.tools import assert_raises
 
 import einops
 import einops.layers
@@ -88,11 +88,11 @@ def test_parse_expression():
     assert structure == [['a1'], ['b1'], ['c1'], ['d1']]
 
     parse_expression('name1 ... a1 a12 (name2 a14)')
-    with pytest.raises(EinopsError):
+    with assert_raises(EinopsError):
         parse_expression('duplicate_name ... a1 a12 (duplicate_name a14)')
 
     parse_expression('... axis1 a12 (axis2)')
-    with pytest.raises(EinopsError):
+    with assert_raises(EinopsError):
         # double parenthesis
         parse_expression('... axis1 a12 (axis2 ...)')
 
