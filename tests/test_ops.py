@@ -2,6 +2,7 @@ import itertools
 
 import numpy
 
+from einops import EinopsError
 from einops.einops import (rearrange, reduce, parse_shape, _enumerate_directions, _reductions)
 from . import collect_test_backends
 

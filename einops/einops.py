@@ -6,6 +6,7 @@ import warnings
 from collections import OrderedDict
 from typing import Tuple, List, Set, Dict
 
+from . import EinopsError
 from ._backends import get_backend
 
 _reductions = ('min', 'max', 'sum', 'mean', 'prod')
@@ -18,11 +19,6 @@ def _product(sequence):
     for element in sequence:
         result *= element
     return result
-
-
-class EinopsError(RuntimeError):
-    """ Runtime error thrown by einops """
-    pass
 
 
 def _reduce_axes(tensor, reduction_type: str, reduced_axes: Tuple[int], backend):

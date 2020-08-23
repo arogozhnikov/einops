@@ -2,7 +2,8 @@ __author__ = 'Alex Rogozhnikov'
 
 import functools
 
-from ..einops import TransformRecipe, _prepare_transformation_recipe, EinopsError
+from ..einops import TransformRecipe, _prepare_transformation_recipe
+from .. import EinopsError
 
 
 class RearrangeMixin:
