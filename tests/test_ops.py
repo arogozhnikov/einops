@@ -4,7 +4,7 @@ import numpy
 from nose.tools import assert_raises
 
 from einops import EinopsError
-from einops.einops import (rearrange, reduce, parse_shape, _enumerate_directions, _reductions)
+from einops.einops import (rearrange, reduce, _enumerate_directions, _reductions)
 from . import collect_test_backends
 
 imp_op_backends = collect_test_backends(symbolic=False, layers=False)
@@ -152,7 +152,8 @@ def test_rearrange_consistency_numpy():
     assert x2[0, 1, 2] == result[1, 2, 0]
 
 
-def test_rearrange_numpy_element_wise():
+def test_rearrange_permutations_numpy():
+    # tests random permutation of axes against two independent numpy ways
     for n_axes in range(1, 10):
         input = numpy.arange(2 ** n_axes).reshape([2] * n_axes)
         permutation = numpy.random.permutation(n_axes)
@@ -183,21 +184,27 @@ def test_reduction_imperatives():
     for backend in imp_op_backends:
         print('Reduction tests for ', backend.framework_name)
         for reduction in _reductions:
+            # slight redundancy for simpler order - numpy version is evaluated multiple times
             input = numpy.arange(2 * 3 * 4 * 5 * 6, dtype='int64').reshape([2, 3, 4, 5, 6])
             if reduction in ['mean', 'prod']:
                 input = input / input.astype('float64').mean()
             test_cases = [
-                ['a b c d e -> ', {}, getattr(input, reduction)()],
-                ['... -> ', {}, getattr(input, reduction)()],
-                ['(a1 a2) ... (e1 e2) -> ', dict(a1=1, e2=2), getattr(input, reduction)()],
+                ['a b c d e -> ', {},
+                 getattr(input, reduction)()],
+                ['a ... -> ', {},
+                 getattr(input, reduction)()],
+                ['(a1 a2) ... (e1 e2) -> ', dict(a1=1, e2=2),
+                 getattr(input, reduction)()],
                 ['a b c d e -> (e c) a', {},
                  getattr(input, reduction)(axis=(1, 3)).transpose(2, 1, 0).reshape([-1, 2])],
                 ['a ... c d e -> (e c) a', {},
                  getattr(input, reduction)(axis=(1, 3)).transpose(2, 1, 0).reshape([-1, 2])],
                 ['a b c d e ... -> (e c) a', {},
                  getattr(input, reduction)(axis=(1, 3)).transpose(2, 1, 0).reshape([-1, 2])],
-                ['a b c d e -> (e c a)', {}, getattr(input, reduction)(axis=(1, 3)).transpose(2, 1, 0).reshape(-1)],
-                ['(a1 a2) ... -> (a2 a1) ...', dict(a2=1), input],
+                ['a b c d e -> (e c a)', {},
+                 getattr(input, reduction)(axis=(1, 3)).transpose(2, 1, 0).reshape([-1])],
+                ['(a a2) ... -> (a2 a) ...', dict(a2=1),
+                 input],
             ]
             for pattern, axes_lengths, expected_result in test_cases:
                 result = reduce(backend.from_numpy(input.copy()), pattern, reduction=reduction, **axes_lengths)
@@ -211,6 +218,7 @@ def test_reduction_symbolic():
         for reduction in _reductions:
             input = numpy.arange(2 * 3 * 4 * 5 * 6, dtype='int64').reshape([2, 3, 4, 5, 6])
             input = input / input.astype('float64').mean()
+            # slight redundancy for simpler order - numpy version is evaluated multiple times
             test_cases = [
                 ['a b c d e -> ', {},
                  getattr(input, reduction)()],
@@ -229,7 +237,7 @@ def test_reduction_symbolic():
                 ['(a a2) ... -> (a2 a) ...', dict(a2=1),
                  input],
             ]
-            for pattern, axes_lengths, expected_result in test_cases:
+            for pattern, axes_lengths, expected_numpy_result in test_cases:
                 shapes = [input.shape]
                 if backend.framework_name != 'mxnet.symbol':
                     # mxnet can't handle non-specified shapes
@@ -238,7 +246,7 @@ def test_reduction_symbolic():
                     sym = backend.create_symbol(shape)
                     result_sym = reduce(sym, pattern, reduction=reduction, **axes_lengths)
                     result = backend.eval_symbol(result_sym, [(sym, input)])
-                    assert numpy.allclose(result, expected_result)
+                    assert numpy.allclose(result, expected_numpy_result)
 
                 if True:
                     shape = []
@@ -253,7 +261,7 @@ def test_reduction_symbolic():
                     sym = backend.create_symbol(shape)
                     result_sym = reduce(sym, pattern, reduction=reduction, **_axes_lengths)
                     result = backend.eval_symbol(result_sym, [(sym, input)])
-                    assert numpy.allclose(result, expected_result)
+                    assert numpy.allclose(result, expected_numpy_result)
 
 
 def test_reduction_stress_imperatives():
@@ -274,7 +282,7 @@ def test_reduction_stress_imperatives():
                 pattern = left + '->' + right
                 x = numpy.arange(1, 1 + numpy.prod(shape), dtype=dtype).reshape(shape)
                 if reduction == 'prod':
-                    x /= x.mean()
+                    x /= x.mean()  # to avoid overflows
                 result1 = reduce(x, pattern, reduction=reduction)
                 result2 = x.transpose(permutation)
                 if skipped > 0:
@@ -296,10 +304,11 @@ def test_enumerating_directions():
             x = numpy.arange(numpy.prod(shape)).reshape(shape)
             axes1 = _enumerate_directions(x)
             axes2 = _enumerate_directions(backend.from_numpy(x))
-            for axe1, axe2 in zip(axes1, axes2):
-                axe2 = backend.to_numpy(axe2)
-                assert axe1.shape == axe2.shape
-                assert numpy.allclose(axe1, axe2)
+            assert len(axes1) == len(axes2) == len(shape)
+            for ax1, ax2 in zip(axes1, axes2):
+                ax2 = backend.to_numpy(ax2)
+                assert ax1.shape == ax2.shape
+                assert numpy.allclose(ax1, ax2)
 
 
 def test_concatenations_and_stacking():
@@ -402,20 +411,22 @@ repeat_test_cases = [
 ]
 
 
+def check_reversion(x, repeat_pattern, **sizes):
+    """Checks repeat pattern by running reduction """
+    left, right = repeat_pattern.split('->')
+    reduce_pattern = right + '->' + left
+    repeated = reduce(x, repeat_pattern, reduction='repeat', **sizes)
+    reduced_min = reduce(repeated, reduce_pattern, reduction='min', **sizes)
+    reduced_max = reduce(repeated, reduce_pattern, reduction='max', **sizes)
+    assert numpy.array_equal(x, reduced_min)
+    assert numpy.array_equal(x, reduced_max)
+
+
 def test_repeat_numpy():
+    # check repeat vs reduce. Repeat works ok if reverse reduction with min and max work well
     x = numpy.arange(2 * 3 * 5).reshape([2, 3, 5])
     x1 = reduce(x, 'a b c -> copy a b c ', reduction='repeat', copy=1)
     assert numpy.array_equal(x[None], x1)
-
-    def check_reversion(x, repeat_pattern, **sizes):
-        left, right = repeat_pattern.split('->')
-        reduce_pattern = right + '->' + left
-        repeated = reduce(x, repeat_pattern, reduction='repeat', **sizes)
-        reduced_min = reduce(repeated, reduce_pattern, reduction='min', **sizes)
-        reduced_max = reduce(repeated, reduce_pattern, reduction='max', **sizes)
-        assert numpy.array_equal(x, reduced_min)
-        assert numpy.array_equal(x, reduced_max)
-
     for pattern, axis_dimensions in repeat_test_cases:
         check_reversion(x, pattern, **axis_dimensions)
 
@@ -445,3 +456,21 @@ def test_repeat_symbolic():
             sym = backend.create_symbol(x.shape)
             result = backend.eval_symbol(reduce(sym, pattern, reduction='repeat', **axis_dimensions), [[sym, x]])
             assert numpy.array_equal(result, expected)
+
+
+test_cases_repeat_anonymous = [
+    # all assume that input has shape [1, 2, 4, 6]
+    ('a b c d -> c a d b', dict()),
+    ('a b c d -> (c 2 d a b)', dict(a=1, c=4, d=6)),
+    ('1 b c d -> (d copy 1) 3 b c ', dict(copy=3)),
+    ('1 ...  -> 3 ... ', dict()),
+    ('() ... d -> 1 (copy1 d copy2) ... ', dict(copy1=2, copy2=3)),
+    ('1 b c d -> (1 1) (1 b) 2 c 3 d (1 1)', dict()),
+
+]
+
+
+def test_anonymous_axes():
+    x = numpy.arange(1 * 2 * 4 * 6).reshape([1, 2, 4, 6])
+    for pattern, axis_dimensions in test_cases_repeat_anonymous:
+        check_reversion(x, pattern, **axis_dimensions)
