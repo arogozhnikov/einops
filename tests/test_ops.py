@@ -165,18 +165,18 @@ def test_reduction_imperatives():
     for backend in imp_op_backends:
         print('Reduction tests for ', backend.framework_name)
         for reduction in _reductions:
-            input = numpy.arange(2 * 3 * 4 * 5 * 6, dtype='int64').reshape(2, 3, 4, 5, 6)
+            input = numpy.arange(2 * 3 * 4 * 5 * 6, dtype='int64').reshape([2, 3, 4, 5, 6])
             if reduction in ['mean', 'prod']:
                 input = input / input.astype('float64').mean()
             test_cases = [
                 ['a b c d e -> ', {}, getattr(input, reduction)()],
                 ['... -> ', {}, getattr(input, reduction)()],
                 ['(a1 a2) ... (e1 e2) -> ', dict(a1=1, e2=2), getattr(input, reduction)()],
-                ['a b c d e -> (e c) a', {}, getattr(input, reduction)(axis=(1, 3)).transpose(2, 1, 0).reshape(-1, 2)],
+                ['a b c d e -> (e c) a', {}, getattr(input, reduction)(axis=(1, 3)).transpose(2, 1, 0).reshape([-1, 2])],
                 ['a ... c d e -> (e c) a', {},
-                 getattr(input, reduction)(axis=(1, 3)).transpose(2, 1, 0).reshape(-1, 2)],
+                 getattr(input, reduction)(axis=(1, 3)).transpose(2, 1, 0).reshape([-1, 2])],
                 ['a b c d e ... -> (e c) a', {},
-                 getattr(input, reduction)(axis=(1, 3)).transpose(2, 1, 0).reshape(-1, 2)],
+                 getattr(input, reduction)(axis=(1, 3)).transpose(2, 1, 0).reshape([-1, 2])],
                 ['a b c d e -> (e c a)', {}, getattr(input, reduction)(axis=(1, 3)).transpose(2, 1, 0).reshape(-1)],
                 ['(a1 a2) ... -> (a2 a1) ...', dict(a2=1), input],
             ]
@@ -190,7 +190,7 @@ def test_reduction_symbolic():
     for backend in sym_op_backends:
         print('Reduction tests for ', backend.framework_name)
         for reduction in _reductions:
-            input = numpy.arange(2 * 3 * 4 * 5 * 6, dtype='int64').reshape(2, 3, 4, 5, 6)
+            input = numpy.arange(2 * 3 * 4 * 5 * 6, dtype='int64').reshape([2, 3, 4, 5, 6])
             input = input / input.astype('float64').mean()
             test_cases = [
                 ['a b c d e -> ', {},
@@ -200,13 +200,13 @@ def test_reduction_symbolic():
                 ['(a a2) ... (e e2) -> ', dict(a2=1, e2=1),
                  getattr(input, reduction)()],
                 ['a b c d e -> (e c) a', {},
-                 getattr(input, reduction)(axis=(1, 3)).transpose(2, 1, 0).reshape(-1, 2)],
+                 getattr(input, reduction)(axis=(1, 3)).transpose(2, 1, 0).reshape([-1, 2])],
                 ['a ... c d e -> (e c) a', {},
-                 getattr(input, reduction)(axis=(1, 3)).transpose(2, 1, 0).reshape(-1, 2)],
+                 getattr(input, reduction)(axis=(1, 3)).transpose(2, 1, 0).reshape([-1, 2])],
                 ['a b c d e ... -> (e c) a', {},
-                 getattr(input, reduction)(axis=(1, 3)).transpose(2, 1, 0).reshape(-1, 2)],
+                 getattr(input, reduction)(axis=(1, 3)).transpose(2, 1, 0).reshape([-1, 2])],
                 ['a b c d e -> (e c a)', {},
-                 getattr(input, reduction)(axis=(1, 3)).transpose(2, 1, 0).reshape(-1)],
+                 getattr(input, reduction)(axis=(1, 3)).transpose(2, 1, 0).reshape([-1])],
                 ['(a a2) ... -> (a2 a) ...', dict(a2=1),
                  input],
             ]
@@ -440,7 +440,7 @@ def test_concatenations_and_stacking():
 def test_gradients_imperatives():
     # lazy - just checking reductions
     for reduction in _reductions:
-        x = numpy.arange(1, 1 + 2 * 3 * 4).reshape(2, 3, 4).astype('float32')
+        x = numpy.arange(1, 1 + 2 * 3 * 4).reshape([2, 3, 4]).astype('float32')
         results = {}
         for backend in imp_op_backends:
             y0 = backend.from_numpy(x)
@@ -639,7 +639,7 @@ repeat_test_cases = [
 
 
 def test_repeat_numpy():
-    x = numpy.arange(2 * 3 * 5).reshape(2, 3, 5)
+    x = numpy.arange(2 * 3 * 5).reshape([2, 3, 5])
     x1 = reduce(x, 'a b c -> copy a b c ', reduction='repeat', copy=1)
     assert numpy.array_equal(x[None], x1)
 
@@ -657,7 +657,7 @@ def test_repeat_numpy():
 
 
 def test_repeat_imperatives():
-    x = numpy.arange(2 * 3 * 5).reshape(2, 3, 5)
+    x = numpy.arange(2 * 3 * 5).reshape([2, 3, 5])
     for backend in imp_op_backends:
         print('Repeat tests for ', backend.framework_name)
 
@@ -670,7 +670,7 @@ def test_repeat_imperatives():
 
 
 def test_repeat_symbolic():
-    x = numpy.arange(2 * 3 * 5).reshape(2, 3, 5)
+    x = numpy.arange(2 * 3 * 5).reshape([2, 3, 5])
 
     for backend in sym_op_backends:
         print('Repeat tests for ', backend.framework_name)
