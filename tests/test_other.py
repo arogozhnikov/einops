@@ -1,16 +1,13 @@
 import sys
+from doctest import testmod
+
 import numpy
-from nose.tools import assert_raises
 
 import einops
 import einops.layers
-
-from doctest import testmod
-
-from einops import EinopsError
-from einops.einops import (rearrange, parse_shape, _optimize_transformation, _check_elementary_axis_name,
-                           parse_expression)
+import einops.parsing
 from einops._backends import AbstractBackend
+from einops.einops import rearrange, parse_shape, _optimize_transformation
 from . import collect_test_backends
 
 __author__ = 'Alex Rogozhnikov'
@@ -70,35 +67,6 @@ def test_optimize_transformations_numpy():
             combination3 = _optimize_transformation(*combination2)
             for a, b in zip(combination2, combination3):
                 assert numpy.array_equal(a, b)
-
-
-def test_elementary_axis_name():
-    for name in ['a', 'b', 'h', 'dx', 'h1', 'zz', 'i9123', 'somelongname',
-                 'Alex', 'camelCase', 'u_n_d_e_r_score', 'unreasonablyLongAxisName']:
-        assert _check_elementary_axis_name(name)
-
-    for name in ['', '2b', '12', '_startWithUnderscore', 'endWithUnderscore_', '_', '...', einops.einops._ellipsis]:
-        assert not _check_elementary_axis_name(name)
-
-
-def test_parse_expression():
-    # TODO tests for anonymous axes when those are introduced
-    names, structure = parse_expression('a1 b1 c1 d1')
-    assert names == {'a1', 'b1', 'c1', 'd1'}
-    assert structure == [['a1'], ['b1'], ['c1'], ['d1']]
-
-    parse_expression('name1 ... a1 a12 (name2 a14)')
-    with assert_raises(EinopsError):
-        parse_expression('duplicate_name ... a1 a12 (duplicate_name a14)')
-
-    parse_expression('... axis1 a12 (axis2)')
-    with assert_raises(EinopsError):
-        # double parenthesis
-        parse_expression('... axis1 a12 (axis2 ...)')
-
-    names, structure = parse_expression('a ... ')
-    assert names == {einops.einops._ellipsis, 'a'}
-    assert structure == [['a'], einops.einops._ellipsis]
 
 
 def test_parse_shape_imperative():
