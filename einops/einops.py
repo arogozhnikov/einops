@@ -1,39 +1,46 @@
 import functools
 import itertools
-import keyword
 import math
-import warnings
 from collections import OrderedDict
-from typing import Tuple, List, Set, Dict
+from typing import Tuple, List, Dict, Union, Callable
 
 from . import EinopsError
 from ._backends import get_backend
 from .parsing import ParsedExpression, _ellipsis, AnonymousAxis
 
+ReductionCallable = Callable[['tensor', Tuple[int]], 'tensor']
+Reduction = Union[str, ReductionCallable]
+
+
 _reductions = ('min', 'max', 'sum', 'mean', 'prod')
 
 
 def _product(sequence):
-    # minimalistic product that works both with numbers and symbols. Supports empty lists
+    """ minimalistic product that works both with numbers and symbols. Supports empty lists """
     result = 1
     for element in sequence:
         result *= element
     return result
 
 
-def _reduce_axes(tensor, reduction_type: str, reduced_axes: Tuple[int], backend):
+def _reduce_axes(tensor, reduction_type: Reduction, reduced_axes: Tuple[int], backend):
     reduced_axes = tuple(reduced_axes)
-    if len(reduced_axes) == 0:
-        return tensor
-    assert reduction_type in _reductions
-    if reduction_type == 'mean':
-        if not backend.is_float_type(tensor):
-            raise NotImplementedError('reduce_mean is not available for non-floating tensors')
-    return backend.reduce(tensor, reduction_type, reduced_axes)
+    if callable(reduction_type):
+        # custom callable
+        return reduction_type(tensor, reduced_axes)
+    else:
+        # one of built-in operations
+        if len(reduced_axes) == 0:
+            return tensor
+        assert reduction_type in _reductions
+        if reduction_type == 'mean':
+            if not backend.is_float_type(tensor):
+                raise NotImplementedError('reduce_mean is not available for non-floating tensors')
+        return backend.reduce(tensor, reduction_type, reduced_axes)
 
 
 def _optimize_transformation(init_shapes, reduced_axes, axes_reordering, final_shapes):
-    # TODO this method is very slow
+    # TODO this method can be optimized
     assert len(axes_reordering) + len(reduced_axes) == len(init_shapes)
     # joining consecutive axes that will be reduced
     # possibly we can skip this if all backends can optimize this (not sure)
@@ -111,7 +118,7 @@ class TransformRecipe:
                  # ids of axes as they appear in result, again pointers to elementary_axes_lengths,
                  # only used to infer result dimensions
                  output_composite_axes: List[List[int]],
-                 reduction_type: str = 'rearrange',
+                 reduction_type: Reduction = 'rearrange',
                  # positions of ellipsis in lhs and rhs of expression
                  ellipsis_position_in_lhs: int = math.inf,
                  ):
@@ -204,9 +211,13 @@ class TransformRecipe:
         return backend.reshape(tensor, final_shapes)
 
 
+
+
 # TODO add logaddexp, std, var, ptp, l1, l2
 @functools.lru_cache(256)
-def _prepare_transformation_recipe(pattern: str, operation: str, axes_lengths: Tuple[Tuple]) -> TransformRecipe:
+def _prepare_transformation_recipe(pattern: str,
+                                   operation: Reduction,
+                                   axes_lengths: Tuple[Tuple]) -> TransformRecipe:
     """ Perform initial parsing of pattern and provided supplementary info
     axes_lengths is a tuple of tuples (axis_name, axis_length)
     """
@@ -233,7 +244,7 @@ def _prepare_transformation_recipe(pattern: str, operation: str, axes_lengths: T
                                            {*left.identifiers, *(ax for ax, _ in axes_lengths)})
         if len(axes_without_size) > 0:
             raise EinopsError('Specify sizes for new axes in repeat: {}'.format(axes_without_size))
-    elif operation in _reductions:
+    elif operation in _reductions or callable(operation):
         difference = set.difference(rght.identifiers, left.identifiers)
         if len(difference) > 0:
             raise EinopsError('Unexpected identifiers on the right side of reduce {}: {}'.format(operation, difference))
