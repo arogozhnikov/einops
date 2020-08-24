@@ -84,7 +84,7 @@ def check_op_against_numpy(backend, numpy_input, pattern, axes_lengths, reductio
     check_equal = numpy.array_equal
     p_none_dimension = 0.5
     if 'mxnet' in backend.framework_name:
-        # known mxnet bug cant work with scalars - allclose
+        # known bug in mxnet: it cant work with scalars - so use allclose instead
         check_equal = numpy.allclose
         # mxnet can't work unless shape is completely specified
         p_none_dimension = 0
@@ -106,12 +106,13 @@ def test_ellipsis_ops_imperative():
     for is_symbolic in [True, False]:
         for backend in collect_test_backends(symbolic=is_symbolic, layers=False):
             for pattern in identity_patterns + list(itertools.chain(*equivalent_rearrange_patterns)):
-                check_op_against_numpy(backend, x, pattern, axes_lengths={}, is_symbolic=is_symbolic)
+                check_op_against_numpy(backend, x, pattern, axes_lengths={},
+                                       reduction='rearrange', is_symbolic=is_symbolic)
 
             for reduction in ['min', 'max', 'sum']:
                 for pattern in itertools.chain(*equivalent_reduction_patterns):
-                    check_op_against_numpy(backend, x, pattern,
-                                           axes_lengths={}, reduction=reduction, is_symbolic=is_symbolic)
+                    check_op_against_numpy(backend, x, pattern, axes_lengths={},
+                                           reduction=reduction, is_symbolic=is_symbolic)
 
 
 def test_rearrange_consistency_numpy():
