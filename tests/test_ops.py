@@ -295,6 +295,59 @@ def test_reduction_stress_imperatives():
                 check_op_against_numpy(backend, x, pattern, reduction=reduction, axes_lengths={}, is_symbolic=False)
 
 
+def test_reduction_with_callable_imperatives():
+    x_numpy = numpy.arange(2 * 3 * 4 * 5 * 6).reshape([2, 3, 4, 5, 6]).astype('float32')
+    x_numpy /= x_numpy.max()
+
+    def logsumexp_torch(x, tuple_of_axes):
+        return x.logsumexp(tuple_of_axes)
+
+    def logsumexp_tf(x, tuple_of_axes):
+        import tensorflow as tf
+        return tf.reduce_logsumexp(x, tuple_of_axes)
+
+    def logsumexp_chainer(x, tuple_of_axes):
+        import chainer
+        return chainer.functions.logsumexp(x, tuple_of_axes)
+
+    def logsumexp_keras(x, tuple_of_axes):
+        import keras.backend as k
+        return k.logsumexp(x, tuple_of_axes)
+
+    def logsumexp_numpy(x, tuple_of_axes):
+        # very naive logsumexp
+        minused = x.max(tuple_of_axes)
+        y = x - x.max(tuple_of_axes, keepdims=True)
+        y = numpy.exp(y)
+        y = numpy.sum(y, axis=tuple_of_axes)
+        return numpy.log(y) + minused
+
+    from einops._backends import TorchBackend, ChainerBackend, TensorflowBackend, KerasBackend, NumpyBackend
+    backend2callback = {
+        TorchBackend.framework_name: logsumexp_torch,
+        ChainerBackend.framework_name: logsumexp_chainer,
+        TensorflowBackend.framework_name: logsumexp_tf,
+        KerasBackend.framework_name: logsumexp_keras,
+        NumpyBackend.framework_name: logsumexp_numpy,
+    }
+
+    for backend in imp_op_backends:
+        if backend.framework_name not in backend2callback:
+            continue
+
+        backend_callback = backend2callback[backend.framework_name]
+
+        x_backend = backend.from_numpy(x_numpy)
+        for pattern1, pattern2 in equivalent_reduction_patterns:
+            print('Test reduction with callable for ', backend.framework_name, pattern1, pattern2)
+            output_numpy = reduce(x_numpy, pattern1, reduction=logsumexp_numpy)
+            output_backend = reduce(x_backend, pattern1, reduction=backend_callback)
+            assert numpy.allclose(
+                output_numpy,
+                backend.to_numpy(output_backend),
+            )
+
+
 def test_enumerating_directions():
     for backend in imp_op_backends:
         print('testing directions for', backend.framework_name)
