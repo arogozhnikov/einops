@@ -315,7 +315,7 @@ def test_reduction_with_callable_imperatives():
         return k.logsumexp(x, tuple_of_axes)
 
     def logsumexp_numpy(x, tuple_of_axes):
-        # very naive logsumexp
+        # very naive logsumexp to compare to
         minused = x.max(tuple_of_axes)
         y = x - x.max(tuple_of_axes, keepdims=True)
         y = numpy.exp(y)
