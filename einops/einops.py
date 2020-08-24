@@ -327,7 +327,7 @@ def _prepare_transformation_recipe(pattern: str,
     )
 
 
-def reduce(tensor, pattern: str, reduction: str, **axes_lengths: int):
+def reduce(tensor, pattern: str, reduction: Reduction, **axes_lengths: int):
     """
     einops.reduce provides combination of reordering and reduction using reader-friendly notation.
     
@@ -360,6 +360,8 @@ def reduce(tensor, pattern: str, reduction: str, **axes_lengths: int):
             list of tensors is also accepted, those should be of the same type and shape
     :param pattern: string, reduction pattern
     :param reduction: one of available reductions ('min', 'max', 'sum', 'mean', 'prod'), case-sensitive
+        alternatively, a callable f(tensor, reduced_axes) -> tensor can be provided.
+        This allows using various reductions, examples: np.max, tf.reduce_logsumexp, torch.var, etc.
     :param axes_lengths: any additional specifications for dimensions
     :return: tensor of the same type as input
     """
