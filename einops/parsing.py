@@ -1,12 +1,14 @@
 from einops import EinopsError
 import keyword
 import warnings
+from typing import List
 
 _ellipsis = '…'  # NB, this is a single unicode symbol. String is used as it is not a list, but can be iterated
 
 
 class AnonymousAxis(object):
     """Important thing: all instances of this class are not equal to each other """
+
     def __init__(self, value: str):
         self.value = int(value)
         if self.value <= 1:
@@ -24,14 +26,13 @@ class ParsedExpression:
     non-mutable structure that contains information about one side of expression (e.g. 'b c (h w)')
     and keeps some information important for downstream
     """
-
-    # non-mutable structure than contains
     def __init__(self, expression):
         self.has_ellipsis = False
         self.has_ellipsis_parenthesized = None
         self.identifiers = set()
         # that's axes like 2, 3 or 5. Axes with size 1 are exceptional and replaced with empty composition
         self.has_non_unitary_anonymous_axes = False
+        # composition keeps structure of composite axes, see how different corner cases are handled in tests
         self.composition = []
         if '.' in expression:
             if '...' not in expression:
@@ -103,6 +104,21 @@ class ParsedExpression:
         if bracket_group is not None:
             raise EinopsError('Imbalanced parentheses in expression: "{}"'.format(expression))
         add_axis_name(current_identifier)
+
+    def flat_axes_order(self) -> List:
+        result = []
+        for composed_axis in self.composition:
+            assert isinstance(composed_axis, list), 'does not work with ellipsis'
+            for axis in composed_axis:
+                result.append(axis)
+        return result
+
+    def has_composed_axes(self) -> bool:
+        # this will ignore 1 inside brackets
+        for axes in self.composition:
+            if isinstance(axes, list) and len(axes) > 1:
+                return True
+        return False
 
     @staticmethod
     def check_axis_name(name: str, return_reason=False):
