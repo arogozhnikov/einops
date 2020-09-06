@@ -190,7 +190,7 @@ def test_reduce_symbolic():
 
                     if 'keras' not in backend.framework_name:
                         # simple pickling / unpickling
-                        # keras bug - fails for pickling
+                        # keras bug - fails for pickling, requires special import/export
                         layer2 = pickle.loads(pickle.dumps(layer))
                         result_symbol2 = layer2(symbol)
                         result2 = backend.eval_symbol(result_symbol2, eval_inputs)
@@ -245,7 +245,7 @@ def test_torch_layer():
         torch.testing.assert_allclose(model1(input), model3(input), atol=1e-3, rtol=1e-3)
         torch.testing.assert_allclose(model1(input + 1), model3(input + 1), atol=1e-3, rtol=1e-3)
 
-        model4 = torch.jit.trace(model2, example_inputs=input, optimize=True)
+        model4 = torch.jit.trace(model2, example_inputs=input)
         torch.testing.assert_allclose(model1(input), model4(input), atol=1e-3, rtol=1e-3)
         torch.testing.assert_allclose(model1(input + 1), model4(input + 1), atol=1e-3, rtol=1e-3)
 
