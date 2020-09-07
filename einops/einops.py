@@ -211,9 +211,6 @@ class TransformRecipe:
         return backend.reshape(tensor, final_shapes)
 
 
-
-
-# TODO add logaddexp, std, var, ptp, l1, l2
 @functools.lru_cache(256)
 def _prepare_transformation_recipe(pattern: str,
                                    operation: Reduction,
