@@ -7,7 +7,7 @@ matrix:
   - name: python3.6
     env: DOCKERIMAGE=python:3.6-stretch
   - name: python3.8
-    env: DOCKERIMAGE=python:3.8-stretch
+    env: DOCKERIMAGE=python:3.8-buster
 install:
   - docker pull $DOCKERIMAGE
 script:
