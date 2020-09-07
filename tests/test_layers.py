@@ -87,20 +87,8 @@ def test_rearrange_symbolic():
                     result2 = backend.eval_symbol(result_symbol2, eval_inputs)
                     assert numpy.allclose(result1, result2)
                 else:
-                    import keras
-                    import einops.layers.keras
-                    model = keras.models.Model(symbol, result_symbol1)
-                    result2 = model.predict_on_batch(x)
-
-                    # create a temporary file using a context manager
-                    with tempfile.NamedTemporaryFile(mode='r+b') as fp:
-                        keras.models.save_model(model, fp.name)
-                        model2 = keras.models.load_model(fp.name,
-                                                         custom_objects=einops.layers.keras.keras_custom_objects)
-
-                    result3 = model2.predict_on_batch(x)
-                    assert numpy.allclose(result1, result2)
-                    assert numpy.allclose(result1, result3)
+                    # keras is depreciated, so no checks for save/load
+                    pass
 
                 # now testing back-propagation
                 just_sum = backend.layers().Reduce('...->', reduction='sum')
@@ -196,20 +184,7 @@ def test_reduce_symbolic():
                         result2 = backend.eval_symbol(result_symbol2, eval_inputs)
                         assert numpy.allclose(result1, result2)
                     else:
-                        import keras
-                        import einops.layers.keras
-                        model = keras.models.Model(symbol, result_symbol1)
-                        result2 = model.predict_on_batch(x)
-
-                        # create a temporary file using a context manager
-                        with tempfile.NamedTemporaryFile(mode='r+b') as fp:
-                            keras.models.save_model(model, fp.name)
-                            model2 = keras.models.load_model(fp.name,
-                                                             custom_objects=einops.layers.keras.keras_custom_objects)
-
-                        result3 = model2.predict_on_batch(x)
-                        assert numpy.allclose(result1, result2)
-                        assert numpy.allclose(result1, result3)
+                        pass
 
 
 def test_torch_layer():
@@ -278,18 +253,20 @@ def test_keras_layer():
         input = numpy.random.normal(size=[10, 32, 32, 3]).astype('float32')
         assert not numpy.allclose(model1.predict_on_batch(input), model2.predict_on_batch(input))
 
+        # get some temp filename
+        with tempfile.NamedTemporaryFile(mode='r+b') as f:
+            tmp_filename = f.name
         # save arch + weights
-        with tempfile.NamedTemporaryFile(mode='r+b') as fp:
-            keras.models.save_model(model1, fp.name)
-            model3 = keras.models.load_model(fp.name, custom_objects=keras_custom_objects)
+        print('temp_path_keras1', tmp_filename)
+        keras.models.save_model(model1, tmp_filename)
+        model3 = keras.models.load_model(tmp_filename, custom_objects=keras_custom_objects)
         assert numpy.allclose(model1.predict_on_batch(input), model3.predict_on_batch(input))
 
-        # save arch as json, md5
+        # save arch as json
         model4 = keras.models.model_from_json(model1.to_json(), custom_objects=keras_custom_objects)
-        with tempfile.NamedTemporaryFile(mode='r+b') as fp:
-            model1.save_weights(fp.name)
-            model4.load_weights(fp.name)
-            model2.load_weights(fp.name)
+        model1.save_weights(tmp_filename)
+        model4.load_weights(tmp_filename)
+        model2.load_weights(tmp_filename)
         assert numpy.allclose(model1.predict_on_batch(input), model4.predict_on_batch(input))
         assert numpy.allclose(model1.predict_on_batch(input), model2.predict_on_batch(input))
 
