@@ -496,6 +496,10 @@ class TensorflowBackend(AbstractBackend):
     def is_float_type(self, x):
         return x.dtype in ('float16', 'float32', 'float64', 'float128')
 
+    def layers(self):
+        from .layers import tensorflow
+        return tensorflow
+
 
 class KerasBackend(AbstractBackend):
     framework_name = 'keras'
