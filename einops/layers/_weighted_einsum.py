@@ -36,6 +36,8 @@ class WeightedEinsumMixin:
         - when need only within-group connections to reduce number of weights and computations
         - perfect as a part of sequential models
 
+        Uniform He initialization is applied to weight tensor.
+
         Parameters
         :param pattern: transformation pattern, left side - dimensions of input, right side - dimensions of output
         :param weight_shape: axes of weight. Tensor od this shape is created, stored, and optimized in a layer
