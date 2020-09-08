@@ -14,7 +14,8 @@ class WeightedEinsumMixin:
     def __init__(self, pattern, weight_shape, bias_shape=None, **axes_lengths):
         """
         WeightedEinsum - Einstein summation with second argument being weight tensor.
-        NB: it is an experimental API.
+        NB: it is an experimental API. RFC https://github.com/arogozhnikov/einops/issues/71
+
         Imagine taking einsum with two arguments, one of each input, and one - tensor with weights
         >>> einsum('time batch channel_in, channel_in channel_out -> time batch channel_out', input, weight)
 
@@ -22,7 +23,7 @@ class WeightedEinsumMixin:
         >>> WeightedEinsum('time batch channel_in -> time batch channel_out', weight_shape='channel_in channel_out')
         But otherwise it is the same einsum.
 
-        Simple linear layer with bias term. One can
+        Simple linear layer with bias term (you have one like that in your framework)
         >>> WeightedEinsum('t b cin -> t b cout', weight_shape='cin cout', bias_shape='cout', cin=10, cout=20)
         Channel-wise multiplication (like one used in normalizations)
         >>> WeightedEinsum('t b c -> t b c', weight_shape='c', c=128)
