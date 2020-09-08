@@ -12,6 +12,36 @@ def _report_axes(axes: set, report_message: str):
 
 class WeightedEinsumMixin:
     def __init__(self, pattern, weight_shape, bias_shape=None, **axes_lengths):
+        """
+        WeightedEinsum - Einstein summation with second argument being weight tensor.
+        NB: it is an experimental API.
+        Imagine taking einsum with two arguments, one of each input, and one - tensor with weights
+        >>> einsum('time batch channel_in, channel_in channel_out -> time batch channel_out', input, weight)
+
+        This layer manages weights for you after a minor tweaking
+        >>> WeightedEinsum('time batch channel_in -> time batch channel_out', weight_shape='channel_in channel_out')
+        But otherwise it is the same einsum.
+
+        Simple linear layer with bias term. One can
+        >>> WeightedEinsum('t b cin -> t b cout', weight_shape='cin cout', bias_shape='cout', cin=10, cout=20)
+        Channel-wise multiplication (like one used in normalizations)
+        >>> WeightedEinsum('t b c -> t b c', weight_shape='c', c=128)
+        Separate dense layer within each head, no connection between different heads
+        >>> WeightedEinsum('t b head cin -> t b head cout', weight_shape='head cin cout', ...)
+
+        ... ah yes, you need to specify all dimensions of weight shape/bias shape in parameters.
+
+        Good use cases:
+        - when channel dimension is not last, use WeightedEinsum, not transposition
+        - when need only within-group connections to reduce number of weights and computations
+        - perfect as a part of sequential models
+
+        Parameters
+        :param pattern: transformation pattern, left side - dimensions of input, right side - dimensions of output
+        :param weight_shape: axes of weight. Tensor od this shape is created, stored, and optimized in a layer
+        :param bias_shape: axes of bias added to output.
+        :param axes_lengths: dimensions of weight tensor
+        """
         super().__init__()
         warnings.warn('WeightedEinsum is experimental feature. API can change in unpredictable and enjoyable ways',
                       FutureWarning)
@@ -35,6 +65,9 @@ class WeightedEinsumMixin:
             raise EinopsError('Anonymous axes (numbers) are not allowed in WeightedEinsum')
         if '(' in weight_shape or ')' in weight_shape:
             raise EinopsError('Parenthesis is not allowed in weight shape')
+        # TODO implement this
+        if '(' in pattern or ')' in pattern:
+            raise EinopsError('Axis composition/decomposition are not yet supported in einsum')
         for axis in weight.identifiers:
             if axis not in axes_lengths:
                 raise EinopsError('Dimension {} of weight should be specified'.format(axis))
@@ -79,9 +112,6 @@ class WeightedEinsumMixin:
         weight_bound = (3 / _fan_in) ** 0.5
         bias_bound = (1 / _fan_in) ** 0.5
         self._create_parameters(_weight_shape, weight_bound, _bias_shape, bias_bound)
-
-        self.pre_reshape = None
-        self.post_reshape = None
 
         # rewrite einsum expression with single-letter latin identifiers so that each expression is
         mapping2letters = {*left.identifiers, *right.identifiers, *weight.identifiers}
