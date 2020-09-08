@@ -4,10 +4,10 @@ dist: xenial
 language: generic
 matrix:
   include:
-  - name: python3.5
-    env: DOCKERIMAGE=python:3.5-stretch
-  - name: python3.7
-    env: DOCKERIMAGE=python:3.7-stretch
+  - name: python3.6
+    env: DOCKERIMAGE=python:3.6-stretch
+  - name: python3.8
+    env: DOCKERIMAGE=python:3.8-buster
 install:
   - docker pull $DOCKERIMAGE
 script:

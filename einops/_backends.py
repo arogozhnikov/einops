@@ -422,6 +422,23 @@ class ChainerBackend(AbstractBackend):
         return chainer
 
 
+class HashableTuple:
+    """Overcomes non-hashability of symbolic elements"""
+
+    def __init__(self, elements: tuple):
+        self.elements = elements
+
+    def __iter__(self):
+        for x in self.elements:
+            yield x
+
+    def __len__(self):
+        return len(self.elements)
+
+    def __getitem__(self, item):
+        return self.elements[item]
+
+
 class TensorflowBackend(AbstractBackend):
     framework_name = 'tensorflow'
 
@@ -440,28 +457,23 @@ class TensorflowBackend(AbstractBackend):
         assert self.tf.executing_eagerly()
         return x.numpy()
 
-    def create_symbol(self, shape, dtype='float32'):
-        assert not self.tf.executing_eagerly()
-        return self.tf.placeholder(dtype=dtype, shape=shape, name='einops_placeholder')
-
-    def eval_symbol(self, symbol, input_dict):
-        assert not self.tf.executing_eagerly()
-        with self.tf.Session() as sess:
-            return sess.run(symbol, feed_dict=dict(input_dict))
-
     def arange(self, start, stop):
         return self.tf.range(start, stop)
 
     def shape(self, x):
         if self.tf.executing_eagerly():
-            return tuple(int(d) for d in x.shape)
+            return tuple(UnknownSize() if d is None else int(d) for d in x.shape)
         else:
             static_shape = x.shape.as_list()
             tf_shape = self.tf.shape(x)
-
-            # use the static shape where known, otherwise use the TF shape
-            shape = [s or tf_shape[dim] for dim, s in enumerate(static_shape)]
-            return tuple(shape)
+            # use the static shape where known, otherwise use the TF shape components
+            shape = tuple([s or tf_shape[dim] for dim, s in enumerate(static_shape)])
+            try:
+                hash(shape)
+                return shape
+            except:
+                # unhashable symbols in shape. Wrap tuple to be hashable.
+                return HashableTuple(shape)
 
     def reduce(self, x, operation, axes):
         return getattr(self.tf, 'reduce_' + operation)(x, axis=axes)

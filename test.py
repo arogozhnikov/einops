@@ -31,8 +31,7 @@ if have_cuda:
 
 # install dependencies
 dependencies = [
-    # TODO remove numpy version
-    'numpy==1.18.4',
+    'numpy',
     'mxnet',
     'torch',
     'tensorflow',
@@ -51,11 +50,5 @@ assert 0 == run('pip install {} --pre --progress-bar off'.format(' '.join(depend
 assert 0 == run('pip install -e .')
 
 
-# we need to run tests twice
-# - once for tensorflow eager
-return_code1 = run('python -m nose tests -vds', TF_EAGER='1', EINOPS_SKIP_CUPY='0' if have_cuda else '1')
-print('\n' * 5)
-# - and once for symbolic tensorflow
-return_code2 = run('python -m nose tests -vds', TF_EAGER='0', EINOPS_SKIP_CUPY='0' if have_cuda else '1')
-
-assert return_code1 == 0 and return_code2 == 0
+return_code = run('python -m nose tests -vds', EINOPS_SKIP_CUPY='0' if have_cuda else '1')
+assert return_code == 0
