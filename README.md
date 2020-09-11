@@ -225,9 +225,8 @@ y = x.flatten() # or flatten(x)
 ```
 
 Suppose `x`'s shape was `(3, 4, 5)`, then `y` has shape ...
-- numpy, cupy, chainer: `(60,)`
+- numpy, cupy, chainer, pytorch: `(60,)`
 - keras, tensorflow.layers, mxnet and gluon: `(3, 20)`
-- pytorch: no such function
 
 ### Independence of framework terminology
 
@@ -255,13 +254,14 @@ Einops works with ...
 
 - [numpy](http://www.numpy.org/)
 - [pytorch](https://pytorch.org/)
-- [tensorflow](https://www.tensorflow.org/), including [eager mode](https://www.tensorflow.org/guide/eager)
+- [tensorflow](https://www.tensorflow.org/)
+- [jax](https://github.com/google/jax)
 - [cupy](https://cupy.chainer.org/)
 - [chainer](https://chainer.org/)
-- [gluon](https://mxnet.apache.org/)
-- [keras](https://keras.io/) and [tf.keras](https://www.tensorflow.org/guide/keras)
-- [mxnet](https://gluon.mxnet.io/) (experimental)
-- [jax](https://github.com/google/jax) (experimental)
+- [gluon](https://gluon.mxnet.io/)
+- [tf.keras](https://www.tensorflow.org/guide/keras)
+- [mxnet](https://mxnet.apache.org/) (experimental)
+
 
 ## Contributing 
 
