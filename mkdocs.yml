@@ -1,7 +1,7 @@
 site_name: Einops
-repo_name: cgarciae/einops
-repo_url: https://github.com/cgarciae/einops
-site_url: https://cgarciae.github.io/einops
+repo_name: arogozhnikov/einops
+repo_url: https://github.com/arogozhnikov/einops
+site_url: https://arogozhnikov.github.io/einops
 theme:
   name: material
   favicon: images/favicon.png
