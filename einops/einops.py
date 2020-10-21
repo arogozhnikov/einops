@@ -330,37 +330,50 @@ def reduce(tensor, pattern: str, reduction: Reduction, **axes_lengths: int):
     
     Examples for reduce operation:
     
-    >>> x = np.random.randn(100, 32, 64)
-    >>> # perform max-reduction on the first axis
-    >>> y = reduce(x, 't b c -> b c', 'max')
-    >>> # same as previous, but with clearer axes meaning
-    >>> y = reduce(x, 'time batch channel -> batch channel', 'max')
+    ```python
+    x = np.random.randn(100, 32, 64)
 
-    >>> x = np.random.randn(10, 20, 30, 40)
-    >>> # 2d max-pooling with kernel size = 2 * 2 for image processing
-    >>> y1 = reduce(x, 'b c (h1 h2) (w1 w2) -> b c h1 w1', 'max', h2=2, w2=2)
-    >>> # if one wants to go back to the original height and width, depth-to-space trick can be applied
-    >>> y2 = rearrange(y1, 'b (c h2 w2) h1 w1 -> b c (h1 h2) (w1 w2)', h2=2, w2=2)
-    >>> assert parse_shape(x, 'b _ h w') == parse_shape(y2, 'b _ h w')
-    >>> # Adaptive 2d max-pooling to 3 * 4 grid
-    >>> reduce(x, 'b c (h1 h2) (w1 w2) -> b c h1 w1', 'max', h1=3, w1=4).shape
+    # perform max-reduction on the first axis
+    y = reduce(x, 't b c -> b c', 'max')
+
+    # same as previous, but with clearer axes meaning
+    y = reduce(x, 'time batch channel -> batch channel', 'max')
+
+    x = np.random.randn(10, 20, 30, 40)
+
+    # 2d max-pooling with kernel size = 2 * 2 for image processing
+    y1 = reduce(x, 'b c (h1 h2) (w1 w2) -> b c h1 w1', 'max', h2=2, w2=2)
+
+    # if one wants to go back to the original height and width, depth-to-space trick can be applied
+    y2 = rearrange(y1, 'b (c h2 w2) h1 w1 -> b c (h1 h2) (w1 w2)', h2=2, w2=2)
+    assert parse_shape(x, 'b _ h w') == parse_shape(y2, 'b _ h w')
+
+    # Adaptive 2d max-pooling to 3 * 4 grid
+    reduce(x, 'b c (h1 h2) (w1 w2) -> b c h1 w1', 'max', h1=3, w1=4).shape
     (10, 20, 3, 4)
-    >>> # Global average pooling
-    >>> reduce(x, 'b c h w -> b c', 'mean').shape
+
+    # Global average pooling
+    reduce(x, 'b c h w -> b c', 'mean').shape
     (10, 20)
-    >>> # Subtracting mean over batch for each channel
-    >>> y = x - reduce(x, 'b c h w -> () c () ()', 'mean')
-    >>> # Subtracting per-image mean for each channel
-    >>> y = x - reduce(x, 'b c h w -> b c () ()', 'mean') 
+
+    # Subtracting mean over batch for each channel
+    y = x - reduce(x, 'b c h w -> () c () ()', 'mean')
+
+    # Subtracting per-image mean for each channel
+    y = x - reduce(x, 'b c h w -> b c () ()', 'mean') 
+    ```
     
-    :param tensor: tensor: tensor of any supported library (e.g. numpy.ndarray, tensorflow, pytorch, mxnet.ndarray).
+    Parameters:
+        tensor: tensor: tensor of any supported library (e.g. numpy.ndarray, tensorflow, pytorch, mxnet.ndarray).
             list of tensors is also accepted, those should be of the same type and shape
-    :param pattern: string, reduction pattern
-    :param reduction: one of available reductions ('min', 'max', 'sum', 'mean', 'prod'), case-sensitive
+        pattern: string, reduction pattern
+        reduction: one of available reductions ('min', 'max', 'sum', 'mean', 'prod'), case-sensitive
         alternatively, a callable f(tensor, reduced_axes) -> tensor can be provided.
         This allows using various reductions, examples: np.max, tf.reduce_logsumexp, torch.var, etc.
-    :param axes_lengths: any additional specifications for dimensions
-    :return: tensor of the same type as input
+        axes_lengths: any additional specifications for dimensions
+
+    Returns:
+        tensor of the same type as input
     """
     try:
         hashable_axes_lengths = tuple(sorted(axes_lengths.items()))
@@ -384,38 +397,51 @@ def rearrange(tensor, pattern, **axes_lengths):
 
     Examples for rearrange operation:
 
-    >>> # suppose we have a set of 32 images in "h w c" format (height-width-channel)
-    >>> images = [np.random.randn(30, 40, 3) for _ in range(32)]
-    >>> # stack along first (batch) axis, output is a single array
-    >>> rearrange(images, 'b h w c -> b h w c').shape
-    (32, 30, 40, 3)
-    >>> # concatenate images along height (vertical axis), 960 = 32 * 30
-    >>> rearrange(images, 'b h w c -> (b h) w c').shape
-    (960, 40, 3)
-    >>> # concatenated images along horizontal axis, 1280 = 32 * 40
-    >>> rearrange(images, 'b h w c -> h (b w) c').shape
-    (30, 1280, 3)
-    >>> # reordered axes to "b c h w" format for deep learning
-    >>> rearrange(images, 'b h w c -> b c h w').shape
-    (32, 3, 30, 40)
-    >>> # flattened each image into a vector, 3600 = 30 * 40 * 3
-    >>> rearrange(images, 'b h w c -> b (c h w)').shape
-    (32, 3600)
-    >>> # split each image into 4 smaller (top-left, top-right, bottom-left, bottom-right), 128 = 32 * 2 * 2
-    >>> rearrange(images, 'b (h1 h) (w1 w) c -> (b h1 w1) h w c', h1=2, w1=2).shape
-    (128, 15, 20, 3)
-    >>> # space-to-depth operation
-    >>> rearrange(images, 'b (h h1) (w w1) c -> b h w (c h1 w1)', h1=2, w1=2).shape
-    (32, 15, 20, 12)
+    ```python
+    # suppose we have a set of 32 images in "h w c" format (height-width-channel)
+    images = [np.random.randn(30, 40, 3) for _ in range(32)]
 
-    :param tensor: tensor of any supported library (e.g. numpy.ndarray, tensorflow, pytorch, mxnet.ndarray).
-            list of tensors is also accepted, those should be of the same type and shape
-    :param pattern: string, rearrangement pattern
-    :param axes_lengths: any additional specifications for dimensions
-    :return: tensor of the same type as input. If possible, a view to the original tensor is returned.
+    # stack along first (batch) axis, output is a single array
+    rearrange(images, 'b h w c -> b h w c').shape
+    (32, 30, 40, 3)
+
+    # concatenate images along height (vertical axis), 960 = 32 * 30
+    rearrange(images, 'b h w c -> (b h) w c').shape
+    (960, 40, 3)
+
+    # concatenated images along horizontal axis, 1280 = 32 * 40
+    rearrange(images, 'b h w c -> h (b w) c').shape
+    (30, 1280, 3)
+
+    # reordered axes to "b c h w" format for deep learning
+    rearrange(images, 'b h w c -> b c h w').shape
+    (32, 3, 30, 40)
+
+    # flattened each image into a vector, 3600 = 30 * 40 * 3
+    rearrange(images, 'b h w c -> b (c h w)').shape
+    (32, 3600)
+
+    # split each image into 4 smaller (top-left, top-right, bottom-left, bottom-right), 128 = 32 * 2 * 2
+    rearrange(images, 'b (h1 h) (w1 w) c -> (b h1 w1) h w c', h1=2, w1=2).shape
+    (128, 15, 20, 3)
+
+    # space-to-depth operation
+    rearrange(images, 'b (h h1) (w w1) c -> b h w (c h1 w1)', h1=2, w1=2).shape
+    (32, 15, 20, 12)
+    ```
 
     When composing axes, C-order enumeration used (consecutive elements have different last axis)
     Find more examples in einops tutorial.
+
+    Parameters:
+        tensor: tensor of any supported library (e.g. numpy.ndarray, tensorflow, pytorch, mxnet.ndarray).
+                list of tensors is also accepted, those should be of the same type and shape
+        pattern: string, rearrangement pattern
+        axes_lengths: any additional specifications for dimensions
+
+    Returns:
+        tensor of the same type as input. If possible, a view to the original tensor is returned.
+
     """
     if isinstance(tensor, list):
         if len(tensor) == 0:
@@ -430,33 +456,45 @@ def repeat(tensor, pattern, **axes_lengths):
     This operation includes functionality of repeat, tile, broadcast functions.
 
     Examples for repeat operation:
-    >>> # a grayscale image (of shape height x width)
-    >>> image = np.random.randn(30, 40)
-    >>> # change it to RGB format by repeating in each channel
-    >>> repeat(image, 'h w -> h w c', c=3).shape
-    (30, 40, 3)
-    >>> # repeat image 2 times along height (vertical axis)
-    >>> repeat(image, 'h w -> (repeat h) w', repeat=2).shape
-    (60, 40)
-    >>> # repeat image 2 time along height and 3 times along width
-    >>> repeat(image, 'h w -> h (repeat w)', repeat=3).shape
-    (30, 120)
-    >>> # convert each pixel to a small square 2x2. Upsample image by 2x
-    >>> repeat(image, 'h w -> (h h2) (w w2)', h2=2, w2=2).shape
-    (60, 80)
-    >>> # pixelate image first by downsampling by 2x, then upsampling
-    >>> downsampled = reduce(image, '(h h2) (w w2) -> h w', 'mean', h2=2, w2=2)
-    >>> repeat(downsampled, 'h w -> (h h2) (w w2)', h2=2, w2=2).shape
-    (30, 40)
 
-    :param tensor: tensor of any supported library (e.g. numpy.ndarray, tensorflow, pytorch, mxnet.ndarray).
-            list of tensors is also accepted, those should be of the same type and shape
-    :param pattern: string, rearrangement pattern
-    :param axes_lengths: any additional specifications for dimensions
-    :return: tensor of the same type as input. If possible, a view to the original tensor is returned.
+    ```python
+    # a grayscale image (of shape height x width)
+    image = np.random.randn(30, 40)
+
+    # change it to RGB format by repeating in each channel
+    repeat(image, 'h w -> h w c', c=3).shape
+    (30, 40, 3)
+
+    # repeat image 2 times along height (vertical axis)
+    repeat(image, 'h w -> (repeat h) w', repeat=2).shape
+    (60, 40)
+
+    # repeat image 2 time along height and 3 times along width
+    repeat(image, 'h w -> h (repeat w)', repeat=3).shape
+    (30, 120)
+
+    # convert each pixel to a small square 2x2. Upsample image by 2x
+    repeat(image, 'h w -> (h h2) (w w2)', h2=2, w2=2).shape
+    (60, 80)
+
+    # pixelate image first by downsampling by 2x, then upsampling
+    downsampled = reduce(image, '(h h2) (w w2) -> h w', 'mean', h2=2, w2=2)
+    repeat(downsampled, 'h w -> (h h2) (w w2)', h2=2, w2=2).shape
+    (30, 40)
+    ```
 
     When composing axes, C-order enumeration used (consecutive elements have different last axis)
     Find more examples in einops tutorial.
+
+    Parameters:
+        tensor: tensor of any supported library (e.g. numpy.ndarray, tensorflow, pytorch, mxnet.ndarray).
+            list of tensors is also accepted, those should be of the same type and shape
+        pattern: string, rearrangement pattern
+        axes_lengths: any additional specifications for dimensions
+    
+    Returns:
+        Tensor of the same type as input. If possible, a view to the original tensor is returned.
+
     """
     return reduce(tensor, pattern, reduction='repeat', **axes_lengths)
 
@@ -465,19 +503,29 @@ def parse_shape(x, pattern: str):
     """
     Parse a tensor shape to dictionary mapping axes names to their lengths.
     Use underscore to skip the dimension in parsing.
-    >>> x = np.zeros([2, 3, 5, 7])
-    >>> parse_shape(x, 'batch _ h w')
-    {'batch': 2, 'h': 5, 'w': 7}
 
-    parse_shape output can be used to specify axes_lengths for other operations
-    >>> y = np.zeros([700])
-    >>> rearrange(y, '(b c h w) -> b c h w', **parse_shape(x, 'b _ h w')).shape
+    ```python
+    x = np.zeros([2, 3, 5, 7])
+    parse_shape(x, 'batch _ h w')
+    {'batch': 2, 'h': 5, 'w': 7}
+    ```
+
+    `parse_shape` output can be used to specify axes_lengths for other operations:
+
+    ```python
+    y = np.zeros([700])
+    rearrange(y, '(b c h w) -> b c h w', **parse_shape(x, 'b _ h w')).shape
     (2, 10, 5, 7)
+    ```
 
     For symbolic frameworks may return symbols, not integers.
-    :param x: tensor of any of supported frameworks
-    :param pattern: str, space separated names for axes, underscore means skip axis
-    :return: dict, maps axes names to their lengths
+
+    Parameters:
+        x: tensor of any of supported frameworks
+        pattern: str, space separated names for axes, underscore means skip axis
+
+    Returns:
+        dict, maps axes names to their lengths
     """
     names = [elementary_axis for elementary_axis in pattern.split(' ') if len(elementary_axis) > 0]
     shape = get_backend(x).shape(x)
@@ -514,9 +562,13 @@ def _enumerate_directions(x):
 
 def asnumpy(tensor):
     """
-    Convert a tensor of an imperative framework (i.e. numpy/cupy/torch/gluon/etc.) to numpy.ndarray
+    Convert a tensor of an imperative framework (i.e. numpy/cupy/torch/gluon/etc.) to `numpy.ndarray`
 
-    :param tensor: tensor of any of known imperative framework
-    :return: numpy.ndarray, converted to numpy
+
+    Parameters:
+        tensor: tensor of any of known imperative framework
+
+    Returns:
+        `numpy.ndarray`, converted to numpy
     """
     return get_backend(tensor).to_numpy(tensor)

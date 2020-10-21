@@ -1,0 +1,3 @@
+# einops.asnumpy
+
+::: einops.asnumpy
