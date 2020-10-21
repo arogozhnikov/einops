@@ -368,8 +368,8 @@ def reduce(tensor, pattern: str, reduction: Reduction, **axes_lengths: int):
             list of tensors is also accepted, those should be of the same type and shape
         pattern: string, reduction pattern
         reduction: one of available reductions ('min', 'max', 'sum', 'mean', 'prod'), case-sensitive
-        alternatively, a callable f(tensor, reduced_axes) -> tensor can be provided.
-        This allows using various reductions, examples: np.max, tf.reduce_logsumexp, torch.var, etc.
+            alternatively, a callable f(tensor, reduced_axes) -> tensor can be provided.
+            This allows using various reductions, examples: np.max, tf.reduce_logsumexp, torch.var, etc.
         axes_lengths: any additional specifications for dimensions
 
     Returns:
