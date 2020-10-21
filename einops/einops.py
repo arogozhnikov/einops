@@ -389,7 +389,7 @@ def reduce(tensor, pattern: str, reduction: Reduction, **axes_lengths: int):
         raise EinopsError(message + '\n {}'.format(e))
 
 
-def rearrange(tensor, pattern, **axes_lengths):
+def rearrange(tensor, pattern: str, **axes_lengths):
     """
     einops.rearrange is a reader-friendly smart element reordering for multidimensional tensors.
     This operation includes functionality of transpose (axes permutation), reshape (view), squeeze, unsqueeze,
@@ -450,7 +450,7 @@ def rearrange(tensor, pattern, **axes_lengths):
     return reduce(tensor, pattern, reduction='rearrange', **axes_lengths)
 
 
-def repeat(tensor, pattern, **axes_lengths):
+def repeat(tensor, pattern: str, **axes_lengths):
     """
     einops.repeat allows reordering elements and repeating them in arbitrary combinations.
     This operation includes functionality of repeat, tile, broadcast functions.
