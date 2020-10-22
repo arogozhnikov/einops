@@ -350,11 +350,11 @@ def reduce(tensor, pattern: str, reduction: Reduction, **axes_lengths: int):
 
     >>> # Adaptive 2d max-pooling to 3 * 4 grid
     >>> reduce(x, 'b c (h1 h2) (w1 w2) -> b c h1 w1', 'max', h1=3, w1=4).shape
-    >>> (10, 20, 3, 4)
+    10, 20, 3, 4)
 
     >>> # Global average pooling
     >>> reduce(x, 'b c h w -> b c', 'mean').shape
-    >>> (10, 20)
+    10, 20)
 
     >>> # Subtracting mean over batch for each channel
     >>> y = x - reduce(x, 'b c h w -> () c () ()', 'mean')
@@ -403,31 +403,31 @@ def rearrange(tensor, pattern: str, **axes_lengths):
 
     >>> # stack along first (batch) axis, output is a single array
     >>> rearrange(images, 'b h w c -> b h w c').shape
-    >>> (32, 30, 40, 3)
+    32, 30, 40, 3)
 
     >>> # concatenate images along height (vertical axis), 960 = 32 * 30
     >>> rearrange(images, 'b h w c -> (b h) w c').shape
-    >>> (960, 40, 3)
+    960, 40, 3)
 
     >>> # concatenated images along horizontal axis, 1280 = 32 * 40
     >>> rearrange(images, 'b h w c -> h (b w) c').shape
-    >>> (30, 1280, 3)
+    30, 1280, 3)
 
     >>> # reordered axes to "b c h w" format for deep learning
     >>> rearrange(images, 'b h w c -> b c h w').shape
-    >>> (32, 3, 30, 40)
+    32, 3, 30, 40)
 
     >>> # flattened each image into a vector, 3600 = 30 * 40 * 3
     >>> rearrange(images, 'b h w c -> b (c h w)').shape
-    >>> (32, 3600)
+    32, 3600)
 
     >>> # split each image into 4 smaller (top-left, top-right, bottom-left, bottom-right), 128 = 32 * 2 * 2
     >>> rearrange(images, 'b (h1 h) (w1 w) c -> (b h1 w1) h w c', h1=2, w1=2).shape
-    >>> (128, 15, 20, 3)
+    128, 15, 20, 3)
 
     >>> # space-to-depth operation
     >>> rearrange(images, 'b (h h1) (w w1) c -> b h w (c h1 w1)', h1=2, w1=2).shape
-    >>> (32, 15, 20, 12)
+    32, 15, 20, 12)
     ```
 
     When composing axes, C-order enumeration used (consecutive elements have different last axis)
@@ -463,24 +463,24 @@ def repeat(tensor, pattern: str, **axes_lengths):
 
     >>> # change it to RGB format by repeating in each channel
     >>> repeat(image, 'h w -> h w c', c=3).shape
-    >>> (30, 40, 3)
+    30, 40, 3)
 
     >>> # repeat image 2 times along height (vertical axis)
     >>> repeat(image, 'h w -> (repeat h) w', repeat=2).shape
-    >>> (60, 40)
+    60, 40)
 
     >>> # repeat image 2 time along height and 3 times along width
     >>> repeat(image, 'h w -> h (repeat w)', repeat=3).shape
-    >>> (30, 120)
+    30, 120)
 
     >>> # convert each pixel to a small square 2x2. Upsample image by 2x
     >>> repeat(image, 'h w -> (h h2) (w w2)', h2=2, w2=2).shape
-    >>> (60, 80)
+    60, 80)
 
     >>> # pixelate image first by downsampling by 2x, then upsampling
     >>> downsampled = reduce(image, '(h h2) (w w2) -> h w', 'mean', h2=2, w2=2)
     >>> repeat(downsampled, 'h w -> (h h2) (w w2)', h2=2, w2=2).shape
-    >>> (30, 40)
+    30, 40)
     ```
 
     When composing axes, C-order enumeration used (consecutive elements have different last axis)
@@ -515,7 +515,7 @@ def parse_shape(x, pattern: str):
     ```python
     >>> y = np.zeros([700])
     >>> rearrange(y, '(b c h w) -> b c h w', **parse_shape(x, 'b _ h w')).shape
-    >>> (2, 10, 5, 7)
+    2, 10, 5, 7)
     ```
 
     For symbolic frameworks may return symbols, not integers.
