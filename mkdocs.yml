@@ -1,0 +1,35 @@
+site_name: Einops
+repo_name: arogozhnikov/einops
+repo_url: https://github.com/arogozhnikov/einops
+site_url: https://arogozhnikov.github.io/einops
+theme:
+  name: material
+  favicon: images/favicon.png
+  icon:
+    logo: fontawesome/solid/infinity
+    repo: octicons/mark-github-16
+nav:
+  - Introduction: index.md
+  - Tutorials:
+      Einops Basics: 1-einops-basics.ipynb
+      Einops for Deep Learning: 2-einops-for-deep-learning.ipynb
+      Pytorch Examples: pytorch-examples.html
+  - API Reference:
+      asnumpy: api/asnumpy.md
+      parse_shape: api/parse_shape.md
+      rearrange: api/rearrange.md
+      reduce: api/reduce.md
+      repeat: api/repeat.md
+extra:
+  search:
+    language: en
+markdown_extensions:
+  - admonition
+  - codehilite
+  - pymdownx.arithmatex
+plugins:
+  - search
+  - mkdocstrings
+  - mkdocs-jupyter
+extra_javascript:
+  - https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML

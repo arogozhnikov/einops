@@ -1,0 +1,3 @@
+# einops.rearrange
+
+::: einops.rearrange

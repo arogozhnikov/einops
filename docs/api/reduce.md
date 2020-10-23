@@ -1,0 +1,3 @@
+# einops.reduce
+
+::: einops.reduce
