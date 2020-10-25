@@ -38,7 +38,8 @@ Supports numpy, pytorch, tensorflow, and [others](#supported-frameworks).
 
 ## Contents
 
-- [Tutorial](#Tutorial--Documentation) 
+- [Documentation](https://arogozhnikov.github.io/einops/)
+- [Tutorial](#Tutorials) 
 - [API micro-reference](#API)
 - [Installation](#Installation)
 - [Naming](#Naming)
@@ -48,7 +49,7 @@ Supports numpy, pytorch, tensorflow, and [others](#supported-frameworks).
 - [Github repository (for issues/questions)](https://github.com/arogozhnikov/einops)
 
 
-## Tutorial / Documentation 
+## Tutorials
 
 Tutorials are the most convenient way to see `einops` in action (and right now work as a documentation)
 
@@ -271,16 +272,10 @@ Einops works with ...
 Best ways to contribute are
 
 - spread the word about `einops`
-- if you like explaining things, alternative tutorials would be very helpful
-  - some people grasp `einops` ideas immediately, while many others need help-by-example
+- if you like explaining things, alternative tutorials are very helpful
 - translating examples in languages other than English is also a good idea
 - use `einops` notation in your papers to strictly define used operations!
 
 ## Supported python versions
 
-`einops` works with python 3.5 or later. 
-
-<!--
-There is nothing specific to python 3 in the code, 
-we simply [need to move further](http://github.com/arogozhnikov/python3_with_pleasure).
--->
+`einops` works with python 3.6 or later. 
