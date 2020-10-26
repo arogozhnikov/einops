@@ -1,0 +1,8 @@
+div.highlight{
+    /* this was introduced to fix size of documentation script */
+    font-size: 12px;
+}
+
+div.highlight>pre{
+    padding: 3px;
+}
