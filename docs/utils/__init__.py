@@ -25,8 +25,19 @@ def display_np_arrays_as_images():
 
 from IPython.display import display_html
 
+_style_inline = """<style>
+.einops-answer {
+    color: transparent;
+    padding: 5px 15px;
+    background-color: #def;
+}
+.einops-answer:hover { color: blue; } 
+</style>
+"""
+
 
 def guess(x):
-    display_html("""
-    <h4>Answer is: <a class="anchor-link jp-InternalAnchorLink" href="#Z">{x}</a> (hover to see)</h4>
-    """.format(x=tuple(x)), raw=True)
+    display_html(
+        _style_inline
+        + "<h4>Answer is: <span class='einops-answer'>{x}</span> (hover to see)</h4>".format(x=tuple(x)),
+        raw=True)
