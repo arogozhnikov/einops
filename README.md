@@ -10,7 +10,7 @@
 # einops 
 [![Build Status](https://travis-ci.org/arogozhnikov/einops.svg?branch=master)](https://travis-ci.org/arogozhnikov/einops)
 [![PyPI version](https://badge.fury.io/py/einops.svg)](https://badge.fury.io/py/einops)
-[![Documentation](https://img.shields.io/badge/documentation-link-blue.svg)](https://arogozhnikov.github.io/einops/)
+[![Documentation](https://img.shields.io/badge/documentation-link-blue.svg)](https://einops.rocks/)
 
 
 Flexible and powerful tensor operations for readable and reliable code. 
@@ -38,7 +38,7 @@ Supports numpy, pytorch, tensorflow, and [others](#supported-frameworks).
 
 ## Contents
 
-- [Documentation](https://arogozhnikov.github.io/einops/)
+- [Documentation](https://einops.rocks/)
 - [Tutorial](#Tutorials) 
 - [API micro-reference](#API)
 - [Installation](#Installation)
