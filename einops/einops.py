@@ -330,9 +330,6 @@ def _match_einop(pattern: str, reduction=None, **axes_lengths: int):
     left = ParsedExpression(left)
     rght = ParsedExpression(rght)
 
-    if left.has_ellipsis or rght.has_ellipsis:
-        raise EinopsError('No ellipsis allowed when using generic einop: {}'.format(pattern))
-
     default_op = 'rearrange'
     op = default_op
 
