@@ -1,6 +1,6 @@
 import numpy
 
-from einops import rearrange, parse_shape, reduce
+from einops import rearrange, parse_shape, reduce, einop
 from tests import collect_test_backends
 from tests.test_ops import imp_op_backends
 
