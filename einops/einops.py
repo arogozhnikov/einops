@@ -323,6 +323,50 @@ def _prepare_transformation_recipe(pattern: str,
         ellipsis_position_in_lhs=ellipsis_left,
     )
 
+@functools.lru_cache(256)
+def _match_einop(pattern: str, reduction=None, **axes_lengths: int):
+    """Find the corresponding operation matching the pattern"""
+    left, rght = pattern.split('->')
+    left = ParsedExpression(left)
+    rght = ParsedExpression(rght)
+
+    if left.has_ellipsis or rght.has_ellipsis:
+        raise EinopsError('No ellipsis allowed when using generic einop: {}'.format(pattern))
+
+    default_op = 'rearrange'
+    op = default_op
+
+    for index in left.identifiers:
+        if index not in rght.identifiers:
+            op = 'reduce'
+            break
+
+    for index in rght.identifiers:
+        if index not in left.identifiers:
+            if op != default_op:
+                raise EinopsError('You must perform a reduce and repeat separately: {}'.format(pattern))
+            op = 'repeat'
+            break
+
+    return op
+
+def einop(tensor, pattern: str, reduction=None, **axes_lengths: int):
+    """Perform either reduce, rearrange, or repeat depending on pattern"""
+    op = _match_einop(pattern, reduction, **axes_lengths)
+
+    if op == 'rearrange':
+        if reduction is not None:
+            raise EinopsError('Do not pass reduction for rearrange pattern: {}'.format(pattern))
+        return rearrange(tensor, pattern, **axes_lengths)
+    elif op == 'reduce':
+        if reduction is None:
+            raise EinopsError('Missing reduction operation for reduce pattern: {}'.format(pattern))
+        return reduce(tensor, pattern, reduction, **axes_lengths)
+    elif op == 'repeat':
+        if reduction is not None:
+            raise EinopsError('Do not pass reduction for repeat pattern: {}'.format(pattern))
+        return repeat(tensor, pattern, **axes_lengths)
+
 
 def reduce(tensor, pattern: str, reduction: Reduction, **axes_lengths: int):
     """
