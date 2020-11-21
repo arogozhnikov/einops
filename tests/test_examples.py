@@ -81,6 +81,30 @@ def test_rearrange_examples():
         assert tensors.shape == (30, 10 * 40, 20)
         return tensors
 
+
+    #Generic operations:
+    def test12(x):
+        # concatenate
+        tensors = list(x + 0)  # 0 is needed https://github.com/tensorflow/tensorflow/issues/23185
+        tensors = einop(tensors, 'b c h w -> h (b w) c')
+        assert tensors.shape == (30, 10 * 40, 20)
+        return tensors
+
+    def test13(x):
+        # max-pooling
+        y = einop(x, 'b c (h h1) (w w1) -> b c h w', reduction='max', h1=2, w1=2)
+        assert y.shape == (10, 20, 30 // 2, 40 // 2)
+        return y
+
+    def test14(x):
+        # squeeze - unsqueeze
+        y = einop(x, 'b c h w -> b c () ()', reduction='max')
+        assert y.shape == (10, 20, 1, 1)
+        y = einop(y, 'b c () () -> c b')
+        assert y.shape == (20, 10)
+        return y
+
+
     def shufflenet(x, convolve, c1, c2):
         # shufflenet reordering example
         x = convolve(x)
@@ -112,7 +136,7 @@ def test_rearrange_examples():
     # mock for convolution (works for all backends)
     convolve_mock = lambda x: x
 
-    tests = [test1, test2, test3, test4, test5, test6, test7, test8, test9, test10, test11,
+    tests = [test1, test2, test3, test4, test5, test6, test7, test8, test9, test10, test11, test12, test13, test14,
              lambda x: shufflenet(x, convolve=convolve_mock, c1=4, c2=5),
              lambda x: convolve_strided_1d(x, stride=2, usual_convolution=convolve_mock),
              lambda x: convolve_strided_2d(x, h_stride=2, w_stride=2, usual_convolution=convolve_mock),
