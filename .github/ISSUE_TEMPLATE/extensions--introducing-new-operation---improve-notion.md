@@ -1,7 +1,7 @@
 ---
 name: 'Extensions: Introducing new operation / improve notion'
 about: 'You want to suggest a new operation or extend an existing one? '
-title: "[Feature sugggestion]"
+title: "[Feature suggestion]"
 labels: feature suggestion
 assignees: ''
 
