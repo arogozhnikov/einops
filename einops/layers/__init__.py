@@ -20,7 +20,7 @@ class RearrangeMixin:
         super().__init__()
         self.pattern = pattern
         self.axes_lengths = axes_lengths
-        self.recipe()  # checking parameters
+        self._recipe = self.recipe()  # checking parameters
 
     def __repr__(self):
         params = repr(self.pattern)
@@ -37,10 +37,7 @@ class RearrangeMixin:
             raise EinopsError(' Error while preparing {!r}\n {}'.format(self, e))
 
     def _apply_recipe(self, x):
-        try:
-            return self.recipe().apply(x)
-        except EinopsError as e:
-            raise EinopsError(' Error while computing {!r}\n {}'.format(self, e))
+        return self._recipe.apply(x)
 
 
 class ReduceMixin:
@@ -59,7 +56,7 @@ class ReduceMixin:
         self.pattern = pattern
         self.reduction = reduction
         self.axes_lengths = axes_lengths
-        self.recipe()  # checking parameters
+        self._recipe = self.recipe()  # checking parameters
 
     def __repr__(self):
         params = '{!r}, {!r}'.format(self.pattern, self.reduction)
@@ -76,7 +73,4 @@ class ReduceMixin:
             raise EinopsError(' Error while preparing {!r}\n {}'.format(self, e))
 
     def _apply_recipe(self, x):
-        try:
-            return self.recipe().apply(x)
-        except EinopsError as e:
-            raise EinopsError(' Error while computing {!r}\n {}'.format(self, e))
+        return self._recipe.apply(x)
