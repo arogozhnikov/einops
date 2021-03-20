@@ -269,7 +269,7 @@ class MXNetBackend(AbstractBackend):
             return x  # poor support of scalars in mxnet
         if any(isinstance(dimension, UnknownSize) for dimension in shape):
             from einops import EinopsError
-            raise EinopsError("Mxnet could't infer all dimensions statically, please provide those with axes_lengths")
+            raise EinopsError("Mxnet couldn't infer all dimensions statically, please provide those with axes_lengths")
         return x.reshape(shape)
 
     def arange(self, start, stop):

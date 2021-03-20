@@ -84,7 +84,7 @@ def check_op_against_numpy(backend, numpy_input, pattern, axes_lengths, reductio
     check_equal = numpy.array_equal
     p_none_dimension = 0.5
     if 'mxnet' in backend.framework_name:
-        # known bug in mxnet: it cant work with scalars - so use allclose instead
+        # known bug in mxnet: it can't work with scalars - so use allclose instead
         check_equal = numpy.allclose
         # mxnet can't work unless shape is completely specified
         p_none_dimension = 0
@@ -290,7 +290,7 @@ def test_reduction_stress_imperatives():
                     result2 = getattr(result2, reduction)(axis=tuple(range(skipped)))
                 assert coincide(result1, result2)
                 if n_axes == 0 and 'mxnet' in backend.framework_name:
-                    # known mxnet bug, cant attach gradients to scalar
+                    # known mxnet bug, can't attach gradients to scalar
                     continue
                 check_op_against_numpy(backend, x, pattern, reduction=reduction, axes_lengths={}, is_symbolic=False)
 
