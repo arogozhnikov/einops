@@ -229,6 +229,7 @@ y = x.flatten() # or flatten(x)
 ```
 
 Suppose `x`'s shape was `(3, 4, 5)`, then `y` has shape ...
+
 - numpy, cupy, chainer, pytorch: `(60,)`
 - keras, tensorflow.layers, mxnet and gluon: `(3, 20)`
 
