@@ -37,7 +37,7 @@ class RearrangeMixin:
             raise EinopsError(' Error while preparing {!r}\n {}'.format(self, e))
 
     def _apply_recipe(self, x):
-        self._recipe.apply(x)
+        return self._recipe.apply(x)
 
 
 class ReduceMixin:
@@ -73,4 +73,4 @@ class ReduceMixin:
             raise EinopsError(' Error while preparing {!r}\n {}'.format(self, e))
 
     def _apply_recipe(self, x):
-        self._recipe.apply(x)
+        return self._recipe.apply(x)
