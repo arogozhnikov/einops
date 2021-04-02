@@ -471,7 +471,7 @@ def repeat(tensor, pattern: str, **axes_lengths):
     >>> repeat(image, 'h w -> (repeat h) w', repeat=2).shape
     (60, 40)
 
-    # repeat image 2 time along height and 3 times along width
+    # repeat image 3 times along width
     >>> repeat(image, 'h w -> h (repeat w)', repeat=3).shape
     (30, 120)
 
