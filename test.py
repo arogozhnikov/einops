@@ -45,7 +45,8 @@ dependencies = [
     'pillow',
     'nose',
 ]
-assert 0 == run('pip install {} --pre --progress-bar off'.format(' '.join(dependencies)))
+
+assert 0 == run('pip install {} --progress-bar off'.format(' '.join(dependencies)))
 # install einops
 assert 0 == run('pip install -e .')
 
