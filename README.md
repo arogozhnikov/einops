@@ -1,3 +1,9 @@
+<!-- this link magically rendered as video -->
+
+https://user-images.githubusercontent.com/6318811/116849688-0ca41c00-aba4-11eb-8ccf-74744f6cbc23.mp4
+
+
+<!--
 <a href='http://arogozhnikov.github.io/images/einops/einops_video.mp4' >
 <div align="center">
   <img src="http://arogozhnikov.github.io/images/einops/einops_video.gif" alt="einops package examples" />
@@ -6,6 +12,7 @@
   <br><br>
 </div>
 </a>
+-->
 
 # einops 
 [![Build Status](https://travis-ci.org/arogozhnikov/einops.svg?branch=master)](https://travis-ci.org/arogozhnikov/einops)
