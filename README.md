@@ -58,7 +58,7 @@ Supports numpy, pytorch, tensorflow, and [others](#supported-frameworks).
 
 ## Tutorials
 
-Tutorials are the most convenient way to see `einops` in action (and right now work as a documentation)
+Tutorials are the most convenient way to see `einops` in action
 
 - part 1: [einops fundamentals](https://github.com/arogozhnikov/einops/blob/master/docs/1-einops-basics.ipynb) 
 - part 2: [einops for deep learning](https://github.com/arogozhnikov/einops/blob/master/docs/2-einops-for-deep-learning.ipynb)
