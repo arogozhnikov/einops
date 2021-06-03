@@ -216,12 +216,12 @@ and you'd like to specify this in your code.
 ```python
 reduce(x, 'b c (x dx) -> b c x', 'max', dx=2)
 reduce(x, 'b c (x dx) (y dy) -> b c x y', 'max', dx=2, dy=3)
-reduce(x, 'b c (x dx) (y dy) (z dz)-> b c x y z', 'max', dx=2, dy=3, dz=4)
+reduce(x, 'b c (x dx) (y dy) (z dz) -> b c x y z', 'max', dx=2, dy=3, dz=4)
 ```
 These examples demonstrated that we don't use separate operations for 1d/2d/3d pooling, 
 those are all defined in a uniform way. 
 
-Space-to-depth and depth-to space are defined in many frameworks but how about width-to-height?
+Space-to-depth and depth-to space are defined in many frameworks but how about width-to-height? Here you go:
 
 ```python
 rearrange(x, 'b c h (w w2) -> b c (h w2) w', w2=2)
@@ -239,6 +239,8 @@ Suppose `x`'s shape was `(3, 4, 5)`, then `y` has shape ...
 
 - numpy, cupy, chainer, pytorch: `(60,)`
 - keras, tensorflow.layers, mxnet and gluon: `(3, 20)`
+
+`einops` works the same way in all frameworks.
 
 ### Independence of framework terminology
 
@@ -258,7 +260,6 @@ repeat(image, 'h w -> h (tile w)', tile=2)  # in mxnet
 ... (etc.)
 ```
 
-<!-- TODO examples for depth-to-space and pixel shuffle? transpose vs permute? -->
 
 ## Supported frameworks
 
@@ -280,7 +281,7 @@ Einops works with ...
 Best ways to contribute are
 
 - spread the word about `einops`
-- if you like explaining things, alternative tutorials are very helpful
+- if you like explaining things, alternative tutorials are welcome
 - translating examples in languages other than English is also a good idea
 - use `einops` notation in your papers to strictly define used operations!
 
