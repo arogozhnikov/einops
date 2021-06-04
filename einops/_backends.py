@@ -505,7 +505,7 @@ class KerasBackend(AbstractBackend):
     framework_name = 'keras'
 
     def __init__(self):
-        import keras
+        from tensorflow import keras
         self.keras = keras
         self.K = keras.backend
 
