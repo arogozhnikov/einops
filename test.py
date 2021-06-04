@@ -36,7 +36,6 @@ dependencies = [
     'torch',
     'tensorflow',
     'chainer',
-    'keras',
     'jax',
     'jaxlib',
     'nbformat',
