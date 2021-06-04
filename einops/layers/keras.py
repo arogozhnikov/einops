@@ -1,4 +1,4 @@
-from keras.engine import Layer
+from tensorflow.keras.layers import Layer
 
 from .._backends import UnknownSize
 from . import RearrangeMixin, ReduceMixin
