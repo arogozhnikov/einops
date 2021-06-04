@@ -505,12 +505,13 @@ class KerasBackend(AbstractBackend):
     framework_name = 'keras'
 
     def __init__(self):
-        import keras
-        self.keras = keras
-        self.K = keras.backend
+        import tensorflow as tf
+        self.tf = tf
+        self.keras = tf.keras
+        self.K = tf.keras.backend
 
     def is_appropriate_type(self, tensor):
-        return self.K.is_tensor(tensor) and self.K.is_keras_tensor(tensor)
+        return self.tf.is_tensor(tensor) and self.K.is_keras_tensor(tensor)
 
     def create_symbol(self, shape):
         return self.keras.Input(batch_shape=shape)

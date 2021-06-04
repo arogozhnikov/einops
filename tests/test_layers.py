@@ -229,9 +229,9 @@ def test_keras_layer():
     if any(backend.framework_name == 'keras' for backend in collect_test_backends(symbolic=True, layers=True)):
         # checked that keras present
 
-        import keras
-        from keras.models import Sequential
-        from keras.layers import MaxPool2D as MaxPool2d, Conv2D as Conv2d, Dense as Linear, ReLU
+        import tensorflow as tf
+        from tensorflow.keras.models import Sequential
+        from tensorflow.keras.layers import MaxPool2D as MaxPool2d, Conv2D as Conv2d, Dense as Linear, ReLU
         from einops.layers.keras import Rearrange, Reduce, keras_custom_objects
 
         def create_model():
@@ -258,12 +258,12 @@ def test_keras_layer():
             tmp_filename = f.name
         # save arch + weights
         print('temp_path_keras1', tmp_filename)
-        keras.models.save_model(model1, tmp_filename)
-        model3 = keras.models.load_model(tmp_filename, custom_objects=keras_custom_objects)
+        tf.keras.models.save_model(model1, tmp_filename)
+        model3 = tf.keras.models.load_model(tmp_filename, custom_objects=keras_custom_objects)
         assert numpy.allclose(model1.predict_on_batch(input), model3.predict_on_batch(input))
 
         # save arch as json
-        model4 = keras.models.model_from_json(model1.to_json(), custom_objects=keras_custom_objects)
+        model4 = tf.keras.models.model_from_json(model1.to_json(), custom_objects=keras_custom_objects)
         model1.save_weights(tmp_filename)
         model4.load_weights(tmp_filename)
         model2.load_weights(tmp_filename)

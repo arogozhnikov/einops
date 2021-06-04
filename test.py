@@ -32,11 +32,10 @@ if have_cuda:
 # install dependencies
 dependencies = [
     'numpy',
-    'mxnet',
+    'mxnet==1.*',
     'torch',
     'tensorflow',
     'chainer',
-    'keras',
     'jax',
     'jaxlib',
     'nbformat',

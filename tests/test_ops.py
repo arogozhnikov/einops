@@ -311,7 +311,7 @@ def test_reduction_with_callable_imperatives():
         return chainer.functions.logsumexp(x, tuple_of_axes)
 
     def logsumexp_keras(x, tuple_of_axes):
-        import keras.backend as k
+        import tensorflow.keras.backend as k
         return k.logsumexp(x, tuple_of_axes)
 
     def logsumexp_numpy(x, tuple_of_axes):
