@@ -116,7 +116,8 @@ class WeightedEinsumMixin:
         bias_bound = (1 / _fan_in) ** 0.5
         self._create_parameters(_weight_shape, weight_bound, _bias_shape, bias_bound)
 
-        # rewrite einsum expression with single-letter latin identifiers so that each expression is
+        # rewrite einsum expression with single-letter latin identifiers so that each expression
+        # can be parsed by packages
         mapping2letters = {*left.identifiers, *right.identifiers, *weight.identifiers}
         mapping2letters = {k: letter for letter, k in zip(string.ascii_lowercase, mapping2letters)}
 
