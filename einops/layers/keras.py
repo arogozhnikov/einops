@@ -2,16 +2,8 @@ from tensorflow.keras.layers import Layer
 
 from .._backends import UnknownSize
 from . import RearrangeMixin, ReduceMixin
-import warnings
 
 __author__ = 'Alex Rogozhnikov'
-
-warnings.warn(
-    'Keras does not exist anymore as an independent framework, '
-    'these layers (targeted at old multi-framework keras) will be removed, '
-    'please use einops.layers.tensorflow.',
-    DeprecationWarning,
-)
 
 
 def _compute_output_shape(self, input_shape):
