@@ -502,7 +502,7 @@ class TensorflowBackend(AbstractBackend):
 
 
 class KerasBackend(AbstractBackend):
-    framework_name = 'keras'
+    framework_name = 'tensorflow.keras'
 
     def __init__(self):
         import tensorflow as tf
@@ -525,8 +525,8 @@ class KerasBackend(AbstractBackend):
         return self.K.arange(start, stop)
 
     def shape(self, x):
-        shape = self.K.shape(x)  # tf tensor (if tf is backend)
-        return tuple(shape[i] for i in range(shape.shape[0]))
+        shape = self.K.shape(x)  # tf tensor
+        return HashableTuple(tuple(shape))
 
     def reduce(self, x, operation, axes):
         return getattr(self.K, operation)(x, axis=axes)

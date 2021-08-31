@@ -97,8 +97,9 @@ def test_parse_shape_symbolic():
     backends = collect_test_backends(symbolic=True, layers=False)
     backends += collect_test_backends(symbolic=True, layers=True)
     for backend in backends:
-        if backend.framework_name == 'keras':
+        if backend.framework_name == 'tensorflow.keras':
             # need special way to compile, shape vars can be used only inside layers
+            # but not as outputs
             continue
         print('special shape parsing for', backend.framework_name)
         input_symbols = [

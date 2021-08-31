@@ -179,7 +179,7 @@ but rather a sequence (video).
 
 Semantic information makes the code easier to read and maintain. 
 
-### More checks
+### Convenient checks
 
 Reconsider the same example:
 

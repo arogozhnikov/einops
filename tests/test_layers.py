@@ -87,7 +87,7 @@ def test_rearrange_symbolic():
                     result2 = backend.eval_symbol(result_symbol2, eval_inputs)
                     assert numpy.allclose(result1, result2)
                 else:
-                    # keras is depreciated, so no checks for save/load
+                    # keras is deprecated, so no checks for save/load
                     pass
 
                 # now testing back-propagation
