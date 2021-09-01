@@ -1,24 +1,21 @@
 <!-- this link magically rendered as video -->
 
-https://user-images.githubusercontent.com/6318811/116849688-0ca41c00-aba4-11eb-8ccf-74744f6cbc23.mp4
+<!-- https://user-images.githubusercontent.com/6318811/116849688-0ca41c00-aba4-11eb-8ccf-74744f6cbc23.mp4 -->
 
-
-<!--
 <a href='http://arogozhnikov.github.io/images/einops/einops_video.mp4' >
 <div align="center">
   <img src="http://arogozhnikov.github.io/images/einops/einops_video.gif" alt="einops package examples" />
   <br>
-  <small><a href='http://arogozhnikov.github.io/images/einops/einops_video.mp4'>This video in better quality.</a></small>
+  <small><a href='http://arogozhnikov.github.io/images/einops/einops_video.mp4'>This video in high quality (mp4)</a></small>
   <br><br>
 </div>
 </a>
--->
 
 # einops 
 [![Run tests](https://github.com/arogozhnikov/einops/actions/workflows/run_tests.yml/badge.svg)](https://github.com/arogozhnikov/einops/actions/workflows/run_tests.yml)
 [![PyPI version](https://badge.fury.io/py/einops.svg)](https://badge.fury.io/py/einops)
 [![Documentation](https://img.shields.io/badge/documentation-link-blue.svg)](https://einops.rocks/)
-![Supported python versions](./docs/resources/python_badge.svg)
+![Supported python versions](https://raw.githubusercontent.com/arogozhnikov/einops/master/docs/resources/python_badge.svg)
 
 
 Flexible and powerful tensor operations for readable and reliable code. 
