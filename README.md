@@ -18,7 +18,7 @@ https://user-images.githubusercontent.com/6318811/116849688-0ca41c00-aba4-11eb-8
 [![Run tests](https://github.com/arogozhnikov/einops/actions/workflows/run_tests.yml/badge.svg)](https://github.com/arogozhnikov/einops/actions/workflows/run_tests.yml)
 [![PyPI version](https://badge.fury.io/py/einops.svg)](https://badge.fury.io/py/einops)
 [![Documentation](https://img.shields.io/badge/documentation-link-blue.svg)](https://einops.rocks/)
-![Supported python versions](./docs/resources/python_badge.svg)
+![Supported python versions](https://raw.githubusercontent.com/arogozhnikov/einops/master/docs/resources/python_badge.svg)
 
 
 Flexible and powerful tensor operations for readable and reliable code. 
