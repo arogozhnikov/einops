@@ -1,4 +1,4 @@
-<!-- this link magically rendered as video -->
+<!-- this link magically rendered as video, unfortunately not in docs -->
 
 <!-- https://user-images.githubusercontent.com/6318811/116849688-0ca41c00-aba4-11eb-8ccf-74744f6cbc23.mp4 -->
 
@@ -257,6 +257,7 @@ repeat(image, 'h w -> h (tile w)', tile=2)  # in mxnet
 ... (etc.)
 ```
 
+Testimonials provide user's perspective on the same question. 
 
 ## Supported frameworks <a name="Supported-frameworks"></a>
 
@@ -278,9 +279,10 @@ Einops works with ...
 Best ways to contribute are
 
 - spread the word about `einops`
-- if you like explaining things, alternative tutorials are welcome
-- translating examples in languages other than English is also a good idea
-- use `einops` in your code and papers!
+- if you like explaining things, more tutorials/tear-downs of implementations is welcome
+- tutorials in other languages are very welcome
+- do you have project/code example to share? Let me know in github discussions
+- use `einops` in your papers!
 
 ## Supported python versions
 
