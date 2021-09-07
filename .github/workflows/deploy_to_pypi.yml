@@ -1,0 +1,27 @@
+name: Deploy to pypi
+
+on:
+    release:
+        types: [created]
+
+jobs:
+    publish:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout sources
+              uses: actions/checkout@v2
+
+            - name: Set up Python
+              uses: actions/setup-python@v2
+              with:
+                  python-version: "3.8"
+
+            - name: Install dependencies
+              run: |
+                  pip install .
+            - name: Publish einops to PyPi
+              env:
+                  TWINE_USERNAME: "__token__"
+                  TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+              run: |
+                  source scripts/deploy_to_pypi.sh

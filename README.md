@@ -1,4 +1,4 @@
-<!-- this link magically rendered as video -->
+<!-- this link magically rendered as video, unfortunately not in docs -->
 
 <!-- https://user-images.githubusercontent.com/6318811/116849688-0ca41c00-aba4-11eb-8ccf-74744f6cbc23.mp4 -->
 
@@ -43,26 +43,16 @@ Supports numpy, pytorch, tensorflow, and [others](#supported-frameworks).
 
 ## Contents
 
+- [Installation](#Installation)
 - [Documentation](https://einops.rocks/)
 - [Tutorial](#Tutorials) 
 - [API micro-reference](#API)
-- [Installation](#Installation)
-- [Naming](#Naming)
 - [Why using einops](#Why-using-einops-notation)
 - [Supported frameworks](#Supported-frameworks)
 - [Contributing](#Contributing)
-- [Github repository (for issues/questions)](https://github.com/arogozhnikov/einops)
+- [Repository](https://github.com/arogozhnikov/einops) and [discussions](https://github.com/arogozhnikov/einops/discussions)
 
-
-## Tutorials
-
-Tutorials are the most convenient way to see `einops` in action
-
-- part 1: [einops fundamentals](https://github.com/arogozhnikov/einops/blob/master/docs/1-einops-basics.ipynb) 
-- part 2: [einops for deep learning](https://github.com/arogozhnikov/einops/blob/master/docs/2-einops-for-deep-learning.ipynb)
-- part 3: [real code fragments improved with einops](https://arogozhnikov.github.io/einops/pytorch-examples.html) (so far only for pytorch)   
-
-## Installation
+## Installation  <a name="Installation"></a>
 
 Plain and simple:
 ```bash
@@ -78,7 +68,16 @@ pip install https://github.com/arogozhnikov/einops/archive/master.zip
 ```
 -->
 
-## API 
+## Tutorials <a name="Tutorials"></a>
+
+Tutorials are the most convenient way to see `einops` in action
+
+- part 1: [einops fundamentals](https://github.com/arogozhnikov/einops/blob/master/docs/1-einops-basics.ipynb) 
+- part 2: [einops for deep learning](https://github.com/arogozhnikov/einops/blob/master/docs/2-einops-for-deep-learning.ipynb)
+- part 3: [improve pytorch code with einops](https://arogozhnikov.github.io/einops/pytorch-examples.html)   
+
+
+## API <a name="API"></a>
 
 `einops` has a minimalistic yet powerful API.
 
@@ -145,14 +144,14 @@ parse_shape(input_tensor, 'batch _ h w') # e.g {'batch': 64, 'h': 128, 'w': 160}
 ```
 -->
 
-## Naming
+## Naming <a name="Naming"></a>
 
 `einops` stands for Einstein-Inspired Notation for operations 
 (though "Einstein operations" is more attractive and easier to remember).
 
 Notation was loosely inspired by Einstein summation (in particular by `numpy.einsum` operation).
 
-## Why use `einops` notation?!
+## Why use `einops` notation?! <a name="Why-using-einops-notation"></a>
 
 
 ### Semantic information (being verbose in expectations)
@@ -258,8 +257,9 @@ repeat(image, 'h w -> h (tile w)', tile=2)  # in mxnet
 ... (etc.)
 ```
 
+Testimonials provide user's perspective on the same question. 
 
-## Supported frameworks
+## Supported frameworks <a name="Supported-frameworks"></a>
 
 Einops works with ...
 
@@ -274,14 +274,15 @@ Einops works with ...
 - [mxnet](https://mxnet.apache.org/) (experimental)
 
 
-## Contributing 
+## Contributing <a name="Contributing"></a>
 
 Best ways to contribute are
 
 - spread the word about `einops`
-- if you like explaining things, alternative tutorials are welcome
-- translating examples in languages other than English is also a good idea
-- use `einops` notation in your papers to strictly define used operations!
+- if you like explaining things, more tutorials/tear-downs of implementations is welcome
+- tutorials in other languages are very welcome
+- do you have project/code example to share? Let me know in github discussions
+- use `einops` in your papers!
 
 ## Supported python versions
 

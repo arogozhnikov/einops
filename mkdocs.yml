@@ -20,6 +20,8 @@ nav:
       rearrange: api/rearrange.md
       reduce: api/reduce.md
       repeat: api/repeat.md
+  - Testimonials: pages/testimonials.md
+  - Projects: pages/projects.md
 extra:
   search:
     language: en
