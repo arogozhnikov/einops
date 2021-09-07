@@ -43,6 +43,8 @@ ML TLDR twitter thread on einops:
 Book "Deep Reinforcement Learning in Action" by Brandon Brown & Alexander Zai
 contains an introduction into einops in chapter 10.
 
+[comment]: <> (MLP mixer introduction)
+[comment]: <> (https://www.youtube.com/watch?v=HqytB2GUbHA)
 
 ## Other einops-based projects worth looking at:
 
