@@ -3,7 +3,7 @@ import keyword
 import warnings
 from typing import List
 
-_ellipsis = '…'  # NB, this is a single unicode symbol. String is used as it is not a list, but can be iterated
+_ellipsis: str = '…'  # NB, this is a single unicode symbol. String is used as it is not a list, but can be iterated
 
 
 class AnonymousAxis(object):
