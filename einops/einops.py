@@ -327,9 +327,9 @@ def _prepare_transformation_recipe(pattern: str,
 def reduce(tensor, pattern: str, reduction: Reduction, **axes_lengths: int):
     """
     einops.reduce provides combination of reordering and reduction using reader-friendly notation.
-    
+
     Examples for reduce operation:
-    
+
     ```python
     >>> x = np.random.randn(100, 32, 64)
 
@@ -363,7 +363,7 @@ def reduce(tensor, pattern: str, reduction: Reduction, **axes_lengths: int):
     >>> y = x - reduce(x, 'b c h w -> b c () ()', 'mean')
 
     ```
-    
+
     Parameters:
         tensor: tensor: tensor of any supported library (e.g. numpy.ndarray, tensorflow, pytorch, mxnet.ndarray).
             list of tensors is also accepted, those should be of the same type and shape
@@ -471,7 +471,7 @@ def repeat(tensor, pattern: str, **axes_lengths):
     >>> repeat(image, 'h w -> (repeat h) w', repeat=2).shape
     (60, 40)
 
-    # repeat image 3 times along width
+    # repeat image 2 time along height and 3 times along width
     >>> repeat(image, 'h w -> h (repeat w)', repeat=3).shape
     (30, 120)
 
@@ -494,7 +494,7 @@ def repeat(tensor, pattern: str, **axes_lengths):
             list of tensors is also accepted, those should be of the same type and shape
         pattern: string, rearrangement pattern
         axes_lengths: any additional specifications for dimensions
-    
+
     Returns:
         Tensor of the same type as input. If possible, a view to the original tensor is returned.
 
@@ -547,10 +547,10 @@ def _enumerate_directions(x):
     ```python
     x = np.zeros([2, 3, 4]) # or any other tensor
     i, j, k = _enumerate_directions(x)
-    result = i + 2 * j + 3 * k
+    result = i + 2*j + 3*k
     ```
 
-    `result[i, j, k] = i + 2 * j + 3 * k`, and also has the same shape as result
+    `result[i, j, k] = i + 2j + 3k`, and also has the same shape as result
     Works very similarly to numpy.ogrid (open indexing grid)
     """
     backend = get_backend(x)
