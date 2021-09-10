@@ -3,6 +3,7 @@ import tempfile
 from collections import namedtuple
 
 import numpy
+import torch.jit
 
 from einops import rearrange, reduce
 from einops.einops import _reductions
@@ -187,29 +188,32 @@ def test_reduce_symbolic():
                         pass
 
 
+def create_torch_model(use_reduce=False, add_scripted_layer=False):
+    from torch.nn import Sequential, Conv2d, MaxPool2d, Linear, ReLU
+    from einops.layers.torch import Rearrange, Reduce
+    return Sequential(
+        Conv2d(3, 6, kernel_size=(5, 5)),
+        Reduce('b c (h h2) (w w2) -> b c h w', 'max', h2=2, w2=2) if use_reduce else MaxPool2d(kernel_size=2),
+        Conv2d(6, 16, kernel_size=(5, 5)),
+        Reduce('b c (h h2) (w w2) -> b c h w', 'max', h2=2, w2=2),
+        torch.jit.script(Rearrange('b c h w -> b (c h w)'))
+        if add_scripted_layer else Rearrange('b c h w -> b (c h w)'),
+        Linear(16 * 5 * 5, 120),
+        ReLU(),
+        Linear(120, 84),
+        ReLU(),
+        Linear(84, 10),
+    )
+
+
 def test_torch_layer():
-    if any(backend.framework_name == 'torch' for backend in collect_test_backends(symbolic=False, layers=True)):
+    has_torch = any(backend.framework_name == 'torch' for backend in collect_test_backends(symbolic=False, layers=True))
+    if has_torch:
         # checked that torch present
         import torch
-        from torch.nn import Sequential, Conv2d, MaxPool2d, Linear, ReLU
-        from einops.layers.torch import Rearrange, Reduce
 
-        def create_model(use_reduce=False):
-            return Sequential(
-                Conv2d(3, 6, kernel_size=5),
-                Reduce('b c (h h2) (w w2) -> b c h w', 'max', h2=2, w2=2) if use_reduce else MaxPool2d(kernel_size=2),
-                Conv2d(6, 16, kernel_size=5),
-                Reduce('b c (h h2) (w w2) -> b c h w', 'max', h2=2, w2=2),
-                Rearrange('b c h w -> b (c h w)'),
-                Linear(16 * 5 * 5, 120),
-                ReLU(),
-                Linear(120, 84),
-                ReLU(),
-                Linear(84, 10),
-            )
-
-        model1 = create_model(use_reduce=True)
-        model2 = create_model(use_reduce=False)
+        model1 = create_torch_model(use_reduce=True)
+        model2 = create_torch_model(use_reduce=False)
         input = torch.randn([10, 3, 32, 32])
         # random models have different predictions
         assert not torch.allclose(model1(input), model2(input))
@@ -226,8 +230,18 @@ def test_torch_layer():
         torch.testing.assert_allclose(model1(input + 1), model4(input + 1), atol=1e-3, rtol=1e-3)
 
 
+def test_torch_layers_scripting():
+    import torch
+    for script_layer in [False, True]:
+        model1 = create_torch_model(use_reduce=True, add_scripted_layer=script_layer)
+        model2 = torch.jit.script(model1)
+        input = torch.randn([10, 3, 32, 32])
+
+        torch.testing.assert_allclose(model1(input), model2(input), atol=1e-3, rtol=1e-3)
+
+
 def test_keras_layer():
-    if any(backend.framework_name == 'keras' for backend in collect_test_backends(symbolic=True, layers=True)):
+    if any(backend.framework_name == 'tensorflow.keras' for backend in collect_test_backends(symbolic=True, layers=True)):
         # checked that keras present
 
         import tensorflow as tf
@@ -273,7 +287,10 @@ def test_keras_layer():
 
 
 def test_gluon_layer():
-    if any('mxnet' in backend.framework_name for backend in collect_test_backends(symbolic=False, layers=True)):
+    gluon_is_present = any(
+        'mxnet' in backend.framework_name for backend in collect_test_backends(symbolic=False, layers=True)
+    )
+    if gluon_is_present:
         # checked that gluon present
         import mxnet
         from mxnet.gluon.nn import HybridSequential, Dense, Conv2D, LeakyReLU
