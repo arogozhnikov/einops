@@ -2,6 +2,8 @@ __author__ = 'Alex Rogozhnikov'
 
 import functools
 
+from einops.einops import _apply_recipe
+
 from ..einops import TransformRecipe, _prepare_transformation_recipe
 from .. import EinopsError
 
@@ -37,7 +39,7 @@ class RearrangeMixin:
             raise EinopsError(' Error while preparing {!r}\n {}'.format(self, e))
 
     def _apply_recipe(self, x):
-        return self._recipe.apply(x)
+        return _apply_recipe(self._recipe, x, reduction_type='rearrange')
 
 
 class ReduceMixin:
@@ -68,9 +70,10 @@ class ReduceMixin:
     def recipe(self) -> TransformRecipe:
         try:
             hashable_lengths = tuple(sorted(self.axes_lengths.items()))
-            return _prepare_transformation_recipe(self.pattern, operation=self.reduction, axes_lengths=hashable_lengths)
+            return _prepare_transformation_recipe(
+                self.pattern, operation=self.reduction, axes_lengths=hashable_lengths)
         except EinopsError as e:
             raise EinopsError(' Error while preparing {!r}\n {}'.format(self, e))
 
     def _apply_recipe(self, x):
-        return self._recipe.apply(x)
+        return _apply_recipe(self._recipe, x, reduction_type=self.reduction)

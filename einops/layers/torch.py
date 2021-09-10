@@ -2,18 +2,27 @@ import torch
 
 from . import RearrangeMixin, ReduceMixin
 from ._weighted_einsum import WeightedEinsumMixin
+from .._torch_specific import apply_for_scriptable_torch
 
 __author__ = 'Alex Rogozhnikov'
 
 
 class Rearrange(RearrangeMixin, torch.nn.Module):
     def forward(self, input):
-        return self._apply_recipe(input)
+        return apply_for_scriptable_torch(self._recipe, input, reduction_type='rearrange')
+
+    def _apply_recipe(self, x):
+        # overriding parent method to prevent it's scripting
+        pass
 
 
 class Reduce(ReduceMixin, torch.nn.Module):
     def forward(self, input):
-        return self._apply_recipe(input)
+        return apply_for_scriptable_torch(self._recipe, input, reduction_type=self.reduction)
+
+    def _apply_recipe(self, x):
+        # overriding parent method to prevent it's scripting
+        pass
 
 
 class WeightedEinsum(WeightedEinsumMixin, torch.nn.Module):
