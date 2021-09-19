@@ -1,7 +1,9 @@
+from typing import Optional, Dict
+
 import chainer
 
 from . import RearrangeMixin, ReduceMixin
-from ._weighted_einsum import WeightedEinsumMixin
+from ._einmix import _EinmixMixin
 
 __author__ = 'Alex Rogozhnikov'
 
@@ -16,7 +18,7 @@ class Reduce(ReduceMixin, chainer.Link):
         return self._apply_recipe(x)
 
 
-class WeightedEinsum(WeightedEinsumMixin, chainer.Link):
+class EinMix(_EinmixMixin, chainer.Link):
     def _create_parameters(self, weight_shape, weight_bound, bias_shape, bias_bound):
         uniform = chainer.variable.initializers.Uniform
         with self.init_scope():
@@ -25,6 +27,20 @@ class WeightedEinsum(WeightedEinsumMixin, chainer.Link):
                 self.bias = chainer.variable.Parameter(uniform(bias_bound), bias_shape)
             else:
                 self.bias = None
+
+    def _create_rearrange_layers(self,
+                                 pre_reshape_pattern: Optional[str],
+                                 pre_reshape_lengths: Optional[Dict],
+                                 post_reshape_pattern: Optional[str],
+                                 post_reshape_lengths: Optional[Dict],
+                                 ):
+        self.pre_rearrange = None
+        if pre_reshape_pattern is not None:
+            self.pre_rearrange = Rearrange(pre_reshape_pattern, **pre_reshape_lengths)
+
+        self.post_rearrange = None
+        if post_reshape_pattern is not None:
+            self.post_rearrange = Rearrange(post_reshape_pattern)
 
     def __call__(self, input):
         result = chainer.functions.einsum(self.einsum_pattern, input, self.weight)
