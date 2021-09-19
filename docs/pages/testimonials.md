@@ -13,6 +13,7 @@ blockquote + p {
     padding-right: 5em;
 }
 </style>
+
 Einops was created three years ago, and never hit big ML news.
 However, little by little and step by step it sneaked into every major AI lab.
 
