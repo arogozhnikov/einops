@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 import tensorflow as tf
 from tensorflow.keras.layers import Layer
@@ -50,6 +50,20 @@ class WeightedEinsum(WeightedEinsumMixin, Layer):
                                     trainable=True)
         else:
             self.bias = None
+
+    def _create_rearrange_layers(self,
+                                 pre_reshape_pattern: Optional[str],
+                                 pre_reshape_lengths: Optional[Dict],
+                                 post_reshape_pattern: Optional[str],
+                                 post_reshape_lengths: Optional[Dict],
+                                 ):
+        self.pre_rearrange = None
+        if pre_reshape_pattern is not None:
+            self.pre_rearrange = Rearrange(pre_reshape_pattern, **pre_reshape_lengths)
+
+        self.post_rearrange = None
+        if post_reshape_pattern is not None:
+            self.post_rearrange = Rearrange(post_reshape_pattern, **post_reshape_lengths)
 
     def build(self, input_shape):
         pass

@@ -1,3 +1,5 @@
+from typing import Optional, Dict
+
 import torch
 
 from . import RearrangeMixin, ReduceMixin
@@ -35,8 +37,26 @@ class WeightedEinsum(WeightedEinsumMixin, torch.nn.Module):
         else:
             self.bias = None
 
+    def _create_rearrange_layers(self,
+                                 pre_reshape_pattern: Optional[str],
+                                 pre_reshape_lengths: Optional[Dict],
+                                 post_reshape_pattern: Optional[str],
+                                 post_reshape_lengths: Optional[Dict],
+                                 ):
+        self.pre_rearrange = None
+        if pre_reshape_pattern is not None:
+            self.pre_rearrange = Rearrange(pre_reshape_pattern, **pre_reshape_lengths)
+
+        self.post_rearrange = None
+        if post_reshape_pattern is not None:
+            self.post_rearrange = Rearrange(post_reshape_pattern, **post_reshape_lengths)
+
     def forward(self, input):
+        if self.pre_rearrange is not None:
+            input = self.pre_rearrange(input)
         result = torch.einsum(self.einsum_pattern, input, self.weight)
         if self.bias is not None:
             result += self.bias
+        if self.post_rearrange is not None:
+            result = self.post_rearrange(result)
         return result
