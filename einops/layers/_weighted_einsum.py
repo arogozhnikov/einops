@@ -1,3 +1,5 @@
+from typing import Optional, Dict
+
 from einops import EinopsError
 from einops.parsing import ParsedExpression, _ellipsis, AnonymousAxis
 import warnings
@@ -19,7 +21,7 @@ class WeightedEinsumMixin:
         Imagine taking einsum with two arguments, one of each input, and one - tensor with weights
         >>> einsum('time batch channel_in, channel_in channel_out -> time batch channel_out', input, weight)
 
-        This layer manages weights for you after a minor tweaking
+        This layer manages weights for you, syntax highlights separate role of weight matrix
         >>> WeightedEinsum('time batch channel_in -> time batch channel_out', weight_shape='channel_in channel_out')
         But otherwise it is the same einsum.
 
@@ -32,7 +34,7 @@ class WeightedEinsumMixin:
 
         ... ah yes, you need to specify all dimensions of weight shape/bias shape in parameters.
 
-        Good use cases:
+        Use cases:
         - when channel dimension is not last, use WeightedEinsum, not transposition
         - when need only within-group connections to reduce number of weights and computations
         - perfect as a part of sequential models
@@ -46,16 +48,14 @@ class WeightedEinsumMixin:
         :param axes_lengths: dimensions of weight tensor
         """
         super().__init__()
-        warnings.warn('WeightedEinsum is experimental feature. API can change in unpredictable and enjoyable ways',
-                      FutureWarning)
         self.pattern = pattern
         self.weight_shape = weight_shape
         self.bias_shape = bias_shape
         self.axes_lengths = axes_lengths
 
-        left, right = pattern.split('->')
-        left = ParsedExpression(left)
-        right = ParsedExpression(right)
+        left_pattern, right_pattern = pattern.split('->')
+        left = ParsedExpression(left_pattern)
+        right = ParsedExpression(right_pattern)
         weight = ParsedExpression(weight_shape)
         _report_axes(
             set.difference(right.identifiers, {*left.identifiers, *weight.identifiers}),
@@ -68,9 +68,27 @@ class WeightedEinsumMixin:
             raise EinopsError('Anonymous axes (numbers) are not allowed in WeightedEinsum')
         if '(' in weight_shape or ')' in weight_shape:
             raise EinopsError('Parenthesis is not allowed in weight shape')
-        # TODO implement this
-        if '(' in pattern or ')' in pattern:
-            raise EinopsError('Axis composition/decomposition are not yet supported in einsum')
+
+        pre_reshape_pattern = None
+        pre_reshape_lengths = None
+        post_reshape_pattern = None
+        if any(len(group) != 1 for group in left.composition):
+            names = []
+            for group in left.composition:
+                names += group
+            composition = ' '.join(names)
+            pre_reshape_pattern = f'{left_pattern}->{composition}'
+            pre_reshape_lengths = {name: length for name, length in self.axes_lengths.items() if name in names}
+
+        if any(len(group) != 1 for group in right.composition):
+            names = []
+            for group in right.composition:
+                names += group
+            composition = ' '.join(names)
+            post_reshape_pattern = f'{composition}->{right_pattern}'
+
+        self._create_rearrange_layers(pre_reshape_pattern, pre_reshape_lengths, post_reshape_pattern, {})
+
         for axis in weight.identifiers:
             if axis not in axes_lengths:
                 raise EinopsError('Dimension {} of weight should be specified'.format(axis))
@@ -116,18 +134,26 @@ class WeightedEinsumMixin:
         bias_bound = (1 / _fan_in) ** 0.5
         self._create_parameters(_weight_shape, weight_bound, _bias_shape, bias_bound)
 
-        # rewrite einsum expression with single-letter latin identifiers so that each expression is
+        # rewrite einsum expression with single-letter latin identifiers so that
+        # expression will be understood by any framework
         mapping2letters = {*left.identifiers, *right.identifiers, *weight.identifiers}
         mapping2letters = {k: letter for letter, k in zip(string.ascii_lowercase, mapping2letters)}
 
         def write_flat(axes: list):
             return ''.join(mapping2letters[axis] for axis in axes)
 
-        self.einsum_pattern = '{},{}->{}'.format(
+        self.einsum_pattern: str = '{},{}->{}'.format(
             write_flat(left.flat_axes_order()),
             write_flat(weight.flat_axes_order()),
             write_flat(right.flat_axes_order()),
         )
+
+    def _create_rearrange_layers(self,
+                                 pre_reshape_pattern: Optional[str],
+                                 pre_reshape_lengths: Optional[Dict],
+                                 post_reshape_pattern: Optional[str],
+                                 post_reshape_lengths: Optional[Dict]):
+        raise NotImplementedError('Should be defined in framework implementations')
 
     def _create_parameters(self, weight_shape, weight_bound, bias_shape, bias_bound):
         """ Shape and implementations """
