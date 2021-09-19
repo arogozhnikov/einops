@@ -80,16 +80,10 @@ def test_rearrange_symbolic():
                 result1 = backend.eval_symbol(result_symbol1, eval_inputs)
                 assert numpy.allclose(result_numpy, result1)
 
-                if 'keras' not in backend.framework_name:
-                    # simple pickling / unpickling
-                    # keras bug - fails for pickling
-                    layer2 = pickle.loads(pickle.dumps(layer))
-                    result_symbol2 = layer2(symbol)
-                    result2 = backend.eval_symbol(result_symbol2, eval_inputs)
-                    assert numpy.allclose(result1, result2)
-                else:
-                    # keras is deprecated, so no checks for save/load
-                    pass
+                layer2 = pickle.loads(pickle.dumps(layer))
+                result_symbol2 = layer2(symbol)
+                result2 = backend.eval_symbol(result_symbol2, eval_inputs)
+                assert numpy.allclose(result1, result2)
 
                 # now testing back-propagation
                 just_sum = backend.layers().Reduce('...->', reduction='sum')
@@ -177,15 +171,10 @@ def test_reduce_symbolic():
                     result1 = backend.eval_symbol(result_symbol1, eval_inputs)
                     assert numpy.allclose(result_numpy, result1)
 
-                    if 'keras' not in backend.framework_name:
-                        # simple pickling / unpickling
-                        # keras bug - fails for pickling, requires special import/export
-                        layer2 = pickle.loads(pickle.dumps(layer))
-                        result_symbol2 = layer2(symbol)
-                        result2 = backend.eval_symbol(result_symbol2, eval_inputs)
-                        assert numpy.allclose(result1, result2)
-                    else:
-                        pass
+                    layer2 = pickle.loads(pickle.dumps(layer))
+                    result_symbol2 = layer2(symbol)
+                    result2 = backend.eval_symbol(result_symbol2, eval_inputs)
+                    assert numpy.allclose(result1, result2)
 
 
 def create_torch_model(use_reduce=False, add_scripted_layer=False):
