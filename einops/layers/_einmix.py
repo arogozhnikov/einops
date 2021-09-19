@@ -15,31 +15,37 @@ def _report_axes(axes: set, report_message: str):
 class _EinmixMixin:
     def __init__(self, pattern, weight_shape, bias_shape=None, **axes_lengths):
         """
-        EinMix - Einstein summation with weight tensor.
-        NB: it is an experimental API. RFC https://github.com/arogozhnikov/einops/issues/71
+        EinMix - Einstein summation with automated tensor management and axis packing/unpacking.
+
+        EinMix is an advanced tool, helpful tutorial:
+        https://github.com/arogozhnikov/einops/blob/master/docs/3-einmix-layer.ipynb
 
         Imagine taking einsum with two arguments, one of each input, and one - tensor with weights
         >>> einsum('time batch channel_in, channel_in channel_out -> time batch channel_out', input, weight)
 
         This layer manages weights for you, syntax highlights separate role of weight matrix
         >>> EinMix('time batch channel_in -> time batch channel_out', weight_shape='channel_in channel_out')
-        But otherwise it is the same einsum.
+        But otherwise it is the same einsum under the hood.
 
         Simple linear layer with bias term (you have one like that in your framework)
         >>> EinMix('t b cin -> t b cout', weight_shape='cin cout', bias_shape='cout', cin=10, cout=20)
+        There is restriction to mix the last axis. Let's mix along height
+        >>> EinMix('h w c-> hout w c', weight_shape='h hout', bias_shape='hout', h=32, hout=32)
         Channel-wise multiplication (like one used in normalizations)
         >>> EinMix('t b c -> t b c', weight_shape='c', c=128)
         Separate dense layer within each head, no connection between different heads
-        >>> EinMix('t b head cin -> t b head cout', weight_shape='head cin cout', ...)
+        >>> EinMix('t b (head cin) -> t b (head cout)', weight_shape='head cin cout', ...)
 
         ... ah yes, you need to specify all dimensions of weight shape/bias shape in parameters.
 
         Use cases:
         - when channel dimension is not last, use EinMix, not transposition
+        - patch/segment embeddings
         - when need only within-group connections to reduce number of weights and computations
         - perfect as a part of sequential models
+        - next-gen MLPs (follow tutorial to learn more)
 
-        Uniform He initialization is applied to weight tensor.
+        Uniform He initialization is applied to weight tensor and encounters for number of elements mixed.
 
         Parameters
         :param pattern: transformation pattern, left side - dimensions of input, right side - dimensions of output
