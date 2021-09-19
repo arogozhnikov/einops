@@ -3,7 +3,7 @@ from typing import Optional, Dict
 import torch
 
 from . import RearrangeMixin, ReduceMixin
-from ._weighted_einsum import WeightedEinsumMixin
+from ._einmix import _EinmixMixin
 from .._torch_specific import apply_for_scriptable_torch
 
 __author__ = 'Alex Rogozhnikov'
@@ -27,7 +27,7 @@ class Reduce(ReduceMixin, torch.nn.Module):
         pass
 
 
-class WeightedEinsum(WeightedEinsumMixin, torch.nn.Module):
+class EinMix(_EinmixMixin, torch.nn.Module):
     def _create_parameters(self, weight_shape, weight_bound, bias_shape, bias_bound):
         self.weight = torch.nn.Parameter(torch.zeros(weight_shape).uniform_(-weight_bound, weight_bound),
                                          requires_grad=True)

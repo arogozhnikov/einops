@@ -179,7 +179,7 @@ def test_reduce_symbolic():
 
 def create_torch_model(use_reduce=False, add_scripted_layer=False):
     from torch.nn import Sequential, Conv2d, MaxPool2d, Linear, ReLU
-    from einops.layers.torch import Rearrange, Reduce, WeightedEinsum
+    from einops.layers.torch import Rearrange, Reduce, EinMix
     return Sequential(
         Conv2d(3, 6, kernel_size=(5, 5)),
         Reduce('b c (h h2) (w w2) -> b c h w', 'max', h2=2, w2=2) if use_reduce else MaxPool2d(kernel_size=2),
@@ -191,7 +191,7 @@ def create_torch_model(use_reduce=False, add_scripted_layer=False):
         ReLU(),
         Linear(120, 84),
         ReLU(),
-        WeightedEinsum('b c1 -> b c2', weight_shape='c1 c2', bias_shape='c2', c1=84, c2=84),
+        EinMix('b c1 -> b c2', weight_shape='c1 c2', bias_shape='c2', c1=84, c2=84),
         Linear(84, 10),
     )
 
@@ -237,7 +237,7 @@ def test_keras_layer():
         import tensorflow as tf
         from tensorflow.keras.models import Sequential
         from tensorflow.keras.layers import Conv2D as Conv2d, Dense as Linear, ReLU
-        from einops.layers.keras import Rearrange, Reduce, WeightedEinsum, keras_custom_objects
+        from einops.layers.keras import Rearrange, Reduce, EinMix, keras_custom_objects
 
         def create_keras_model():
             return Sequential([
@@ -250,7 +250,7 @@ def test_keras_layer():
                 ReLU(),
                 Linear(84),
                 ReLU(),
-                WeightedEinsum('b c1 -> b c2', weight_shape='c1 c2', bias_shape='c2', c1=84, c2=84),
+                EinMix('b c1 -> b c2', weight_shape='c1 c2', bias_shape='c2', c1=84, c2=84),
                 Linear(10),
             ])
 
@@ -285,7 +285,7 @@ def test_gluon_layer():
         # checked that gluon present
         import mxnet
         from mxnet.gluon.nn import HybridSequential, Dense, Conv2D, LeakyReLU
-        from einops.layers.gluon import Rearrange, Reduce, WeightedEinsum
+        from einops.layers.gluon import Rearrange, Reduce, EinMix
         from einops import asnumpy
 
         def create_model():
@@ -348,7 +348,7 @@ def test_chainer_layer():
         import chainer
         import chainer.links as L
         import chainer.functions as F
-        from einops.layers.chainer import Rearrange, Reduce, WeightedEinsum
+        from einops.layers.chainer import Rearrange, Reduce, EinMix
         from einops import asnumpy
         import numpy as np
 
@@ -362,7 +362,7 @@ def test_chainer_layer():
                 L.Linear(16 * 5 * 5, 120),
                 L.Linear(120, 84),
                 F.relu,
-                WeightedEinsum('b c1 -> b c2', weight_shape='c1 c2', bias_shape='c2', c1=84, c2=84),
+                EinMix('b c1 -> b c2', weight_shape='c1 c2', bias_shape='c2', c1=84, c2=84),
                 L.Linear(84, 10),
             )
 

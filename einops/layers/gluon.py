@@ -3,7 +3,7 @@ from typing import Optional, Dict
 import mxnet
 
 from . import RearrangeMixin, ReduceMixin
-from ._weighted_einsum import WeightedEinsumMixin
+from ._einmix import _EinmixMixin
 
 __author__ = 'Alex Rogozhnikov'
 
@@ -18,7 +18,7 @@ class Reduce(ReduceMixin, mxnet.gluon.HybridBlock):
         return self._apply_recipe(x)
 
 
-class WeightedEinsum(WeightedEinsumMixin, mxnet.gluon.HybridBlock):
+class EinMix(_EinmixMixin, mxnet.gluon.HybridBlock):
     def _create_parameters(self, weight_shape, weight_bound, bias_shape, bias_bound):
         with self.name_scope():
 
@@ -37,7 +37,7 @@ class WeightedEinsum(WeightedEinsumMixin, mxnet.gluon.HybridBlock):
                                  pre_reshape_lengths: Optional[Dict],
                                  post_reshape_pattern: Optional[str],
                                  post_reshape_lengths: Optional[Dict]):
-        raise NotImplementedError("WeightedEinsum in mxnet/gluon doesn't support axis merge/unmerge "
+        raise NotImplementedError("EinMix in mxnet/gluon doesn't support axis merge/unmerge "
                                   "because einsum in gluon defined only for mx.np.ndarrays")
 
     def hybrid_forward(self, F, x, *args, **kwargs):

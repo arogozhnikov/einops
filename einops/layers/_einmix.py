@@ -1,7 +1,7 @@
 from typing import Optional, Dict
 
 from einops import EinopsError
-from einops.parsing import ParsedExpression, _ellipsis, AnonymousAxis
+from einops.parsing import ParsedExpression
 import warnings
 import string
 from ..einops import _product
@@ -12,30 +12,30 @@ def _report_axes(axes: set, report_message: str):
         raise EinopsError(report_message.format(axes))
 
 
-class WeightedEinsumMixin:
+class _EinmixMixin:
     def __init__(self, pattern, weight_shape, bias_shape=None, **axes_lengths):
         """
-        WeightedEinsum - Einstein summation with second argument being weight tensor.
+        EinMix - Einstein summation with weight tensor.
         NB: it is an experimental API. RFC https://github.com/arogozhnikov/einops/issues/71
 
         Imagine taking einsum with two arguments, one of each input, and one - tensor with weights
         >>> einsum('time batch channel_in, channel_in channel_out -> time batch channel_out', input, weight)
 
         This layer manages weights for you, syntax highlights separate role of weight matrix
-        >>> WeightedEinsum('time batch channel_in -> time batch channel_out', weight_shape='channel_in channel_out')
+        >>> EinMix('time batch channel_in -> time batch channel_out', weight_shape='channel_in channel_out')
         But otherwise it is the same einsum.
 
         Simple linear layer with bias term (you have one like that in your framework)
-        >>> WeightedEinsum('t b cin -> t b cout', weight_shape='cin cout', bias_shape='cout', cin=10, cout=20)
+        >>> EinMix('t b cin -> t b cout', weight_shape='cin cout', bias_shape='cout', cin=10, cout=20)
         Channel-wise multiplication (like one used in normalizations)
-        >>> WeightedEinsum('t b c -> t b c', weight_shape='c', c=128)
+        >>> EinMix('t b c -> t b c', weight_shape='c', c=128)
         Separate dense layer within each head, no connection between different heads
-        >>> WeightedEinsum('t b head cin -> t b head cout', weight_shape='head cin cout', ...)
+        >>> EinMix('t b head cin -> t b head cout', weight_shape='head cin cout', ...)
 
         ... ah yes, you need to specify all dimensions of weight shape/bias shape in parameters.
 
         Use cases:
-        - when channel dimension is not last, use WeightedEinsum, not transposition
+        - when channel dimension is not last, use EinMix, not transposition
         - when need only within-group connections to reduce number of weights and computations
         - perfect as a part of sequential models
 
@@ -59,15 +59,15 @@ class WeightedEinsumMixin:
         weight = ParsedExpression(weight_shape)
         _report_axes(
             set.difference(right.identifiers, {*left.identifiers, *weight.identifiers}),
-            'Unrecognized identifiers on the right side of WeightedEinsum {}'
+            'Unrecognized identifiers on the right side of EinMix {}'
         )
 
         if left.has_ellipsis or right.has_ellipsis or weight.has_ellipsis:
-            raise EinopsError('Ellipsis is not supported in WeightedEinsum (right now)')
+            raise EinopsError('Ellipsis is not supported in EinMix (right now)')
         if any(x.has_non_unitary_anonymous_axes for x in [left, right, weight]):
-            raise EinopsError('Anonymous axes (numbers) are not allowed in WeightedEinsum')
+            raise EinopsError('Anonymous axes (numbers) are not allowed in EinMix')
         if '(' in weight_shape or ')' in weight_shape:
-            raise EinopsError('Parenthesis is not allowed in weight shape')
+            raise EinopsError(f'Parenthesis is not allowed in weight shape: {weight_shape}')
 
         pre_reshape_pattern = None
         pre_reshape_lengths = None
@@ -101,7 +101,7 @@ class WeightedEinsumMixin:
             'Weight axes {} are redundant'
         )
         if len(weight.identifiers) == 0:
-            warnings.warn('WeightedEinsum: weight has no dimensions (means multiplication by a number)')
+            warnings.warn('EinMix: weight has no dimensions (means multiplication by a number)')
 
         _weight_shape = [axes_lengths[axis] for axis, in weight.composition]
         # single output element is a combination of fan_in input elements
@@ -161,7 +161,9 @@ class WeightedEinsumMixin:
 
     def __repr__(self):
         params = repr(self.pattern)
-        params += ', ' + self.weight_shape
+        params += f", '{self.weight_shape}'"
+        if self.bias_shape is not None:
+            params += f", '{self.bias_shape}'"
         for axis, length in self.axes_lengths.items():
             params += ', {}={}'.format(axis, length)
         return '{}({})'.format(self.__class__.__name__, params)

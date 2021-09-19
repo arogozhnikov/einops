@@ -43,7 +43,7 @@ test_cases = [
 def test_all():
     for backend in collect_test_backends(layers=True, symbolic=False):
         if backend.framework_name in ['tensorflow', 'torch', 'chainer']:
-            layer_type = backend.layers().WeightedEinsum
+            layer_type = backend.layers().EinMix
             for args, in_shape, out_shape in test_cases:
                 layer = args(layer_type)
                 print('Running', layer.einsum_pattern, 'for', backend.framework_name)
@@ -61,7 +61,7 @@ def test_all():
 #             import mxnet as mx
 #
 #             mx.npx.set_np()
-#             layer_type = backend.layers().WeightedEinsum
+#             layer_type = backend.layers().EinMix
 #
 #             for args, in_shape, out_shape in test_cases:
 #                 layer = args(layer_type)

@@ -1,9 +1,9 @@
 __author__ = 'Alex Rogozhnikov'
 
-from ..layers.tensorflow import Rearrange, Reduce, WeightedEinsum
+from ..layers.tensorflow import Rearrange, Reduce, EinMix
 
 keras_custom_objects = {
     Rearrange.__name__: Rearrange,
     Reduce.__name__: Reduce,
-    WeightedEinsum.__name__: WeightedEinsum,
+    EinMix.__name__: EinMix,
 }

@@ -3,7 +3,7 @@ from typing import Optional, Dict
 import chainer
 
 from . import RearrangeMixin, ReduceMixin
-from ._weighted_einsum import WeightedEinsumMixin
+from ._einmix import _EinmixMixin
 
 __author__ = 'Alex Rogozhnikov'
 
@@ -18,7 +18,7 @@ class Reduce(ReduceMixin, chainer.Link):
         return self._apply_recipe(x)
 
 
-class WeightedEinsum(WeightedEinsumMixin, chainer.Link):
+class EinMix(_EinmixMixin, chainer.Link):
     def _create_parameters(self, weight_shape, weight_bound, bias_shape, bias_bound):
         uniform = chainer.variable.initializers.Uniform
         with self.init_scope():
