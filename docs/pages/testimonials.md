@@ -1,10 +1,12 @@
 <style>
 .md-typeset blockquote {
-    background-color: rgba(63,127,127,0.29);
+    background-color: rgba(128, 128, 128, 0.04);
+    border-color: #002ee380;
+    color: #333;
     margin-top: 2.5em;
     margin-bottom: -0.5em;
     margin-right: 3em;
-    color: #333;
+    padding-right: 2em;
 }
 blockquote + p {
     text-align: right;
