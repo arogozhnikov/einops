@@ -1,7 +1,8 @@
 site_name: Einops
 repo_name: arogozhnikov/einops
 repo_url: https://github.com/arogozhnikov/einops
-site_url: https://arogozhnikov.github.io/einops
+site_url: https://einops.rocks
+docs_dir: docs_src
 theme:
   name: material
   favicon: images/favicon.png
