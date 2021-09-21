@@ -5,9 +5,9 @@ but it can also help to see einops in action.
 
 Here are some open-source projects that can teach how to leverage einops for your problems
 
-- [lambda networks](https://www.youtube.com/watch?v=3qxJ2WD8p4w) (non-conventional architecture) implementation by [@lucidrains](https://github.com/lucidrains)
-    - nice demonstration how clearer code can be with einops, even compared to verbal description 
-    - <https://github.com/lucidrains/lambda-networks>
+- lambda networks (non-conventional architecture) implemented by [@lucidrains](https://github.com/lucidrains)
+    - nice demonstration how clearer code can be with einops, even compared to description in the paper 
+    - [implementation](https://github.com/lucidrains/lambda-networks) and [video](https://www.youtube.com/watch?v=3qxJ2WD8p4w)
 
 
 - capsule networks (aka capsnets) [implemented in einops](https://github.com/arogozhnikov/readable_capsnet)
@@ -15,10 +15,10 @@ Here are some open-source projects that can teach how to leverage einops for you
 
 
 - @lucidrains has a dramatic [collection of vision transformers](https://github.com/lucidrains/vit-pytorch)
-    - there is a plenty of good examples how to use einops efficiently
+    - there is a plenty of good examples how to use einops efficiently in your projects
 
 
-- [NuX](https://github.com/Information-Fusion-Lab-Umass/NuX) - normalizing flows in Jax
+- [NuX](https://github.com/Information-Fusion-Lab-Umass/NuX) — normalizing flows in Jax
     - different rearrangement patterns in normalizing flows have nice mapping to einops
 
 
@@ -29,7 +29,7 @@ Here are some open-source projects that can teach how to leverage einops for you
 - For protein folding, see [implementation](https://github.com/lucidrains/invariant-point-attention)
   of invariant point attention from alphafold 2
 
-## Non-official tutorials about einops
+## Community introductions to einops
 
 Tutorial in the AI summer about einops and einsum:
 <https://theaisummer.com/einsum-attention/>
@@ -37,7 +37,10 @@ Tutorial in the AI summer about einops and einsum:
 Implementing visual transformer in pytorch:
 <https://towardsdatascience.com/implementing-visualttransformer-in-pytorch-184f9f16f632>
 
-ML TLDR twitter thread on einops:
+Refactoring machine learning code, one of posts in a series is devoted to einops:
+<https://www.paepper.com/blog/posts/refactoring-machine-learning-code-einops/>
+
+ML TLDR thread on einops:
 <https://twitter.com/mlsummaries/status/1400505282543955970>
 
 Book "Deep Reinforcement Learning in Action" by Brandon Brown & Alexander Zai
@@ -71,5 +74,5 @@ contains an introduction into einops in chapter 10.
 ## Related projects:
 
 - [numpy.einsum](https://numpy.org/doc/stable/reference/generated/numpy.einsum.html) &mdash; grand-dad of einops, this operation is now available in all modern DL frameworks 
-- einops in rust language <https://docs.rs/einops/0.1.0/einops>
+- einops in Rust language <https://docs.rs/einops/0.1.0/einops>
 - tensorcast in Julia language <https://juliahub.com/ui/Packages/TensorCast>

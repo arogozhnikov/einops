@@ -13,6 +13,7 @@ nav:
   - Tutorials:
       Einops Basics: 1-einops-basics.ipynb
       Einops for Deep Learning: 2-einops-for-deep-learning.ipynb
+      Einmix for great MLPs: 3-einmix-layer.ipynb
       Pytorch Examples: pytorch-examples.html
   - API Reference:
       asnumpy: api/asnumpy.md
