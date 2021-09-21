@@ -116,7 +116,7 @@ Alex Mordvintsev, DeepDream creator, [(ref)](https://twitter.com/zzznah/status/1
 > it provides a powerful declarative interface 
 > for manipulating and reshaping multi-dimensional arrays https://github.com/arogozhnikov/einops
 
-Jake VanderPlas, 
+Jake VanderPlas, <br /> 
 Google Research, core contributor to Altair, AstroML, scikit-learn, etc.
 [(ref)](https://twitter.com/jakevdp/status/1299012119761833989)
 
