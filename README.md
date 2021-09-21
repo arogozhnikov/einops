@@ -19,8 +19,12 @@
 
 
 Flexible and powerful tensor operations for readable and reliable code. 
-Supports numpy, pytorch, tensorflow, and [others](#supported-frameworks).
+Supports numpy, pytorch, tensorflow, jax, and [others](#supported-frameworks).
 
+## Recent updates:
+
+- torch.jit.script is supported for pytorch layers
+- powerful EinMix added to einops. [Einmix tutorial notebook](https://github.com/arogozhnikov/einops/blob/master/docs/3-einmix-layer.ipynb) 
 
 <!--<div align="center">
   <img src="http://arogozhnikov.github.io/images/einops/einops_logo_350x350.png" 
