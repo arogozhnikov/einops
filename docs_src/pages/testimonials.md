@@ -42,7 +42,7 @@ Tom Lieberum, University of Amsterdam
 
 > TIL einops can be faster than raw PyTorch 🤯
 
-Zach Mueller, fastai
+Zach Mueller, Novetta, author of "walk with fastai"
 [(ref)](https://twitter.com/TheZachMueller/status/1418003372494426113)
 
 > einops are also a joy to work with!
