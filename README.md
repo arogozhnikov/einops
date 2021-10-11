@@ -43,7 +43,7 @@ Supports numpy, pytorch, tensorflow, jax, and [others](#supported-frameworks).
 > Slowly but surely, einops is seeping in to every nook and cranny of my code. If you find yourself shuffling around bazillion dimensional tensors, this might change your life
 [Nasim Rahaman, MILA (Montreal)](https://twitter.com/nasim_rahaman/status/1216022614755463169)
 
-
+[More testimonials](https://einops.rocks/pages/testimonials/)
 
 ## Contents
 
