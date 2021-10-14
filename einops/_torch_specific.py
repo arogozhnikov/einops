@@ -73,6 +73,10 @@ class TorchJitBackend:
 # mirrors einops.einops._apply_recipe
 def apply_for_scriptable_torch(recipe: TransformRecipe, tensor: torch.Tensor, reduction_type: str) -> torch.Tensor:
     backend = TorchJitBackend
+    if isinstance(tensor, list):
+            if len(tensor) == 0:
+                raise TypeError("Rearrange can't be applied to an empty list")
+            tensor = backend.stack_on_zeroth_dimension(tensor)
     init_shapes, reduced_axes, axes_reordering, added_axes, final_shapes = \
         _reconstruct_from_shape_uncached(recipe, backend.shape(tensor))
     tensor = backend.reshape(tensor, init_shapes)

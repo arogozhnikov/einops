@@ -4,7 +4,7 @@ import functools
 
 from einops.einops import _apply_recipe
 
-from ..einops import TransformRecipe, _prepare_transformation_recipe
+from ..einops import TransformRecipe, _prepare_transformation_recipe, get_backend
 from .. import EinopsError
 
 
@@ -39,6 +39,10 @@ class RearrangeMixin:
             raise EinopsError(' Error while preparing {!r}\n {}'.format(self, e))
 
     def _apply_recipe(self, x):
+        if isinstance(x, list):
+            if len(x) == 0:
+                raise TypeError("Rearrange can't be applied to an empty list")
+            x = get_backend(x[0]).stack_on_zeroth_dimension(x)
         return _apply_recipe(self._recipe, x, reduction_type='rearrange')
 
 
