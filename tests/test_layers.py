@@ -191,7 +191,8 @@ def create_torch_model(use_reduce=False, add_scripted_layer=False):
         ReLU(),
         Linear(120, 84),
         ReLU(),
-        EinMix('b c1 -> b c2', weight_shape='c1 c2', bias_shape='c2', c1=84, c2=84),
+        EinMix('b c1 -> (b c2)', weight_shape='c1 c2', bias_shape='c2', c1=84, c2=84),
+        EinMix('(b c2) -> b c3', weight_shape='c2 c3', bias_shape='c3', c2=84, c3=84),
         Linear(84, 10),
     )
 
@@ -250,7 +251,8 @@ def test_keras_layer():
                 ReLU(),
                 Linear(84),
                 ReLU(),
-                EinMix('b c1 -> b c2', weight_shape='c1 c2', bias_shape='c2', c1=84, c2=84),
+                EinMix('b c1 -> (b c2)', weight_shape='c1 c2', bias_shape='c2', c1=84, c2=84),
+                EinMix('(b c2) -> b c3', weight_shape='c2 c3', bias_shape='c3', c2=84, c3=84),
                 Linear(10),
             ])
 
@@ -362,7 +364,8 @@ def test_chainer_layer():
                 L.Linear(16 * 5 * 5, 120),
                 L.Linear(120, 84),
                 F.relu,
-                EinMix('b c1 -> b c2', weight_shape='c1 c2', bias_shape='c2', c1=84, c2=84),
+                EinMix('b c1 -> (b c2)', weight_shape='c1 c2', bias_shape='c2', c1=84, c2=84),
+                EinMix('(b c2) -> b c3', weight_shape='c2 c3', bias_shape='c3', c2=84, c3=84),
                 L.Linear(84, 10),
             )
 
