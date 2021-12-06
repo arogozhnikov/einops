@@ -43,7 +43,11 @@ class EinMix(_EinmixMixin, chainer.Link):
             self.post_rearrange = Rearrange(post_reshape_pattern)
 
     def __call__(self, input):
+        if self.pre_rearrange is not None:
+            input = self.pre_rearrange(input)
         result = chainer.functions.einsum(self.einsum_pattern, input, self.weight)
         if self.bias is not None:
             result = result + self.bias
+        if self.post_rearrange is not None:
+            result = self.post_rearrange(result)
         return result

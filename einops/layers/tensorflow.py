@@ -69,9 +69,13 @@ class EinMix(_EinmixMixin, Layer):
         pass
 
     def call(self, inputs):
+        if self.pre_rearrange is not None:
+            inputs = self.pre_rearrange(inputs)
         result = tf.einsum(self.einsum_pattern, inputs, self.weight)
         if self.bias is not None:
             result = result + self.bias
+        if self.post_rearrange is not None:
+            result = self.post_rearrange(result)
         return result
 
     def get_config(self):
