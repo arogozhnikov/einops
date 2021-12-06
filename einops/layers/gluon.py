@@ -37,8 +37,9 @@ class EinMix(_EinmixMixin, mxnet.gluon.HybridBlock):
                                  pre_reshape_lengths: Optional[Dict],
                                  post_reshape_pattern: Optional[str],
                                  post_reshape_lengths: Optional[Dict]):
-        raise NotImplementedError("EinMix in mxnet/gluon doesn't support axis merge/unmerge "
-                                  "because einsum in gluon defined only for mx.np.ndarrays")
+        if (pre_reshape_pattern is not None) or (post_reshape_pattern is not None):
+            raise NotImplementedError("EinMix in mxnet/gluon doesn't support axis group/ungroup "
+                                      "because einsum in gluon defined only for mx.np.ndarrays")
 
     def hybrid_forward(self, F, x, *args, **kwargs):
         # mxnet.np can't work with 'usual' ndarrays; .data() is a standard way to get within in gluon
