@@ -141,8 +141,3 @@ def test_is_float_type():
             if 'chainer' in backend.framework_name and not is_float:
                 continue  # chainer doesn't allow non-floating tensors
             assert backend.is_float_type(input) == is_float, (dtype, backend, input.dtype)
-
-
-if __name__ == "__main__":
-    parse_shape(numpy.zeros((10, 20, 40)), 'asdf')
-    test_parse_shape_imperative()
