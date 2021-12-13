@@ -2,6 +2,7 @@ import sys
 from doctest import testmod
 
 import numpy
+from nose.tools import assert_raises
 
 import einops
 import einops.layers
@@ -92,6 +93,9 @@ def test_parse_shape_imperative():
         parsed2 = parse_shape(backend.from_numpy(x), '_ _ a1 a1a111a')
         assert parsed1 == parsed2 == dict(a1=30, a1a111a=40)
 
+        with assert_raises(einops.EinopsError):
+            parse_shape(x, 'a a b b')
+
 
 def test_parse_shape_symbolic():
     backends = collect_test_backends(symbolic=True, layers=False)
@@ -137,3 +141,8 @@ def test_is_float_type():
             if 'chainer' in backend.framework_name and not is_float:
                 continue  # chainer doesn't allow non-floating tensors
             assert backend.is_float_type(input) == is_float, (dtype, backend, input.dtype)
+
+
+if __name__ == "__main__":
+    parse_shape(numpy.zeros((10, 20, 40)), 'asdf')
+    test_parse_shape_imperative()
