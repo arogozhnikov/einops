@@ -562,13 +562,16 @@ def parse_shape(x, pattern: str):
     Returns:
         dict, maps axes names to their lengths
     """
-    names = [elementary_axis for elementary_axis in pattern.split(' ') if len(elementary_axis) > 0]
+    exp = ParsedExpression(pattern, allow_underscore=True)
     shape = get_backend(x).shape(x)
-    if len(shape) != len(names):
+    if exp.has_composed_axes():
+        raise RuntimeError("Can't parse shape with composite axes: {pattern} {shape}".format(
+            pattern=pattern, shape=shape))
+    if len(shape) != len(exp.composition):
         raise RuntimeError("Can't parse shape with different number of dimensions: {pattern} {shape}".format(
             pattern=pattern, shape=shape))
     result = {}
-    for axis_name, axis_length in zip(names, shape):
+    for (axis_name, ), axis_length in zip(exp.composition, shape):
         if axis_name != '_':
             result[axis_name] = axis_length
     return result

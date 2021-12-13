@@ -26,7 +26,7 @@ class ParsedExpression:
     non-mutable structure that contains information about one side of expression (e.g. 'b c (h w)')
     and keeps some information important for downstream
     """
-    def __init__(self, expression):
+    def __init__(self, expression, *, allow_underscore: bool = False):
         self.has_ellipsis: bool = False
         self.has_ellipsis_parenthesized: Optional[bool] = None
         self.identifiers: Set[str] = set()
@@ -48,7 +48,8 @@ class ParsedExpression:
         def add_axis_name(x):
             if x is not None:
                 if x in self.identifiers:
-                    raise EinopsError('Indexing expression contains duplicate dimension "{}"'.format(x))
+                    if not (allow_underscore and x == "_"):
+                        raise EinopsError('Indexing expression contains duplicate dimension "{}"'.format(x))
                 if x == _ellipsis:
                     self.identifiers.add(_ellipsis)
                     if bracket_group is None:
@@ -66,7 +67,7 @@ class ParsedExpression:
                         else:
                             pass  # no need to think about 1s inside parenthesis
                         return
-                    is_axis_name, reason = self.check_axis_name_return_reason(x)
+                    is_axis_name, reason = self.check_axis_name_return_reason(x, allow_underscore=allow_underscore)
                     if not (is_number or is_axis_name):
                         raise EinopsError('Invalid axis identifier: {}\n{}'.format(x, reason))
                     if is_number:
@@ -121,10 +122,12 @@ class ParsedExpression:
         return False
 
     @staticmethod
-    def check_axis_name_return_reason(name: str) -> Tuple[bool, str]:
+    def check_axis_name_return_reason(name: str, allow_underscore: bool = False) -> Tuple[bool, str]:
         if not str.isidentifier(name):
             return False, 'not a valid python identifier'
         elif name[0] == '_' or name[-1] == '_':
+            if name == '_' and allow_underscore:
+                return True, ''
             return False, 'axis name should should not start or end with underscore'
         else:
             if keyword.iskeyword(name):
