@@ -568,10 +568,22 @@ def parse_shape(x, pattern: str):
         raise RuntimeError("Can't parse shape with composite axes: {pattern} {shape}".format(
             pattern=pattern, shape=shape))
     if len(shape) != len(exp.composition):
-        raise RuntimeError("Can't parse shape with different number of dimensions: {pattern} {shape}".format(
-            pattern=pattern, shape=shape))
+        if exp.has_ellipsis:
+            if len(shape) < len(exp.composition) - 1:
+                raise RuntimeError("Can't parse shape with this number of dimensions: {pattern} {shape}".format(
+                    pattern=pattern, shape=shape))
+        else:
+            raise RuntimeError("Can't parse shape with different number of dimensions: {pattern} {shape}".format(
+                pattern=pattern, shape=shape))
+    if exp.has_ellipsis:
+        ellipsis_idx = exp.composition.index(_ellipsis)
+        composition = (exp.composition[:ellipsis_idx] +
+                       ['_'] * (len(shape) - len(exp.composition) + 1) +
+                       exp.composition[ellipsis_idx+1:])
+    else:
+        composition = exp.composition
     result = {}
-    for (axis_name, ), axis_length in zip(exp.composition, shape):
+    for (axis_name, ), axis_length in zip(composition, shape):
         if axis_name != '_':
             result[axis_name] = axis_length
     return result
