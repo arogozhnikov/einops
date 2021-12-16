@@ -41,6 +41,7 @@ dependencies = [
     'nbformat',
     'nbconvert',
     'jupyter',
+    'parameterized',
     'pillow',
     'nose',
 ]
