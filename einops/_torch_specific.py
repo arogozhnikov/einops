@@ -51,11 +51,11 @@ class TorchJitBackend:
 
     @staticmethod
     def add_axes(x, n_axes: int, pos2len: Dict[int, int]):
-        repeats = [1] * n_axes
+        repeats = [-1] * n_axes
         for axis_position, axis_length in pos2len.items():
             x = torch.unsqueeze(x, axis_position)
             repeats[axis_position] = axis_length
-        return TorchJitBackend.tile(x, repeats)
+        return x.expand(repeats)
 
     @staticmethod
     def is_float_type(x):
