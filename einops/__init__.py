@@ -1,5 +1,5 @@
 __author__ = 'Alex Rogozhnikov'
-__version__ = '0.3.2'
+__version__ = '0.4.0'
 
 
 class EinopsError(RuntimeError):
