@@ -4,7 +4,8 @@ import typing
 from collections import OrderedDict
 from typing import Tuple, List, Dict, Union, Callable, Optional, TypeVar
 
-import numpy as np
+if typing.TYPE_CHECKING:
+    import numpy as np
 
 from . import EinopsError
 from ._backends import get_backend
