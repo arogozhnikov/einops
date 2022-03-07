@@ -32,20 +32,21 @@ if have_cuda:
 # install dependencies
 dependencies = [
     'numpy',
-    'mxnet',
+    'mxnet==1.*',
     'torch',
     'tensorflow',
     'chainer',
-    'keras',
     'jax',
     'jaxlib',
     'nbformat',
     'nbconvert',
     'jupyter',
+    'parameterized',
     'pillow',
     'nose',
 ]
-assert 0 == run('pip install {} --pre --progress-bar off'.format(' '.join(dependencies)))
+
+assert 0 == run('pip install {} --progress-bar off'.format(' '.join(dependencies)))
 # install einops
 assert 0 == run('pip install -e .')
 

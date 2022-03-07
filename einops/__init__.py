@@ -1,5 +1,5 @@
 __author__ = 'Alex Rogozhnikov'
-__version__ = '0.3.0'
+__version__ = '0.4.1'
 
 
 class EinopsError(RuntimeError):
@@ -7,6 +7,7 @@ class EinopsError(RuntimeError):
     pass
 
 
-__all__ = ['einop', 'rearrange', 'reduce', 'parse_shape', 'asnumpy', 'EinopsError']
+
+__all__ = ['einop', 'rearrange', 'reduce', 'repeat', 'parse_shape', 'asnumpy', 'EinopsError']
 
 from .einops import einop, rearrange, reduce, repeat, parse_shape, asnumpy

@@ -1,9 +1,9 @@
 from einops import EinopsError
 import keyword
 import warnings
-from typing import List
+from typing import List, Optional, Set, Tuple
 
-_ellipsis = '…'  # NB, this is a single unicode symbol. String is used as it is not a list, but can be iterated
+_ellipsis: str = '…'  # NB, this is a single unicode symbol. String is used as it is not a list, but can be iterated
 
 
 class AnonymousAxis(object):
@@ -26,12 +26,12 @@ class ParsedExpression:
     non-mutable structure that contains information about one side of expression (e.g. 'b c (h w)')
     and keeps some information important for downstream
     """
-    def __init__(self, expression):
-        self.has_ellipsis = False
-        self.has_ellipsis_parenthesized = None
-        self.identifiers = set()
-        # that's axes like 2, 3 or 5. Axes with size 1 are exceptional and replaced with empty composition
-        self.has_non_unitary_anonymous_axes = False
+    def __init__(self, expression, *, allow_underscore: bool = False):
+        self.has_ellipsis: bool = False
+        self.has_ellipsis_parenthesized: Optional[bool] = None
+        self.identifiers: Set[str] = set()
+        # that's axes like 2, 3, 4 or 5. Axes with size 1 are exceptional and replaced with empty composition
+        self.has_non_unitary_anonymous_axes: bool = False
         # composition keeps structure of composite axes, see how different corner cases are handled in tests
         self.composition = []
         if '.' in expression:
@@ -48,7 +48,8 @@ class ParsedExpression:
         def add_axis_name(x):
             if x is not None:
                 if x in self.identifiers:
-                    raise EinopsError('Indexing expression contains duplicate dimension "{}"'.format(x))
+                    if not (allow_underscore and x == "_"):
+                        raise EinopsError('Indexing expression contains duplicate dimension "{}"'.format(x))
                 if x == _ellipsis:
                     self.identifiers.add(_ellipsis)
                     if bracket_group is None:
@@ -66,7 +67,7 @@ class ParsedExpression:
                         else:
                             pass  # no need to think about 1s inside parenthesis
                         return
-                    is_axis_name, reason = self.check_axis_name(x, return_reason=True)
+                    is_axis_name, reason = self.check_axis_name_return_reason(x, allow_underscore=allow_underscore)
                     if not (is_number or is_axis_name):
                         raise EinopsError('Invalid axis identifier: {}\n{}'.format(x, reason))
                     if is_number:
@@ -121,23 +122,26 @@ class ParsedExpression:
         return False
 
     @staticmethod
-    def check_axis_name(name: str, return_reason=False):
-        """
-        Valid axes names are python identifiers except keywords,
-        and additionally should not start or end with underscore
-        """
+    def check_axis_name_return_reason(name: str, allow_underscore: bool = False) -> Tuple[bool, str]:
         if not str.isidentifier(name):
-            result = False, 'not a valid python identifier'
+            return False, 'not a valid python identifier'
         elif name[0] == '_' or name[-1] == '_':
-            result = False, 'axis name should should not start or end with underscore'
+            if name == '_' and allow_underscore:
+                return True, ''
+            return False, 'axis name should should not start or end with underscore'
         else:
             if keyword.iskeyword(name):
                 warnings.warn("It is discouraged to use axes names that are keywords: {}".format(name), RuntimeWarning)
             if name in ['axis']:
                 warnings.warn("It is discouraged to use 'axis' as an axis name "
                               "and will raise an error in future", FutureWarning)
-            result = True, None
-        if return_reason:
-            return result
-        else:
-            return result[0]
+            return True, ''
+
+    @staticmethod
+    def check_axis_name(name: str) -> bool:
+        """
+        Valid axes names are python identifiers except keywords,
+        and additionally should not start or end with underscore
+        """
+        is_valid, _reason = ParsedExpression.check_axis_name_return_reason(name)
+        return is_valid

@@ -1,7 +1,8 @@
 site_name: Einops
 repo_name: arogozhnikov/einops
 repo_url: https://github.com/arogozhnikov/einops
-site_url: https://arogozhnikov.github.io/einops
+site_url: https://einops.rocks
+docs_dir: docs_src
 theme:
   name: material
   favicon: images/favicon.png
@@ -13,6 +14,7 @@ nav:
   - Tutorials:
       Einops Basics: 1-einops-basics.ipynb
       Einops for Deep Learning: 2-einops-for-deep-learning.ipynb
+      Einmix for great MLPs: 3-einmix-layer.ipynb
       Pytorch Examples: pytorch-examples.html
   - API Reference:
       asnumpy: api/asnumpy.md
@@ -20,6 +22,8 @@ nav:
       rearrange: api/rearrange.md
       reduce: api/reduce.md
       repeat: api/repeat.md
+  - Testimonials: pages/testimonials.md
+  - Projects: pages/projects.md
 extra:
   search:
     language: en

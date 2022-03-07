@@ -2,6 +2,8 @@ __author__ = 'Alex Rogozhnikov'
 
 import functools
 
+from einops.einops import _apply_recipe
+
 from ..einops import TransformRecipe, _prepare_transformation_recipe
 from .. import EinopsError
 
@@ -20,7 +22,7 @@ class RearrangeMixin:
         super().__init__()
         self.pattern = pattern
         self.axes_lengths = axes_lengths
-        self.recipe()  # checking parameters
+        self._recipe = self.recipe()  # checking parameters
 
     def __repr__(self):
         params = repr(self.pattern)
@@ -37,10 +39,7 @@ class RearrangeMixin:
             raise EinopsError(' Error while preparing {!r}\n {}'.format(self, e))
 
     def _apply_recipe(self, x):
-        try:
-            return self.recipe().apply(x)
-        except EinopsError as e:
-            raise EinopsError(' Error while computing {!r}\n {}'.format(self, e))
+        return _apply_recipe(self._recipe, x, reduction_type='rearrange')
 
 
 class ReduceMixin:
@@ -59,7 +58,7 @@ class ReduceMixin:
         self.pattern = pattern
         self.reduction = reduction
         self.axes_lengths = axes_lengths
-        self.recipe()  # checking parameters
+        self._recipe = self.recipe()  # checking parameters
 
     def __repr__(self):
         params = '{!r}, {!r}'.format(self.pattern, self.reduction)
@@ -71,12 +70,10 @@ class ReduceMixin:
     def recipe(self) -> TransformRecipe:
         try:
             hashable_lengths = tuple(sorted(self.axes_lengths.items()))
-            return _prepare_transformation_recipe(self.pattern, operation=self.reduction, axes_lengths=hashable_lengths)
+            return _prepare_transformation_recipe(
+                self.pattern, operation=self.reduction, axes_lengths=hashable_lengths)
         except EinopsError as e:
             raise EinopsError(' Error while preparing {!r}\n {}'.format(self, e))
 
     def _apply_recipe(self, x):
-        try:
-            return self.recipe().apply(x)
-        except EinopsError as e:
-            raise EinopsError(' Error while computing {!r}\n {}'.format(self, e))
+        return _apply_recipe(self._recipe, x, reduction_type=self.reduction)

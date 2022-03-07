@@ -333,6 +333,13 @@ class TorchBackend(AbstractBackend):
     def stack_on_zeroth_dimension(self, tensors: list):
         return self.torch.stack(tensors)
 
+    def add_axes(self, x, n_axes, pos2len):
+        repeats = [-1] * n_axes
+        for axis_position, axis_length in pos2len.items():
+            x = self.add_axis(x, axis_position)
+            repeats[axis_position] = axis_length
+        return x.expand(repeats)
+
     def tile(self, x, repeats):
         return x.repeat(repeats)
 
@@ -502,15 +509,16 @@ class TensorflowBackend(AbstractBackend):
 
 
 class KerasBackend(AbstractBackend):
-    framework_name = 'keras'
+    framework_name = 'tensorflow.keras'
 
     def __init__(self):
-        import keras
-        self.keras = keras
-        self.K = keras.backend
+        import tensorflow as tf
+        self.tf = tf
+        self.keras = tf.keras
+        self.K = tf.keras.backend
 
     def is_appropriate_type(self, tensor):
-        return self.K.is_tensor(tensor) and self.K.is_keras_tensor(tensor)
+        return self.tf.is_tensor(tensor) and self.K.is_keras_tensor(tensor)
 
     def create_symbol(self, shape):
         return self.keras.Input(batch_shape=shape)
@@ -524,8 +532,8 @@ class KerasBackend(AbstractBackend):
         return self.K.arange(start, stop)
 
     def shape(self, x):
-        shape = self.K.shape(x)  # tf tensor (if tf is backend)
-        return tuple(shape[i] for i in range(shape.shape[0]))
+        shape = self.K.shape(x)  # tf tensor
+        return HashableTuple(tuple(shape))
 
     def reduce(self, x, operation, axes):
         return getattr(self.K, operation)(x, axis=axes)

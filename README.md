@@ -1,21 +1,30 @@
+<!-- this link magically rendered as video, unfortunately not in docs -->
+
+<!-- https://user-images.githubusercontent.com/6318811/116849688-0ca41c00-aba4-11eb-8ccf-74744f6cbc23.mp4 -->
+
 <a href='http://arogozhnikov.github.io/images/einops/einops_video.mp4' >
 <div align="center">
   <img src="http://arogozhnikov.github.io/images/einops/einops_video.gif" alt="einops package examples" />
   <br>
-  <small><a href='http://arogozhnikov.github.io/images/einops/einops_video.mp4'>This video in better quality.</a></small>
+  <small><a href='http://arogozhnikov.github.io/images/einops/einops_video.mp4'>This video in high quality (mp4)</a></small>
   <br><br>
 </div>
 </a>
 
 # einops 
-[![Build Status](https://travis-ci.org/arogozhnikov/einops.svg?branch=master)](https://travis-ci.org/arogozhnikov/einops)
+[![Run tests](https://github.com/arogozhnikov/einops/actions/workflows/run_tests.yml/badge.svg)](https://github.com/arogozhnikov/einops/actions/workflows/run_tests.yml)
 [![PyPI version](https://badge.fury.io/py/einops.svg)](https://badge.fury.io/py/einops)
 [![Documentation](https://img.shields.io/badge/documentation-link-blue.svg)](https://einops.rocks/)
+![Supported python versions](https://raw.githubusercontent.com/arogozhnikov/einops/master/docs/resources/python_badge.svg)
 
 
 Flexible and powerful tensor operations for readable and reliable code. 
-Supports numpy, pytorch, tensorflow, and [others](#supported-frameworks).
+Supports numpy, pytorch, tensorflow, jax, and [others](#supported-frameworks).
 
+## Recent updates:
+
+- torch.jit.script is supported for pytorch layers
+- powerful EinMix added to einops. [Einmix tutorial notebook](https://github.com/arogozhnikov/einops/blob/master/docs/3-einmix-layer.ipynb) 
 
 <!--<div align="center">
   <img src="http://arogozhnikov.github.io/images/einops/einops_logo_350x350.png" 
@@ -34,30 +43,20 @@ Supports numpy, pytorch, tensorflow, and [others](#supported-frameworks).
 > Slowly but surely, einops is seeping in to every nook and cranny of my code. If you find yourself shuffling around bazillion dimensional tensors, this might change your life
 [Nasim Rahaman, MILA (Montreal)](https://twitter.com/nasim_rahaman/status/1216022614755463169)
 
-
+[More testimonials](https://einops.rocks/pages/testimonials/)
 
 ## Contents
 
+- [Installation](#Installation)
 - [Documentation](https://einops.rocks/)
 - [Tutorial](#Tutorials) 
 - [API micro-reference](#API)
-- [Installation](#Installation)
-- [Naming](#Naming)
 - [Why using einops](#Why-using-einops-notation)
 - [Supported frameworks](#Supported-frameworks)
 - [Contributing](#Contributing)
-- [Github repository (for issues/questions)](https://github.com/arogozhnikov/einops)
+- [Repository](https://github.com/arogozhnikov/einops) and [discussions](https://github.com/arogozhnikov/einops/discussions)
 
-
-## Tutorials
-
-Tutorials are the most convenient way to see `einops` in action (and right now work as a documentation)
-
-- part 1: [einops fundamentals](https://github.com/arogozhnikov/einops/blob/master/docs/1-einops-basics.ipynb) 
-- part 2: [einops for deep learning](https://github.com/arogozhnikov/einops/blob/master/docs/2-einops-for-deep-learning.ipynb)
-- part 3: [real code fragments improved with einops](https://arogozhnikov.github.io/einops/pytorch-examples.html) (so far only for pytorch)   
-
-## Installation
+## Installation  <a name="Installation"></a>
 
 Plain and simple:
 ```bash
@@ -73,7 +72,16 @@ pip install https://github.com/arogozhnikov/einops/archive/master.zip
 ```
 -->
 
-## API 
+## Tutorials <a name="Tutorials"></a>
+
+Tutorials are the most convenient way to see `einops` in action
+
+- part 1: [einops fundamentals](https://github.com/arogozhnikov/einops/blob/master/docs/1-einops-basics.ipynb) 
+- part 2: [einops for deep learning](https://github.com/arogozhnikov/einops/blob/master/docs/2-einops-for-deep-learning.ipynb)
+- part 3: [improve pytorch code with einops](https://arogozhnikov.github.io/einops/pytorch-examples.html)   
+
+
+## API <a name="API"></a>
 
 `einops` has a minimalistic yet powerful API.
 
@@ -140,14 +148,14 @@ parse_shape(input_tensor, 'batch _ h w') # e.g {'batch': 64, 'h': 128, 'w': 160}
 ```
 -->
 
-## Naming
+## Naming <a name="Naming"></a>
 
 `einops` stands for Einstein-Inspired Notation for operations 
 (though "Einstein operations" is more attractive and easier to remember).
 
 Notation was loosely inspired by Einstein summation (in particular by `numpy.einsum` operation).
 
-## Why use `einops` notation?!
+## Why use `einops` notation?! <a name="Why-using-einops-notation"></a>
 
 
 ### Semantic information (being verbose in expectations)
@@ -171,7 +179,7 @@ but rather a sequence (video).
 
 Semantic information makes the code easier to read and maintain. 
 
-### More checks
+### Convenient checks
 
 Reconsider the same example:
 
@@ -209,12 +217,12 @@ and you'd like to specify this in your code.
 ```python
 reduce(x, 'b c (x dx) -> b c x', 'max', dx=2)
 reduce(x, 'b c (x dx) (y dy) -> b c x y', 'max', dx=2, dy=3)
-reduce(x, 'b c (x dx) (y dy) (z dz)-> b c x y z', 'max', dx=2, dy=3, dz=4)
+reduce(x, 'b c (x dx) (y dy) (z dz) -> b c x y z', 'max', dx=2, dy=3, dz=4)
 ```
 These examples demonstrated that we don't use separate operations for 1d/2d/3d pooling, 
 those are all defined in a uniform way. 
 
-Space-to-depth and depth-to space are defined in many frameworks but how about width-to-height?
+Space-to-depth and depth-to space are defined in many frameworks but how about width-to-height? Here you go:
 
 ```python
 rearrange(x, 'b c h (w w2) -> b c (h w2) w', w2=2)
@@ -229,8 +237,11 @@ y = x.flatten() # or flatten(x)
 ```
 
 Suppose `x`'s shape was `(3, 4, 5)`, then `y` has shape ...
+
 - numpy, cupy, chainer, pytorch: `(60,)`
 - keras, tensorflow.layers, mxnet and gluon: `(3, 20)`
+
+`einops` works the same way in all frameworks.
 
 ### Independence of framework terminology
 
@@ -250,9 +261,9 @@ repeat(image, 'h w -> h (tile w)', tile=2)  # in mxnet
 ... (etc.)
 ```
 
-<!-- TODO examples for depth-to-space and pixel shuffle? transpose vs permute? -->
+Testimonials provide user's perspective on the same question. 
 
-## Supported frameworks
+## Supported frameworks <a name="Supported-frameworks"></a>
 
 Einops works with ...
 
@@ -267,14 +278,15 @@ Einops works with ...
 - [mxnet](https://mxnet.apache.org/) (experimental)
 
 
-## Contributing 
+## Contributing <a name="Contributing"></a>
 
 Best ways to contribute are
 
 - spread the word about `einops`
-- if you like explaining things, alternative tutorials are very helpful
-- translating examples in languages other than English is also a good idea
-- use `einops` notation in your papers to strictly define used operations!
+- if you like explaining things, more tutorials/tear-downs of implementations is welcome
+- tutorials in other languages are very welcome
+- do you have project/code example to share? Let me know in github discussions
+- use `einops` in your papers!
 
 ## Supported python versions
 

@@ -6,3 +6,8 @@ div.highlight{
 div.highlight>pre{
     padding: 3px;
 }
+
+.md-typeset ul li, .md-typeset ol li {
+    /*original padding makes lists huge*/
+    margin-bottom: 0.2em;
+}

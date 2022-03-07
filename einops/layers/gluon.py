@@ -1,7 +1,9 @@
+from typing import Optional, Dict
+
 import mxnet
 
 from . import RearrangeMixin, ReduceMixin
-from ._weighted_einsum import WeightedEinsumMixin
+from ._einmix import _EinmixMixin
 
 __author__ = 'Alex Rogozhnikov'
 
@@ -16,7 +18,7 @@ class Reduce(ReduceMixin, mxnet.gluon.HybridBlock):
         return self._apply_recipe(x)
 
 
-class WeightedEinsum(WeightedEinsumMixin, mxnet.gluon.HybridBlock):
+class EinMix(_EinmixMixin, mxnet.gluon.HybridBlock):
     def _create_parameters(self, weight_shape, weight_bound, bias_shape, bias_bound):
         with self.name_scope():
 
@@ -30,8 +32,19 @@ class WeightedEinsum(WeightedEinsumMixin, mxnet.gluon.HybridBlock):
             else:
                 self.bias = None
 
+    def _create_rearrange_layers(self,
+                                 pre_reshape_pattern: Optional[str],
+                                 pre_reshape_lengths: Optional[Dict],
+                                 post_reshape_pattern: Optional[str],
+                                 post_reshape_lengths: Optional[Dict]):
+        if (pre_reshape_pattern is not None) or (post_reshape_pattern is not None):
+            raise NotImplementedError("EinMix in mxnet/gluon doesn't support axis group/ungroup "
+                                      "because einsum in gluon defined only for mx.np.ndarrays")
+
     def hybrid_forward(self, F, x, *args, **kwargs):
-        result = mxnet.np.einsum(self.einsum_pattern, x, self.weight.data())
+        # mxnet.np can't work with 'usual' ndarrays; .data() is a standard way to get within in gluon
+        # .as_np_mndarray makes the necessary conversion
+        result = mxnet.np.einsum(self.einsum_pattern, x.as_np_ndarray(), self.weight.data())
         if self.bias is not None:
             result += self.bias.data()
         return result
