@@ -381,7 +381,7 @@ def einop(tensor, pattern: str, reduction=None, **axes_lengths: int):
 
     if op == 'rearrange':
         if reduction is not None:
-            raise EinopsError('Do not pass reduction for rearrange pattern: {}'.format(pattern))
+            raise EinopsError('Got reduction operation but there is no dimension to reduce in pattern: "{}"'.format(pattern))
         return rearrange(tensor, pattern, **axes_lengths)
     elif op == 'reduce':
         if reduction is None:
