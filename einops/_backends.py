@@ -559,3 +559,65 @@ class KerasBackend(AbstractBackend):
     def layers(self):
         from .layers import keras
         return keras
+
+
+class OneFlowBackend(AbstractBackend):
+    framework_name = "oneflow"
+
+    def __init__(self):
+        import oneflow as flow
+        self.flow = flow
+
+    def is_appropriate_type(self, tensor):
+        return isinstance(tensor, self.flow.Tensor)
+
+    def from_numpy(self, x):
+        variable = self.flow.from_numpy(x)
+        if self.is_float_type(variable):
+            # attach grad only to floating types
+            variable.requires_grad = True
+        return variable
+    
+    def to_numpy(self, x):
+        return x.detach().cpu().numpy()
+
+    def arange(self, start, stop):
+        return self.flow.arange(start, stop, dtype=self.flow.int64)
+
+    def reduce(self, x, operation, reduced_axes):
+        for axis in sorted(reduced_axes, reverse=True):
+            if operation == 'min':
+                x, _ = x.min(dim=axis)
+            elif operation == 'max':
+                x, _ = x.max(dim=axis)
+            elif operation in ['sum', 'mean', 'prod']:
+                x = getattr(x, operation)(dim=axis)
+            else:
+                raise NotImplementedError('Unknown reduction ', operation)
+        return x
+    
+    def transpose(self, x, axes):
+        return x.permute(axes)
+
+    def stack_on_zeroth_dimension(self, tensors: list):
+        return self.flow.stack(tensors)
+
+    def add_axes(self, x, n_axes, pos2len):
+        repeats = [-1] * n_axes
+        for axis_position, axis_length in pos2len.items():
+            x = self.add_axis(x, axis_position)
+            repeats[axis_position] = axis_length
+        return x.expand(*repeats)
+
+    def tile(self, x, repeats):
+        return x.repeat(repeats)
+
+    def add_axis(self, x, new_position):
+        return self.flow.unsqueeze(x, new_position)
+
+    def is_float_type(self, x):
+        return x.dtype in [self.flow.float16, self.flow.float32, self.flow.float64]
+
+    def layers(self):
+        from .layers import oneflow
+        return oneflow

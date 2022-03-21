@@ -44,6 +44,7 @@ dependencies = [
     'parameterized',
     'pillow',
     'nose',
+    'oneflow',
 ]
 
 assert 0 == run('pip install {} --progress-bar off'.format(' '.join(dependencies)))
