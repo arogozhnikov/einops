@@ -567,6 +567,7 @@ class OneFlowBackend(AbstractBackend):
     def __init__(self):
         import oneflow as flow
         self.flow = flow
+        print("using oneflow")
 
     def is_appropriate_type(self, tensor):
         return isinstance(tensor, self.flow.Tensor)

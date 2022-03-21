@@ -274,7 +274,7 @@ def test_reduction_stress_imperatives():
             if reduction in ['mean', 'prod']:
                 dtype = 'float64'
                 coincide = numpy.allclose
-            for n_axes in range(6 if 'mxnet' in backend.framework_name else 11):
+            for n_axes in range(6 if 'mxnet' in backend.framework_name else (7 if 'oneflow' in backend.framework_name else 11)):
                 shape = numpy.random.randint(2, 4, size=n_axes)
                 permutation = numpy.random.permutation(n_axes)
                 skipped = 0 if reduction == 'rearrange' else numpy.random.randint(n_axes + 1)

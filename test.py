@@ -44,10 +44,11 @@ dependencies = [
     'parameterized',
     'pillow',
     'nose',
-    'oneflow',
 ]
 
 assert 0 == run('pip install {} --progress-bar off'.format(' '.join(dependencies)))
+# details of oneflow installation: https://github.com/Oneflow-Inc/oneflow#install-with-pip-package
+assert 0 == run('python3 -m pip install -f https://release.oneflow.info oneflow==0.7.0+cu112 --user')
 # install einops
 assert 0 == run('pip install -e .')
 
