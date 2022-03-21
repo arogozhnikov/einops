@@ -122,10 +122,8 @@ def test_rearrange_examples():
     for backend in imp_op_backends:
         print('testing source_examples for ', backend.framework_name)
         for test in tests:
-            print(f"testing {test}")
             x = numpy.arange(10 * 20 * 30 * 40).reshape([10, 20, 30, 40])
             result1 = test(x)
-            
             result2 = backend.to_numpy(test(backend.from_numpy(x)))
             assert numpy.array_equal(result1, result2)
 
@@ -135,7 +133,6 @@ def test_rearrange_examples():
             last_step = -1 if (backend.framework_name != 'torch' and backend.framework_name != 'oneflow') else 1
             indexing_expression = numpy.index_exp[::2, ::3, ::1, ::last_step]
             result1 = test(x[indexing_expression])
-            print(indexing_expression)
             result2 = backend.to_numpy(test(backend.from_numpy(x)[indexing_expression]))
             assert numpy.array_equal(result1, result2)
 
