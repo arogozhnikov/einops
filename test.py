@@ -6,6 +6,7 @@ Usage: python test.py
 """
 
 import os
+import sys
 from subprocess import Popen, PIPE
 from pathlib import Path
 
@@ -25,7 +26,8 @@ output, _ = Popen('which nvidia-smi'.split(' '), stdout=PIPE).communicate()
 have_cuda = b'nvidia' in output
 
 # install cupy. It can't be installed without cuda available (with compilers).
-if have_cuda:
+skip_cupy = not have_cuda
+if not skip_cupy:
     return_code = run('pip install cupy --pre --progress-bar off')
     assert return_code == 0
 
@@ -47,11 +49,20 @@ dependencies = [
 ]
 
 assert 0 == run('pip install {} --progress-bar off'.format(' '.join(dependencies)))
-# details of oneflow installation: https://github.com/Oneflow-Inc/oneflow#install-with-pip-package
-assert 0 == run('python3 -m pip install -f https://release.oneflow.info oneflow==0.7.0+cu112 --user')
+
+# oneflow provides wheels for linux, but not mac, so it is tested only on linux
+skip_oneflow = 'linux' not in sys.platform
+if not skip_oneflow:
+    # oneflow installation: https://github.com/Oneflow-Inc/oneflow#install-with-pip-package
+    assert 0 == run('pip install -f https://release.oneflow.info oneflow==0.7.0+cpu --user')
+
 # install einops
 assert 0 == run('pip install -e .')
 
 
-return_code = run('python -m nose tests -vds', EINOPS_SKIP_CUPY='0' if have_cuda else '1')
+return_code = run(
+    'python -m nose tests -vds',
+    EINOPS_SKIP_CUPY='1' if skip_cupy else '0',
+    EINOPS_SKIP_ONEFLOW='1' if skip_oneflow else '0',
+)
 assert return_code == 0
