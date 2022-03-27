@@ -11,8 +11,14 @@ import logging
 logging.getLogger('tensorflow').disabled = True
 logging.getLogger('matplotlib').disabled = True
 
-assert os.environ.get('EINOPS_SKIP_CUPY', '') in ['', '1', '0']
-skip_cupy = os.environ.get('EINOPS_SKIP_CUPY', '') == '1'
+flag_to_bool = {
+    '': False,
+    '0': False,
+    '1': True,
+}
+
+skip_cupy = flag_to_bool[os.environ.get('EINOPS_SKIP_CUPY', '1')]
+skip_oneflow = flag_to_bool[os.environ.get('EINOPS_SKIP_ONEFLOW', '1')]
 
 
 def collect_test_backends(symbolic=False, layers=False):
@@ -30,6 +36,7 @@ def collect_test_backends(symbolic=False, layers=False):
                 _backends.GluonBackend,
                 _backends.ChainerBackend,
                 _backends.TensorflowBackend,
+                _backends.OneFlowBackend,
             ]
             if not skip_cupy:
                 backend_types += [_backends.CupyBackend]
@@ -38,6 +45,7 @@ def collect_test_backends(symbolic=False, layers=False):
                 _backends.TorchBackend,
                 _backends.GluonBackend,
                 _backends.ChainerBackend,
+                _backends.OneFlowBackend,
             ]
     else:
         if not layers:

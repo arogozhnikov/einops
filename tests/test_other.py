@@ -29,10 +29,12 @@ def test_backends_installed():
     This test will fail if some of backends are not installed or can't be imported
     Other tests will just work and only test installed backends.
     """
-    from . import skip_cupy
+    from . import skip_cupy, skip_oneflow
     errors = []
     for backend_type in AbstractBackend.__subclasses__():
         if skip_cupy and backend_type.framework_name == 'cupy':
+            continue
+        if skip_oneflow and backend_type.framework_name == 'oneflow':
             continue
         try:
             # instantiate

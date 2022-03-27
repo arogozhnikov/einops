@@ -42,7 +42,7 @@ test_cases = [
 
 def test_all():
     for backend in collect_test_backends(layers=True, symbolic=False):
-        if backend.framework_name in ['tensorflow', 'torch', 'chainer']:
+        if backend.framework_name in ['tensorflow', 'torch', 'chainer', 'oneflow']:
             layer_type = backend.layers().EinMix
             for args, in_shape, out_shape in test_cases:
                 layer = args(layer_type)
