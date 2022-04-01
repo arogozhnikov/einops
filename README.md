@@ -23,6 +23,8 @@ Supports numpy, pytorch, tensorflow, jax, and [others](#supported-frameworks).
 
 ## Recent updates:
 
+- [Einops paper](https://openreview.net/pdf?id=oapKSVM2bcj) is accepted for oral presentation at ICLR 2022
+- oneflow backend added
 - torch.jit.script is supported for pytorch layers
 - powerful EinMix added to einops. [Einmix tutorial notebook](https://github.com/arogozhnikov/einops/blob/master/docs/3-einmix-layer.ipynb) 
 
@@ -276,6 +278,24 @@ Einops works with ...
 - [gluon](https://gluon.mxnet.io/)
 - [tf.keras](https://www.tensorflow.org/guide/keras)
 - [mxnet](https://mxnet.apache.org/) (experimental)
+- [oneflow](https://github.com/Oneflow-Inc/oneflow) (experimental)
+
+## Citing einops <a name="Contributing"></a>
+
+Please use the following bibtex record
+
+```
+@inproceedings{
+rogozhnikov2022einops,
+title={Einops: Clear and Reliable Tensor Manipulations with Einstein-like Notation},
+author={Alex Rogozhnikov},
+booktitle={International Conference on Learning Representations},
+year={2022},
+url={https://openreview.net/forum?id=oapKSVM2bcj}
+}
+```
+
+Link to paper at openreview: https://openreview.net/pdf?id=oapKSVM2bcj. 
 
 
 ## Contributing <a name="Contributing"></a>
