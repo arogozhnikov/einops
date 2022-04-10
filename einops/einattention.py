@@ -152,7 +152,8 @@ def infer_and_check_sizes(
     tensor_shape: (3, 4, 6)
     sizes: [2, None, None, None, None, 3, 4, 5]
     tensor_structure: [ [Anon(3), Anon(1)], [Named(0), Named(1), Anon(2)], [Named[2]] ]
-    This will pass sussessfully, resulting sizes:
+
+    This will pass successfully, resulting sizes (sizes[1] and sizes[2] were filled from the data):
     sizes: [2,    1,    6, None, None, 3, 4, 5]
     """
 
