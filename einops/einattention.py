@@ -381,21 +381,3 @@ class EinAttention(torch.nn.Module):
 
         result = attention.bmm(v)
         return self.r_formula.backward(result, sizes)
-
-
-# class SelfAttention(torch.nn.Module):
-#     def __init__(self, one_pattern, **axis_lengths):
-#         super().__init__()
-#         lexical = parse_tensor_pattern_lexical(one_pattern.replace('*', 'star_name_kqv'))
-#         self.axis2axis_id = {}
-#         axis_names, structure = parse_tensor_structure(lexical, self.axis2axis_id, allow_new_axes=True)
-#
-#         axes_names
-#
-#         left = one_pattern.replace('*', 'star_axis_in')
-#         rght = one_pattern.replace('')
-#
-#         self.to_qkv = WeightedEinsum(f"{one_pattern.replace()} -> kqv {one_pattern.replace('')}")
-#
-#     def forward(self, x):
-#         k, q, v = self.to_qkv(x)
