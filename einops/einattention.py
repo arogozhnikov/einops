@@ -285,14 +285,48 @@ class GroupingRecipe:
 
 class EinAttention(torch.nn.Module):
 
-    def __init__(self,
-                 pattern,
-                 /, *,
-                 mask_dimensions: Optional[str] = None,
-                 **axis_lengths: int):
+    def __init__(
+            self,
+            pattern: str,
+            /,
+            *,
+            lshift_shape: Optional[str] = None,
+            normalize: bool = True,
+            **axis_lengths: int
+    ):
+        """
+        Flexible attention layer.
+
+        Covered cases:
+        1d / 2d / 3d / etc attention
+        batched and single-instance attention
+        strided attention
+        window-ed attention
+
+        Layer does not deal with pre- or post- normalizations and linear projections.
+        This could be a function as of now, but too many computations happening here
+        - so I think it's better to go with a layer to keep things (relatively) simple.
+
+        Additionally, learnable lshift may be introduced, this will require layer, not function.
+
+        Layer is scriptable, relies on bmm internally.
+
+        Most important change is introduction of wildcard dimension (*) that is used as an embedding dimension
+        of attention. This could be a keyword-axis, but its behavior is too different: this axis is matched across k,q,v,
+        but it can have one length in q and k, and different in v. That's rare, but worth considering.
+
+        :param pattern: <result_pattern> <- <query_pattern>, <key_and_value_pattern>
+        Note that key and value should have the same pattern, while query has a different pattern.
+
+        :param lshift_shape: allows passing lshift (logit shift) during forward; allows complex masking on-the-fly
+            layer provides a different mechanism for simpler masks.
+        :param axis_lengths: lengths of axes
+        """
         super().__init__()
         star_name_kq = 'star_dim_kq'
         star_name_v = 'star_dim_v'
+
+        self.normalize = normalize
 
         self.axis2axis_id: Dict[str, int] = {
             '*': 0,
@@ -339,28 +373,90 @@ class EinAttention(torch.nn.Module):
         self.r_formula = GroupingRecipe(
             ids(self.r_structure), batch_ids, self.axis2axis_id[star_name_v], star_last=True)
 
-        if mask_dimensions is not None:
-            self.mask_all_dimensions = [batch_ids, self.q_formula.seq_identifiers, self.k_formula.seq_identifiers]
-            all_mask_identifiers_flat = sum(self.mask_all_dimensions, [])
-            passed_mask_dimensions = [self.axis2axis_id[axis] for axis in mask_dimensions.split(' ')]
+        mask_axis_ids = batch_ids + self.q_formula.seq_identifiers + self.k_formula.seq_identifiers
+        self.mask_all_axis_ids = mask_axis_ids
+        axis_id2axis_name = {v: k for k, v in self.axis2axis_id.items()}
+        self.logit_shape_pattern = " ".join([
+            axis_id2axis_name[axis_id] for axis_id in mask_axis_ids
+        ])
+
+        if lshift_shape is not None:
+            # ids of axes in mask. Order is very important
+            passed_mask_axis_ids = [self.axis2axis_id[axis] for axis in lshift_shape.split(' ')]
             self.mask_transposition = [
-                passed_mask_dimensions.index(dim)
-                for dim in all_mask_identifiers_flat
-                if dim in passed_mask_dimensions
+                passed_mask_axis_ids.index(dim) for dim in mask_axis_ids if dim in passed_mask_axis_ids
             ]
             self.mask_indexer = [
-                slice(None, None, None) if dim in passed_mask_dimensions else None
-                for dim in all_mask_identifiers_flat
+                slice(None, None, None) if dim in passed_mask_axis_ids else None for dim in mask_axis_ids
             ]
         else:
-            self.mask_all_dimensions = None
+            # set all to Nones so that indexer
             self.mask_transposition = None
             self.mask_indexer = None
 
-    def forward(self, q, k, v, mask=None):
+    def modify_logit_inplace(self, logit_all_dims):
+        """
+        users can override this function during subclassing to get some convenient masking
+        for multiple cases.
+
+        See an example below.
+        """
+        pass
+
+    def example_modify_logit_inplace(self, logit: torch.Tensor):
+        # this one is questionable:
+        # there is a simple hack to specify that some positions shouldn't be attended to
+        # by putting NaNs in corresponding embeddings.
+        # and filling positions with a number.
+
+        # This is lazy! Better provide lshift during computations
+        logit = torch.nan_to_num(logit, nan=-1000)
+
+        # 1-d example of temporal ordering: query only from previous or current positions
+        b, t_q, t_kv = self.get_logit_dimensions_grid(logit.shape)
+
+        causal_mask = (t_kv <= t_q)
+        logit.add_(causal_mask.float().mul(100))
+
+        # 1-d example of stripe mask: query only from neighboring positions
+        stripe_mask = abs(t_kv - t_q) <= 10
+        logit.add_(stripe_mask.float().mul(100))
+
+        # 2-d example of causal ordering when generating pixel-by-pixel
+        b, h_q, w_q, h_kv, w_kv = self.get_logit_dimensions_grid(logit.shape)
+        is_prev = (h_q > h_kv) | ((h_q == h_kv) & (w_q >= w_kv))
+        logit.grad(is_prev.float().mul(100))
+
+        # etc.
+        # it is important to track order of dimensions in logit here,
+        # as self.get_logit_dimensions_grid(...) will return them as in a specific order that
+        # is stored in self.logit_shape_pattern
+
+    def get_logit_dimensions_grid(self, logit_shape) -> List[torch.Tensor]:
+        """
+        supplementary function to help with 'example_modify_logit_inplace'
+
+        NB: returns floating tensors
+        :param logit_shape:
+        :return: list of pseudo-1d tensors, each of them aligned to an axis in logit
+            each tensor has only one non-unitary dimension, elements along this dimension are 0, 1, ... dim - 1.
+        """
+        result = [
+            torch.linspace(0, length - 1, length)
+            for dim, length in enumerate(logit_shape)
+        ]
+        return result
+
+    def forward(self, q, k, v, mask: Optional[torch.Tensor] = None):
+        """
+        q, k, v - input tensors in according to patterns
+        NB:
+        return output tensor (according to output part in a pattern)
+        """
+        # to allow different batches have different sizes,
+        # we first
         sizes: List[Optional[int]] = self.axis_lengths.copy()
 
-        print(f'{sizes=}, {q.shape=}, {self.q_structure=}')
         infer_and_check_sizes(q.shape, self.q_structure, sizes=sizes, source_name='query part')
         infer_and_check_sizes(k.shape, self.k_structure, sizes=sizes, source_name='key part')
         infer_and_check_sizes(v.shape, self.v_structure, sizes=sizes, source_name='value part')
@@ -372,12 +468,26 @@ class EinAttention(torch.nn.Module):
         v = self.v_formula.forward(v, sizes)
 
         logattention = q.bmm(k)
-        if mask is not None:
+        if self.normalize:
+            # NB this will not work with FP16, only bf16 and float32
+            logattention *= q.shape[-1] ** -0.5
+
+        logattention_detailed_shape = [sizes[i] for i in self.mask_all_axis_ids]
+        logattention_view = logattention.view(logattention_detailed_shape)
+        # TODO introduce a learnable shift to attention, it should be added here
+
+        # add mask based on
+        if self.mask_transposition is not None:
             reshaped_mask = mask.permute(self.mask_transposition)[self.mask_indexer]
-            logattention.view(self.mask_all_dimensions).add_(reshaped_mask)
+            logattention_view.add_(reshaped_mask)
+        else:
+            assert mask is None, 'mask_dimensions were not passed during layer construction'
+
+        self.modify_logit_inplace(logit_all_dims=logattention_view)
 
         attention = logattention.softmax(-1)
-        # TODO add dropout here
+
+        # TODO add dropout here?
 
         result = attention.bmm(v)
         return self.r_formula.backward(result, sizes)
