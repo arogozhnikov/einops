@@ -54,7 +54,7 @@ def parse_tensor_pattern_lexical(pattern) -> List[List[str]]:
 
         is_number = str.isalnum(x)
         is_star = '*'
-        is_axis_name, reason = ParsedExpression.check_axis_name(x, return_reason=True)
+        is_axis_name, reason = ParsedExpression.check_axis_name_return_reason(x)
         if not (is_number or is_axis_name or is_ellipsis or is_star):
             raise EinopsError('Invalid axis identifier: {}\n{}'.format(x, reason))
         if within_brackets:
