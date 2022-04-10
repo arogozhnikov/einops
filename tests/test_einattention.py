@@ -3,7 +3,7 @@ import torch
 from einops import rearrange
 
 
-def minimal_test():
+def test_einattention_jit_scriptable():
     recipe = EinAttention('t s * head <- t (head *) s, t (head *) s2', head=2)
     result = recipe.forward(torch.ones(3, 4, 5), torch.ones(3, 4, 6), torch.ones(3, 8, 6))
     print(result.shape)
@@ -61,8 +61,3 @@ def test_equivalence_in_different_forms():
         )
         expected_result = rearrange(reference_result, 't head l1 star_v -> ' + result_pattern)
         assert torch.allclose(expected_result, result)
-
-
-test_equivalence_in_different_forms()
-
-# TODO add tests on wrong number of dimensions
