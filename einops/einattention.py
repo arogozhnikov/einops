@@ -95,7 +95,7 @@ def parse_tensor_structure(
         check_unique: bool = True,
         allow_anonymous_axes: bool = True,
 ) -> Tuple[
-    Set[str],
+    List[str],
     List[List[Axis]],
 ]:
     """
@@ -105,7 +105,7 @@ def parse_tensor_structure(
     :param check_unique: restrict duplicate elementary axes
     :param allow_anonymous_axes: allow axes like 3, 5. In reduce patterns: left is ''
     """
-    identifiers = set()
+    identifiers = list()
     new_structure: List[List[Axis]] = []
     for group in parsed_tensor_pattern:
         new_group = []
@@ -124,7 +124,7 @@ def parse_tensor_structure(
             else:
                 if check_unique and axis in identifiers:
                     raise EinopsError("Duplicate axis name: '{}'".format(axis))
-                identifiers.add(axis)
+                identifiers.append(axis)
 
                 if axis not in axis2axis_id:
                     if not allow_new_axes:
@@ -284,13 +284,18 @@ class GroupingRecipe:
 
 
 class EinAttention(torch.nn.Module):
+    # force type for torch.
+    # if this type hint is not provided, torch can recognize var as List[NoneType] and fail.
+
+    axis_lengths: List[Optional[int]]
 
     def __init__(
             self,
             pattern: str,
             /,
             *,
-            lshift_shape: Optional[str] = None,
+            logshift_param: Optional[str] = None,
+            logshift_forward: Optional[str] = None,
             normalize: bool = True,
             **axis_lengths: int
     ):
@@ -304,10 +309,6 @@ class EinAttention(torch.nn.Module):
         window-ed attention
 
         Layer does not deal with pre- or post- normalizations and linear projections.
-        This could be a function as of now, but too many computations happening here
-        - so I think it's better to go with a layer to keep things (relatively) simple.
-
-        Additionally, learnable lshift may be introduced, this will require layer, not function.
 
         Layer is scriptable, relies on bmm internally.
 
@@ -316,10 +317,16 @@ class EinAttention(torch.nn.Module):
         but it can have one length in q and k, and different in v. That's rare, but worth considering.
 
         :param pattern: <result_pattern> <- <query_pattern>, <key_and_value_pattern>
-        Note that key and value should have the same pattern, while query has a different pattern.
+            Note that key and value should have the same pattern, while query has a different pattern.
 
-        :param lshift_shape: allows passing lshift (logit shift) during forward; allows complex masking on-the-fly
+        :param logshift_param: creates an internal logshift (logit shift) parameter of provided pattern;
+            parameter is zero-initialized and properly aligned to logits.
+            Lengths of all axes participating in this pattern should be provided.
+
+        :param logshift_forward: allows passing logshift (logit shift) during forward; allows complex masking on-the-fly
             layer provides a different mechanism for simpler masks.
+            Two logshifts can be applied at the same time.
+
         :param axis_lengths: lengths of axes
         """
         super().__init__()
@@ -345,11 +352,11 @@ class EinAttention(torch.nn.Module):
         kv_identifiers, kv_structure = parse_tensor_structure(kv_pattern, **settings)
         r_identifiers, r_structure = parse_tensor_structure(r_pattern, **settings)
         if q_identifiers != r_identifiers:
-            diff = set.symmetric_difference(q_identifiers, r_identifiers)
+            diff = set.symmetric_difference(set(q_identifiers), set(r_identifiers))
             raise EinopsError(f'Query and result parts should have identical axes in pattern "{pattern}": {diff}')
         assert q_identifiers == r_identifiers, 'Idenfiers'
-        assert star_name_kq not in set.union(q_identifiers, kv_identifiers), f"don't use {star_name_kq} in pattern"
-        assert star_name_v not in set.union(q_identifiers, kv_identifiers), f"don't use {star_name_v} in pattern"
+        assert star_name_kq not in set.union(set(q_identifiers), set(kv_identifiers)), f"don't use {star_name_kq} in pattern"
+        assert star_name_v not in set.union(set(q_identifiers), set(kv_identifiers)), f"don't use {star_name_v} in pattern"
         batch_identifiers = [i for i in kv_identifiers if i in q_identifiers and i != '*']
 
         self.axis_lengths: List[Optional[int]] = [None] * len(self.axis2axis_id)
@@ -376,23 +383,47 @@ class EinAttention(torch.nn.Module):
         mask_axis_ids = batch_ids + self.q_formula.seq_identifiers + self.k_formula.seq_identifiers
         self.mask_all_axis_ids = mask_axis_ids
         axis_id2axis_name = {v: k for k, v in self.axis2axis_id.items()}
-        self.logit_shape_pattern = " ".join([
-            axis_id2axis_name[axis_id] for axis_id in mask_axis_ids
-        ])
+        self.logit_axes_names = [axis_id2axis_name[axis_id] for axis_id in mask_axis_ids]
+        self.logit_axis_name2position = {name: p for p, name in enumerate(self.logit_axes_names)}
 
-        if lshift_shape is not None:
-            # ids of axes in mask. Order is very important
-            passed_mask_axis_ids = [self.axis2axis_id[axis] for axis in lshift_shape.split(' ')]
+        if logshift_param is not None:
+            # provided order does not matter, parameter has its own shape aligned for simple forwarding
+            logshift_param_axes: List[str] = logshift_param.split()
+            assert all(axis_name in self.logit_axes_names for axis_name in logshift_param_axes)
+
+            param_shape = []
+            for axis in self.logit_axes_names:
+                if axis in logshift_param_axes:
+                    axis_length = self.axis_lengths[self.axis2axis_id[axis]]
+
+                    assert isinstance(axis_length, int), f"length of {axis} can't be {axis_length}"
+                    assert axis_length > 0, f"length of {axis} can't be {axis_length}"
+                    param_shape.append(axis_length)
+                else:
+                    param_shape.append(1)
+            self.logshift_param = torch.nn.Parameter(torch.zeros(param_shape), requires_grad=True)
+        else:
+            self.logshift_param = None
+
+        self.logshift_forward = logshift_forward
+
+        if logshift_forward is not None:
+            # ids of axes in logshift. Order is very important
+            passed_mask_axis_ids = [self.axis2axis_id[axis] for axis in logshift_forward.split()]
             self.mask_transposition = [
                 passed_mask_axis_ids.index(dim) for dim in mask_axis_ids if dim in passed_mask_axis_ids
             ]
-            self.mask_indexer = [
-                slice(None, None, None) if dim in passed_mask_axis_ids else None for dim in mask_axis_ids
+            self.logshift_forward_added_dimensions = [
+                i for i, dim in enumerate(mask_axis_ids) if (dim not in passed_mask_axis_ids)
             ]
+            # more efficient way, but torch scripting does not understand it
+            # self.logshift_forward_indexer = [
+            #     slice(None, None, None) if dim in passed_mask_axis_ids else None for dim in mask_axis_ids
+            # ]
         else:
             # set all to Nones so that indexer
             self.mask_transposition = None
-            self.mask_indexer = None
+            self.logshift_forward_added_dimensions = None
 
     def modify_logit_inplace(self, logit_all_dims):
         """
@@ -403,59 +434,65 @@ class EinAttention(torch.nn.Module):
         """
         pass
 
-    def example_modify_logit_inplace(self, logit: torch.Tensor):
+    def example_modify_logit_inplace(self, logit_all_dims: torch.Tensor):
         # this one is questionable:
         # there is a simple hack to specify that some positions shouldn't be attended to
         # by putting NaNs in corresponding embeddings.
         # and filling positions with a number.
-
-        # This is lazy! Better provide lshift during computations
-        logit = torch.nan_to_num(logit, nan=-1000)
+        # This is lazy! Better provide logshift during computations
+        torch.nan_to_num(logit_all_dims, nan=-1000, out=logit_all_dims)
 
         # 1-d example of temporal ordering: query only from previous or current positions
-        b, t_q, t_kv = self.get_logit_dimensions_grid(logit.shape)
+        t_q, t_kv = self.get_logit_dimensions_grid(logit_all_dims, ['t_q', 't_kv'])
 
         causal_mask = (t_kv <= t_q)
-        logit.add_(causal_mask.float().mul(100))
+        logit_all_dims.add_(causal_mask.float().mul(100))
 
         # 1-d example of stripe mask: query only from neighboring positions
         stripe_mask = abs(t_kv - t_q) <= 10
-        logit.add_(stripe_mask.float().mul(100))
+        logit_all_dims.add_(stripe_mask.float().mul(100))
 
         # 2-d example of causal ordering when generating pixel-by-pixel
-        b, h_q, w_q, h_kv, w_kv = self.get_logit_dimensions_grid(logit.shape)
+        h_q, w_q, h_kv, w_kv = self.get_logit_dimensions_grid(logit_all_dims, ['h_q', 'w_q', 'h_kv', 'w_kv'])
         is_prev = (h_q > h_kv) | ((h_q == h_kv) & (w_q >= w_kv))
-        logit.grad(is_prev.float().mul(100))
+        logit_all_dims.grad(is_prev.float().mul(100))
 
         # etc.
-        # it is important to track order of dimensions in logit here,
+        # it is important to track order of dimensions in logit_all_dims here,
         # as self.get_logit_dimensions_grid(...) will return them as in a specific order that
-        # is stored in self.logit_shape_pattern
+        # is stored in self.logit_axes_names
 
-    def get_logit_dimensions_grid(self, logit_shape) -> List[torch.Tensor]:
+    def get_logit_dimensions_grid(self, logit: torch.Tensor, axes: List[str]) -> List[torch.Tensor]:
         """
         supplementary function to help with 'example_modify_logit_inplace'
 
         NB: returns floating tensors
-        :param logit_shape:
-        :return: list of pseudo-1d tensors, each of them aligned to an axis in logit
+        :param logit: logit tensor, only it's shape and device are used, not contents.
+        :return: list of pseudo-1d tensors, each of them aligned to an axis in logit_all_dims
             each tensor has only one non-unitary dimension, elements along this dimension are 0, 1, ... dim - 1.
         """
-        result = [
-            torch.linspace(0, length - 1, length)
-            for dim, length in enumerate(logit_shape)
-        ]
+        result: List[torch.Tensor] = []
+        logit_shape: List[int] = logit.shape
+        for axis_name in axes:
+            dim = self.logit_axis_name2position[axis_name]
+            length = logit_shape[dim]
+            # using longs is very inefficient, but that's the only type that works for torch indexing
+            x = torch.arange(length, device=logit.device, dtype=torch.long)
+            shape = [1] * len(logit_shape)
+            shape[dim] = logit_shape[dim]
+            result.append(x.reshape(shape))
+
         return result
 
-    def forward(self, q, k, v, mask: Optional[torch.Tensor] = None):
+    def forward(self, q, k, v, logshift: Optional[torch.Tensor] = None):
         """
-        q, k, v - input tensors in according to patterns
-        NB:
+        q, k, v - input tensors in accordance to patterns
         return output tensor (according to output part in a pattern)
         """
         # to allow different batches have different sizes,
-        # we first
-        sizes: List[Optional[int]] = self.axis_lengths.copy()
+        # we take a copy. These sizes will be checked or filled for each tensor.
+        # This step checks shapes and deducts axes lengths.
+        sizes: List[Optional[int]] = [x for x in self.axis_lengths]
 
         infer_and_check_sizes(q.shape, self.q_structure, sizes=sizes, source_name='query part')
         infer_and_check_sizes(k.shape, self.k_structure, sizes=sizes, source_name='key part')
@@ -474,16 +511,24 @@ class EinAttention(torch.nn.Module):
 
         logattention_detailed_shape = [sizes[i] for i in self.mask_all_axis_ids]
         logattention_view = logattention.view(logattention_detailed_shape)
-        # TODO introduce a learnable shift to attention, it should be added here
 
-        # add mask based on
+        if self.logshift_param is not None:
+            logattention_view.add_(self.logshift_param)
+
+        # add logshift based on transposition
         if self.mask_transposition is not None:
-            reshaped_mask = mask.permute(self.mask_transposition)[self.mask_indexer]
-            logattention_view.add_(reshaped_mask)
+            assert isinstance(logshift, torch.Tensor), f'logshift of shape {self.logshift_forward} should be passed'
+            reshaped_logshift = logshift.permute(self.mask_transposition)
+            for dim in self.logshift_forward_added_dimensions:
+                reshaped_logshift = reshaped_logshift.unsqueeze(dim)
+            logattention_view.add_(reshaped_logshift)
         else:
-            assert mask is None, 'mask_dimensions were not passed during layer construction'
+            assert logshift is None, 'logshift_forward were not passed during layer construction'
 
         self.modify_logit_inplace(logit_all_dims=logattention_view)
+
+        # turn on this check during debugging to ensure you keep editing the same tensor
+        # assert torch.equal(logattention_view.reshape(logattention.shape), logattention)
 
         attention = logattention.softmax(-1)
 
@@ -491,3 +536,7 @@ class EinAttention(torch.nn.Module):
 
         result = attention.bmm(v)
         return self.r_formula.backward(result, sizes)
+
+    def __repr__(self) -> str:
+        # TODO better layer representation
+        return f'Einattention(...)'
