@@ -348,16 +348,21 @@ class EinAttention(torch.nn.Module):
         kv_pattern = parse_tensor_pattern_lexical(kv_part)
         r_pattern = parse_tensor_pattern_lexical(result)
         settings = dict(axis2axis_id=self.axis2axis_id, allow_new_axes=True, allow_anonymous_axes=False)
-        q_identifiers, q_structure = parse_tensor_structure(q_pattern, **settings)
-        kv_identifiers, kv_structure = parse_tensor_structure(kv_pattern, **settings)
-        r_identifiers, r_structure = parse_tensor_structure(r_pattern, **settings)
-        if q_identifiers != r_identifiers:
-            diff = set.symmetric_difference(set(q_identifiers), set(r_identifiers))
+        q_identifiers_list, q_structure = parse_tensor_structure(q_pattern, **settings)
+        kv_identifiers_list, kv_structure = parse_tensor_structure(kv_pattern, **settings)
+        r_identifiers_list, r_structure = parse_tensor_structure(r_pattern, **settings)
+        q_identifiers = set(q_identifiers_list)
+        kv_identifiers = set(kv_identifiers_list)
+        r_identifiers = set(r_identifiers_list)
+
+        diff = set.symmetric_difference(q_identifiers, r_identifiers)
+        if len(diff) > 0:
             raise EinopsError(f'Query and result parts should have identical axes in pattern "{pattern}": {diff}')
-        assert q_identifiers == r_identifiers, 'Idenfiers'
-        assert star_name_kq not in set.union(set(q_identifiers), set(kv_identifiers)), f"don't use {star_name_kq} in pattern"
-        assert star_name_v not in set.union(set(q_identifiers), set(kv_identifiers)), f"don't use {star_name_v} in pattern"
-        batch_identifiers = [i for i in kv_identifiers if i in q_identifiers and i != '*']
+
+        assert star_name_kq not in set.union(q_identifiers, kv_identifiers), f"don't use {star_name_kq} in pattern"
+        assert star_name_v not in set.union(q_identifiers, kv_identifiers), f"don't use {star_name_v} in pattern"
+        # list is used to have consistent predictable order of axes
+        batch_identifiers = [i for i in kv_identifiers_list if i in q_identifiers and i != '*']
 
         self.axis_lengths: List[Optional[int]] = [None] * len(self.axis2axis_id)
         for axis_name, axis_length in axis_lengths.items():
