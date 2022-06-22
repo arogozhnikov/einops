@@ -19,7 +19,7 @@ flag_to_bool = {
 
 skip_cupy = flag_to_bool[os.environ.get('EINOPS_SKIP_CUPY', '1')]
 skip_oneflow = flag_to_bool[os.environ.get('EINOPS_SKIP_ONEFLOW', '1')]
-
+skip_mindspore = flag_to_bool[os.environ.get('EINOPS_SKIP_MINDSPORE', '1')]
 
 def collect_test_backends(symbolic=False, layers=False):
     """
@@ -37,6 +37,8 @@ def collect_test_backends(symbolic=False, layers=False):
                 _backends.ChainerBackend,
                 _backends.TensorflowBackend,
                 _backends.OneFlowBackend,
+                _backends.MindSporeBackend,
+
             ]
             if not skip_cupy:
                 backend_types += [_backends.CupyBackend]
@@ -46,6 +48,7 @@ def collect_test_backends(symbolic=False, layers=False):
                 _backends.GluonBackend,
                 _backends.ChainerBackend,
                 _backends.OneFlowBackend,
+                _backends.MindSporeBackend,
             ]
     else:
         if not layers:

@@ -60,6 +60,13 @@ if not skip_oneflow:
     # oneflow installation: https://github.com/Oneflow-Inc/oneflow#install-with-pip-package
     assert 0 == run('pip install -f https://release.oneflow.info oneflow==0.7.0+cpu --user')
 
+# mindspore only support einsum on GPU for linux
+skip_mindspore =  'linux' not in sys.platform or not have_cuda
+if not skip_mindspore:
+    # mindspore installation: https://www.mindspore.cn/install
+    assert 0 == run('pip install mindspore-gpu --user')
+
+
 # install einops
 assert 0 == run('pip install -e .')
 
@@ -68,5 +75,6 @@ return_code = run(
     'python -m nose tests -vds',
     EINOPS_SKIP_CUPY='1' if skip_cupy else '0',
     EINOPS_SKIP_ONEFLOW='1' if skip_oneflow else '0',
+    EINOPS_SKIP_MINDSPORE='1' if skip_mindspore else '0'
 )
 assert return_code == 0

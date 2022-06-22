@@ -642,3 +642,54 @@ class OneFlowBackend(AbstractBackend):
 
     def einsum(self, pattern, *x):
         return self.flow.einsum(pattern, *x)
+
+class MindSporeBackend(AbstractBackend):
+    framework_name = "mindspore"
+
+    def __init__(self):
+        super().__init__()
+        import mindspore as ms
+        ms.set_context(mode=ms.PYNATIVE_MODE)
+        self.ms = ms
+    
+    def is_appropriate_type(self, tensor):
+        return isinstance(tensor, self.ms.Tensor)
+    
+    def from_numpy(self, x):
+        return self.ms.Tensor(x, self.ms.float32)
+    
+    def to_numpy(self, x):
+        return x.asnumpy()
+    
+    def arange(self, start, stop):
+        return self.ms.ops.arange(start, stop)
+    
+    def reduce(self, x, operation, axes):
+        x_dtype = x.dtype
+        if x_dtype not in (self.ms.float16, self.ms.float32, self.ms.float64):
+            x = x.astype(self.ms.float32)
+        out = getattr(self.ms.ops, 'reduce_' + operation)(x, axis=axes)
+        if self.ms.ops.isnan(out).all():
+            return self.ms.ops.zeros_like(out)
+        return out.astype(x_dtype)
+
+    def transpose(self, x, axes):
+        if x.ndim == 0:
+            return x
+        return x.transpose(axes)
+    
+    def stack_on_zeroth_dimension(self, tensors: list):
+        return self.ms.ops.stack(tensors)
+    
+    def tile(self, x, repeats):
+        return self.ms.ops.tile(x, repeats)
+
+    def add_axis(self, x, new_position):
+        return x.expand_dims(new_position)
+
+    def is_float_type(self, x):
+        return x.dtype in (self.ms.float16, self.ms.float32, self.ms.float64)
+
+    def layers(self):
+        from .layers import mindspore
+        return mindspore

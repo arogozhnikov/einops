@@ -210,6 +210,10 @@ def test_reduction_imperatives():
             for pattern, axes_lengths, expected_result in test_cases:
                 result = reduce(backend.from_numpy(input.copy()), pattern, reduction=reduction, **axes_lengths)
                 result = backend.to_numpy(result)
+                if not numpy.allclose(result, expected_result):
+                    print(input)
+                    print(pattern, axes_lengths, expected_result)
+                    print(result, expected_result)
                 assert numpy.allclose(result, expected_result)
 
 
@@ -291,6 +295,9 @@ def test_reduction_stress_imperatives():
                 assert coincide(result1, result2)
                 if n_axes == 0 and 'mxnet' in backend.framework_name:
                     # known mxnet bug, can't attach gradients to scalar
+                    continue
+                if n_axes > 8 and 'mindspore' in backend.framework_name:
+                    # mindspore do not support axes > 8
                     continue
                 check_op_against_numpy(backend, x, pattern, reduction=reduction, axes_lengths={}, is_symbolic=False)
 

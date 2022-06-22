@@ -29,12 +29,14 @@ def test_backends_installed():
     This test will fail if some of backends are not installed or can't be imported
     Other tests will just work and only test installed backends.
     """
-    from . import skip_cupy, skip_oneflow
+    from . import skip_cupy, skip_oneflow, skip_mindspore
     errors = []
     for backend_type in AbstractBackend.__subclasses__():
         if skip_cupy and backend_type.framework_name == 'cupy':
             continue
         if skip_oneflow and backend_type.framework_name == 'oneflow':
+            continue
+        if skip_mindspore and backend_type.framework_name == 'mindspore':
             continue
         try:
             # instantiate
@@ -210,4 +212,6 @@ def test_is_float_type():
             input = backend.from_numpy(input)
             if 'chainer' in backend.framework_name and not is_float:
                 continue  # chainer doesn't allow non-floating tensors
+            if 'mindspore' in backend.framework_name and not is_float:
+                continue  # mindspore doesn't allow non-floating tensors
             assert backend.is_float_type(input) == is_float, (dtype, backend, input.dtype)

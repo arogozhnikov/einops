@@ -297,6 +297,7 @@ Einops works with ...
 - [tf.keras](https://www.tensorflow.org/guide/keras)
 - [mxnet](https://mxnet.apache.org/) (experimental)
 - [oneflow](https://github.com/Oneflow-Inc/oneflow) (experimental)
+- [mindspore](https://www.mindspore.cn/) (experimental)
 
 ## Citing einops <a name="Contributing"></a>
 
