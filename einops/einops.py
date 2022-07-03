@@ -252,7 +252,7 @@ def _prepare_transformation_recipe(pattern: str,
 
     # checking that axes are in agreement - new axes appear only in repeat, while disappear only in reduction
     if not left.has_ellipsis and rght.has_ellipsis:
-        raise EinopsError('Ellipsis found in left side, but not right side of a pattern {}'.format(pattern))
+        raise EinopsError('Ellipsis found in right side, but not left side of a pattern {}'.format(pattern))
     if left.has_ellipsis and left.has_ellipsis_parenthesized:
         raise EinopsError('Ellipsis is parenthesis in the left side is not allowed: {}'.format(pattern))
     if operation == 'rearrange':
