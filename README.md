@@ -1,7 +1,7 @@
 <!-- this link magically rendered as video, unfortunately not in docs -->
 
-<!-- https://user-images.githubusercontent.com/6318811/116849688-0ca41c00-aba4-11eb-8ccf-74744f6cbc23.mp4 -->
 
+<!--
 <a href='http://arogozhnikov.github.io/images/einops/einops_video.mp4' >
 <div align="center">
   <img src="http://arogozhnikov.github.io/images/einops/einops_video.gif" alt="einops package examples" />
@@ -10,6 +10,15 @@
   <br><br>
 </div>
 </a>
+-->
+
+
+
+https://user-images.githubusercontent.com/6318811/177030658-66f0eb5d-e136-44d8-99c9-86ae298ead5b.mp4
+
+
+
+
 
 # einops 
 [![Run tests](https://github.com/arogozhnikov/einops/actions/workflows/run_tests.yml/badge.svg)](https://github.com/arogozhnikov/einops/actions/workflows/run_tests.yml)
@@ -23,7 +32,7 @@ Supports numpy, pytorch, tensorflow, jax, and [others](#supported-frameworks).
 
 ## Recent updates:
 
-- [Einops paper](https://openreview.net/pdf?id=oapKSVM2bcj) is accepted for oral presentation at ICLR 2022
+- [Einops paper](https://openreview.net/pdf?id=oapKSVM2bcj) is accepted for oral presentation at ICLR 2022 (yes, it worth reading)
 - oneflow backend added
 - torch.jit.script is supported for pytorch layers
 - powerful EinMix added to einops. [Einmix tutorial notebook](https://github.com/arogozhnikov/einops/blob/master/docs/3-einmix-layer.ipynb) 
@@ -46,6 +55,15 @@ Supports numpy, pytorch, tensorflow, jax, and [others](#supported-frameworks).
 [Nasim Rahaman, MILA (Montreal)](https://twitter.com/nasim_rahaman/status/1216022614755463169)
 
 [More testimonials](https://einops.rocks/pages/testimonials/)
+
+## Recordings of talk at ICLR 2022
+
+<a href='https://iclr.cc/virtual/2022/oral/6603'>
+<img width="922" alt="Screen Shot 2022-07-03 at 1 00 15 AM" src="https://user-images.githubusercontent.com/6318811/177030789-89d349bf-ef75-4af5-a71f-609896d1c8d9.png">
+</a>
+
+Watch [a 15-minute talk](https://iclr.cc/virtual/2022/oral/6603) that focuses on main problems of standard tensor manipulation methods, and how einops improves this process.
+
 
 ## Contents
 
