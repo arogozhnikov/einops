@@ -690,15 +690,30 @@ def _compactify_pattern_for_einsum(pattern: str) -> str:
 
 def einsum(pattern: str, *tensors: List[Tensor]) -> Tensor:
     """
-    einops.einsum calls einsum operations with einops-style indexing.
+    einops.einsum calls einsum operations with einops-style named
+    axes indexing, computing tensor products with an arbitrary
+    number of tensors.
 
     Note that unlike other einops functions, here you must give
     the pattern before the tensor(s), rather than after.
-    Note that rearrange operations, such as `"(batch chan) out"`,
+    Also, note that rearrange operations such as `"(batch chan) out"`
     are not currently supported.
 
     Examples:
 
+    For a given pattern such as:
+    ```python
+    >>> output = einsum("a b c, c b d, a g k -> a b k", x, y, z)
+    ```
+    the following formula is computed:
+    ```tex
+    output[a, b, k] = 
+        \sum_{c, d, g} x[a, b, c] * y[c, b, d] * z[a, g, k]
+    ```
+    where the summation over `c`, `d`, and `g` is performed
+    because those axes names do not appear on the right-hand side.
+
+    Let's see some additional examples:
     ```python
     # Filter a set of images:
     >>> batched_images = np.random.randn(128, 16, 16)
@@ -717,10 +732,17 @@ def einsum(pattern: str, *tensors: List[Tensor]) -> Tensor:
     >>> result.shape
     (50, 30, 10)
 
+    # Matrix trace on a single tensor:
+    >>> matrix = np.random.randn(10, 10)
+    >>> result = einsum("i i ->", matrix)
+    >>> result.shape
+    ()
+
     ```
 
     Parameters:
-        pattern: string, rearrangement pattern, with commas separating axes specified for each tensor.
+        pattern: string, einsum pattern, with commas
+                 separating specifications for each tensor.
         tensors: tensors of any supported library (numpy, tensorflow, pytorch, jax).
 
     Returns:
