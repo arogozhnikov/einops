@@ -89,9 +89,6 @@ class AbstractBackend:
     def reduce(self, x, operation, axes):
         return getattr(x, operation)(axis=axes)
 
-    def einsum(self, pattern, *x):
-        raise NotImplementedError("backend does not support einsum")
-
     def stack_on_zeroth_dimension(self, tensors: list):
         raise NotImplementedError()
 
@@ -119,6 +116,9 @@ class AbstractBackend:
 
     def __repr__(self):
         return "<einops backend for {}>".format(self.framework_name)
+
+    def einsum(self, pattern, *x):
+        raise NotImplementedError("backend does not support einsum")
 
 
 class UnknownSize:
@@ -394,6 +394,9 @@ class CupyBackend(AbstractBackend):
     def is_float_type(self, x):
         return x.dtype in ('float16', 'float32', 'float64', 'float128')
 
+    def einsum(self, pattern, *x):
+        return self.cupy.einsum(pattern, *x)
+
 
 class ChainerBackend(AbstractBackend):
     framework_name = 'chainer'
@@ -436,6 +439,9 @@ class ChainerBackend(AbstractBackend):
     def layers(self):
         from .layers import chainer
         return chainer
+
+    def einsum(self, pattern, *x):
+        return self.chainer.functions.einsum(pattern, *x)
 
 
 class HashableTuple:
@@ -572,6 +578,9 @@ class KerasBackend(AbstractBackend):
         from .layers import keras
         return keras
 
+    def einsum(self, pattern, *x):
+        return self.tf.einsum(pattern, *x)
+
 
 class OneFlowBackend(AbstractBackend):
     framework_name = "oneflow"
@@ -634,3 +643,6 @@ class OneFlowBackend(AbstractBackend):
     def layers(self):
         from .layers import oneflow
         return oneflow
+
+    def einsum(self, pattern, *x):
+        return self.flow.einsum(pattern, *x)
