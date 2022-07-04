@@ -703,7 +703,9 @@ def einsum(pattern: str, *tensors: List[Tensor]) -> Tensor:
 
     For a given pattern such as:
     ```python
+    >>> x, y, z = np.random.randn(3, 20, 20, 20)
     >>> output = einsum("a b c, c b d, a g k -> a b k", x, y, z)
+
     ```
     the following formula is computed:
     ```tex
