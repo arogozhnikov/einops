@@ -85,7 +85,21 @@ test_functional_cases = [
         "ab->a",
         ((5, 4),),
         (5,),
-    )
+    ),
+    (
+        # Trace (repeated index)
+        Arguments("i i -> "),
+        "aa->",
+        ((5, 5),),
+        (),
+    ),
+    (
+        # Trace with other indices
+        Arguments("i middle i -> middle"),
+        "aba->b",
+        ((5, 10, 5),),
+        (10,),
+    ),
 ]
 
 
@@ -120,7 +134,11 @@ def test_functional():
                     for array in in_arrays
                 ]
                 out_array = backend.einsum(predicted_pattern, *in_arrays_framework)
-                assert out_array.shape == out_shape
+                if out_array.shape != out_shape:
+                    raise ValueError(
+                        f"Expected output shape {out_shape} but got {out_array.shape}"
+                    )
+                # assert out_array.shape == out_shape
 
 
 # mxnet/gluon do not support einsum without changing to numpy. which doesn't work with the rest
