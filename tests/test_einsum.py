@@ -11,7 +11,7 @@ class Arguments:
         return function(*self.args, **self.kwargs)
 
 
-test_cases = [
+test_layer_cases = [
     (
         Arguments('b c_in h w -> w c_out h b', 'c_in c_out', bias_shape=None, c_out=13, c_in=12),
         (2, 12, 3, 4),
@@ -40,11 +40,12 @@ test_cases = [
 ]
 
 
-def test_all():
+
+def test_layer():
     for backend in collect_test_backends(layers=True, symbolic=False):
         if backend.framework_name in ['tensorflow', 'torch', 'chainer', 'oneflow']:
             layer_type = backend.layers().EinMix
-            for args, in_shape, out_shape in test_cases:
+            for args, in_shape, out_shape in test_layer_cases:
                 layer = args(layer_type)
                 print('Running', layer.einsum_pattern, 'for', backend.framework_name)
                 input = np.random.uniform(size=in_shape).astype('float32')
