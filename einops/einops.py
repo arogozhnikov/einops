@@ -636,9 +636,6 @@ def _compactify_pattern_for_einsum(pattern: str) -> str:
     lefts, right = pattern.split('->')
     lefts = lefts.split(',')
 
-    # Remove white space on both sides,
-    # so that both "a b, c" and "a b , c" are valid.
-    lefts = [left.strip() for left in lefts]
     lefts = [
         ParsedExpression(left, allow_underscore=True, allow_duplicates=True)
         for left in lefts
