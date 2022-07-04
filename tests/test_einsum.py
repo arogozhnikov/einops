@@ -119,8 +119,10 @@ def test_layer():
 
 def test_functional():
     # Functional tests:
+    valid_backends = ['tensorflow', 'torch', 'jax', 'numpy',
+                      'chainer', 'oneflow', 'cupy', 'tensorflow.keras']
     for backend in collect_test_backends():
-        if backend.framework_name in ['tensorflow', 'torch', 'jax', 'numpy']:
+        if backend.framework_name in valid_backends:
             for args, true_pattern, in_shapes, out_shape in test_functional_cases:
                 print(f"Running '{args.args[0]}' for {backend.framework_name}")
                 predicted_pattern = args(_compactify_pattern_for_einsum)
