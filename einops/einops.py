@@ -635,30 +635,25 @@ def _compactify_pattern_for_einsum(pattern: str) -> str:
     # Remove white space on both sides,
     # so that both "a b, c" and "a b , c" are valid.
     lefts = [left.strip() for left in lefts]
-    
-    # Parse:
     lefts = [
         ParsedExpression(left, allow_underscore=True, allow_duplicates=True)
         for left in lefts
     ]
+
     right = ParsedExpression(right, allow_underscore=True)
 
-    output_pattern = ""
-    # Create map using a hash table:
-
-    i = 0
     # Start from a, and go up to Z
     output_axis_names = string.ascii_letters
+    i = 0
     axis_name_mapping = {}
 
-    for index_left, left in enumerate(lefts):
-        if index_left > 0:
-            output_pattern += ","
-
+    left_patterns = []
+    for left in lefts:
+        left_pattern = ""
         for raw_axis_name in left.composition:
 
             if raw_axis_name == _ellipsis:
-                output_pattern += '...'
+                left_pattern += '...'
                 continue
             elif len(raw_axis_name) > 1:
                 raise NotImplementedError("Shape rearrangement is not yet supported in einsum.")
@@ -671,9 +666,10 @@ def _compactify_pattern_for_einsum(pattern: str) -> str:
                 if i >= len(output_axis_names):
                     raise RuntimeError("Too many axes in einsum.")
 
-            output_pattern += axis_name_mapping[axis_name]
+            left_pattern += axis_name_mapping[axis_name]
+        left_patterns.append(left_pattern)
 
-    output_pattern += "->"
+    output_pattern = ",".join(left_patterns) + "->"
 
     for raw_axis_name in right.composition:
         if raw_axis_name == _ellipsis:
