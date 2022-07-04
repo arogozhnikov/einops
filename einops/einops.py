@@ -628,7 +628,7 @@ def asnumpy(tensor) -> 'numpy.ndarray':
 
 
 @functools.lru_cache(256)
-def _compatify_pattern_for_einsum(pattern: str) -> str:
+def _compactify_pattern_for_einsum(pattern: str) -> str:
     lefts, right = pattern.split('->')
     lefts = lefts.split(',')
 
@@ -725,11 +725,11 @@ def einsum(pattern: str, *tensors: List[Tensor]) -> Tensor:
 
     Parameters:
         pattern: string, rearrangement pattern, with commas separating axes specified for each tensor.
-        tensors: tensors of any supported library (e.g. numpy.ndarray, tensorflow, pytorch, mxnet.ndarray).
+        tensors: tensors of any supported library (numpy, tensorflow, pytorch, jax).
 
     Returns:
         Tensor of the same type as input, after processing with einsum.
 
     """
-    pattern = _compatify_pattern_for_einsum(pattern)
+    pattern = _compactify_pattern_for_einsum(pattern)
     return get_backend(tensors[0]).einsum(pattern, *tensors)

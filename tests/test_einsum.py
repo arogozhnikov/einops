@@ -1,5 +1,5 @@
 from . import collect_test_backends
-from einops.einops import _compatify_pattern_for_einsum
+from einops.einops import _compactify_pattern_for_einsum
 import numpy as np
 
 
@@ -123,7 +123,7 @@ def test_functional():
         if backend.framework_name in ['tensorflow', 'torch', 'jax', 'numpy']:
             for args, true_pattern, in_shapes, out_shape in test_functional_cases:
                 print(f"Running '{args.args[0]}' for {backend.framework_name}")
-                predicted_pattern = args(_compatify_pattern_for_einsum)
+                predicted_pattern = args(_compactify_pattern_for_einsum)
                 assert predicted_pattern == true_pattern
                 in_arrays = [
                     np.random.uniform(size=shape).astype('float32')
