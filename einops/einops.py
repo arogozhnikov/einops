@@ -629,6 +629,10 @@ def asnumpy(tensor) -> 'numpy.ndarray':
 
 @functools.lru_cache(256)
 def _compactify_pattern_for_einsum(pattern: str) -> str:
+    if "->" not in pattern:
+        # numpy allows this, so make sure users
+        # don't accidentally do something like this.
+        raise ValueError("Einsum pattern must contain '->'.")
     lefts, right = pattern.split('->')
     lefts = lefts.split(',')
 
