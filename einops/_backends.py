@@ -89,6 +89,9 @@ class AbstractBackend:
     def reduce(self, x, operation, axes):
         return getattr(x, operation)(axis=axes)
 
+    def einsum(self, pattern, *x):
+        raise NotImplementedError("backend does not support einsum")
+
     def stack_on_zeroth_dimension(self, tensors: list):
         raise NotImplementedError()
 
@@ -167,6 +170,9 @@ class NumpyBackend(AbstractBackend):
 
     def add_axis(self, x, new_position):
         return self.np.expand_dims(x, new_position)
+
+    def einsum(self, pattern, *x):
+        return self.np.einsum(pattern, *x)
 
 
 class JaxBackend(NumpyBackend):
@@ -353,6 +359,9 @@ class TorchBackend(AbstractBackend):
         from .layers import torch
         return torch
 
+    def einsum(self, pattern, *x):
+        return self.torch.einsum(pattern, *x)
+
 
 class CupyBackend(AbstractBackend):
     framework_name = 'cupy'
@@ -506,6 +515,9 @@ class TensorflowBackend(AbstractBackend):
     def layers(self):
         from .layers import tensorflow
         return tensorflow
+
+    def einsum(self, pattern, *x):
+        return self.tf.einsum(pattern, *x)
 
 
 class KerasBackend(AbstractBackend):
