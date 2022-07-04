@@ -706,7 +706,6 @@ def einsum(pattern: str, *tensors: List[Tensor]) -> Tensor:
     >>> filters = np.random.randn(16, 16, 30)
     >>> result = einsum("batch h w, h w channel -> batch channel",
     ...                 batched_images, filters) 
-
     >>> result.shape
     (128, 30)
 
@@ -718,6 +717,7 @@ def einsum(pattern: str, *tensors: List[Tensor]) -> Tensor:
     ...                 weights, data)
     >>> result.shape
     (50, 30, 10)
+
     ```
 
     Parameters:
