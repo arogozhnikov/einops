@@ -94,11 +94,69 @@ test_functional_cases = [
         (),
     ),
     (
+        # Too many spaces in string:
+        " one  two  ,  three four->two  four  ",
+        "ab,cd->bd",
+        ((2, 3), (4, 5)),
+        (3, 5),
+    ),
+    # The following tests were inspired by numpy's einsum tests
+    # https://github.com/numpy/numpy/blob/v1.23.0/numpy/core/tests/test_einsum.py
+    (
         # Trace with other indices
         "i middle i -> middle",
         "aba->b",
         ((5, 10, 5),),
         (10,),
+    ),
+    (
+        # Ellipsis in the middle:
+        "i ... i -> ...",
+        "a...a->...",
+        ((5, 3, 2, 1, 4, 5),),
+        (3, 2, 1, 4),
+    ),
+    (
+        # Product of first and last axes:
+        "i ... i -> i ...",
+        "a...a->a...",
+        ((5, 3, 2, 1, 4, 5),),
+        (5, 3, 2, 1, 4),
+    ),
+    (
+        # Triple diagonal
+        "one one one -> one",
+        "aaa->a",
+        ((5, 5, 5),),
+        (5,),
+    ),
+    (
+        # Axis swap:
+        "i j k -> j i k",
+        "abc->bac",
+        ((1, 2, 3),),
+        (2, 1, 3),
+    ),
+    (
+        # Identity:
+        "... -> ...",
+        "...->...",
+        ((5, 4, 3, 2, 1),),
+        (5, 4, 3, 2, 1),
+    ),
+    (
+        # Elementwise product of three tensors
+        "..., ..., ... -> ...",
+        "...,...,...->...",
+        ((3, 2), (3, 2), (3, 2)),
+        (3, 2),
+    ),
+    (
+        # Basic summation:
+        "index ->",
+        "a->",
+        ((10,)),
+        (()),
     ),
 ]
 
