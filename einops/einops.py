@@ -688,3 +688,9 @@ def _compatify_pattern_for_einsum(pattern: str) -> str:
     return output_pattern
 
 
+def einsum(pattern: str, *tensors: List[Tensor]) -> Tensor:
+    # Convert pattern to einsum style pattern.
+    # For example, "one two three -> one three"
+    # would become: "ijk->ik".
+    pattern = _compatify_pattern_for_einsum(pattern)
+    return get_backend(tensors[0]).einsum(pattern, *tensors)
