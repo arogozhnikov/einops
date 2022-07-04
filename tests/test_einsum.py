@@ -46,56 +46,56 @@ test_layer_cases = [
 test_functional_cases = [
     (
         # Basic:
-        Arguments("b c h w, b w -> b h"),
+        "b c h w, b w -> b h",
         "abcd,ad->ac",
         ((2, 3, 4, 5), (2, 5)),
         (2, 4),
     ),
     (
         # Three tensors:
-        Arguments("b c h w, b w, b c -> b h"),
+        "b c h w, b w, b c -> b h",
         "abcd,ad,ab->ac",
         ((2, 3, 40, 5), (2, 5), (2, 3)),
         (2, 40),
     ),
     (
         # Ellipsis, and full names:
-        Arguments("... one two three, three four five -> ... two five"),
+        "... one two three, three four five -> ... two five",
         "...abc,cde->...be",
         ((32, 5, 2, 3, 4), (4, 5, 6)),
         (32, 5, 3, 6),
     ),
     (
         # Ellipsis at the end:
-        Arguments("one two three ..., three four five -> two five ..."),
+        "one two three ..., three four five -> two five ...",
         "abc...,cde->be...",
         ((2, 3, 4, 32, 5), (4, 5, 6)),
         (3, 6, 32, 5),
     ),
     (
         # Ellipsis on multiple tensors:
-        Arguments("... one two three, ... three four five -> ... two five"),
+        "... one two three, ... three four five -> ... two five",
         "...abc,...cde->...be",
         ((32, 5, 2, 3, 4), (32, 5, 4, 5, 6)),
         (32, 5, 3, 6),
     ),
     (
         # One tensor, and underscores:
-        Arguments("first_tensor second_tensor -> first_tensor"),
+        "first_tensor second_tensor -> first_tensor",
         "ab->a",
         ((5, 4),),
         (5,),
     ),
     (
         # Trace (repeated index)
-        Arguments("i i -> "),
+        "i i -> ",
         "aa->",
         ((5, 5),),
         (),
     ),
     (
         # Trace with other indices
-        Arguments("i middle i -> middle"),
+        "i middle i -> middle",
         "aba->b",
         ((5, 10, 5),),
         (10,),
@@ -123,11 +123,11 @@ def test_functional():
                       'chainer', 'oneflow', 'cupy', 'tensorflow.keras']
     for backend in collect_test_backends():
         if backend.framework_name in valid_backends:
-            for args, true_pattern, in_shapes, out_shape in test_functional_cases:
-                print(f"Running '{args.args[0]}' for {backend.framework_name}")
+            for einops_pattern, true_pattern, in_shapes, out_shape in test_functional_cases:
+                print(f"Running '{einops_pattern}' for {backend.framework_name}")
                 
                 # Create pattern:
-                predicted_pattern = args(_compactify_pattern_for_einsum)
+                predicted_pattern = _compactify_pattern_for_einsum(einops_pattern)
                 assert predicted_pattern == true_pattern
 
                 # Generate example data:
