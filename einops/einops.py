@@ -690,8 +690,43 @@ def _compatify_pattern_for_einsum(pattern: str) -> str:
 
 
 def einsum(pattern: str, *tensors: List[Tensor]) -> Tensor:
-    # Convert pattern to einsum style pattern.
-    # For example, "one two three -> one three"
-    # would become: "ijk->ik".
+    """
+    einops.einsum calls einsum operations with einops-style indexing.
+
+    Note that unlike other einops functions, here you must give
+    the pattern before the tensor(s), rather than after.
+    Note that rearrange operations, such as `"(batch chan) out"`,
+    are not currently supported.
+
+    Examples:
+
+    ```python
+    # Filter a set of images:
+    >>> batched_images = np.random.randn(128, 16, 16)
+    >>> filters = np.random.randn(16, 16, 30)
+    >>> result = einsum("batch h w, h w channel -> batch channel",
+    ...                 batched_images, filters) 
+
+    >>> result.shape
+    (128, 30)
+
+    # Matrix multiplication, with an unknown input shape:
+    >>> batch_shape = (50, 30)
+    >>> data = np.random.randn(*batch_shape, 20)
+    >>> weights = np.random.randn(10, 20)
+    >>> result = einsum("out_dim in_dim, ... in_dim -> ... out_dim",
+    ...                 weights, data)
+    >>> result.shape
+    (50, 30, 10)
+    ```
+
+    Parameters:
+        pattern: string, rearrangement pattern, with commas separating axes specified for each tensor.
+        tensors: tensors of any supported library (e.g. numpy.ndarray, tensorflow, pytorch, mxnet.ndarray).
+
+    Returns:
+        Tensor of the same type as input, after processing with einsum.
+
+    """
     pattern = _compatify_pattern_for_einsum(pattern)
     return get_backend(tensors[0]).einsum(pattern, *tensors)
