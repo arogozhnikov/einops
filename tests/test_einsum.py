@@ -125,22 +125,36 @@ def test_functional():
         if backend.framework_name in valid_backends:
             for args, true_pattern, in_shapes, out_shape in test_functional_cases:
                 print(f"Running '{args.args[0]}' for {backend.framework_name}")
+                
+                # Create pattern:
                 predicted_pattern = args(_compactify_pattern_for_einsum)
                 assert predicted_pattern == true_pattern
+
+                # Generate example data:
+                rstate = np.random.RandomState(0)
                 in_arrays = [
-                    np.random.uniform(size=shape).astype('float32')
+                    rstate.uniform(size=shape).astype('float32')
                     for shape in in_shapes
                 ]
                 in_arrays_framework = [
-                    backend.from_numpy(array)
-                    for array in in_arrays
+                    backend.from_numpy(array) for array in in_arrays
                 ]
+                
+                # Actually run einsum:
                 out_array = backend.einsum(predicted_pattern, *in_arrays_framework)
+                
+                # Check shape:
                 if out_array.shape != out_shape:
                     raise ValueError(
                         f"Expected output shape {out_shape} but got {out_array.shape}"
                     )
-                # assert out_array.shape == out_shape
+
+                # Check values:
+                true_out_array = np.einsum(true_pattern, *in_arrays)
+                predicted_out_array = backend.to_numpy(out_array)
+                np.testing.assert_array_almost_equal(predicted_out_array,
+                                                     true_out_array,
+                                                     decimal=5)
 
 
 # mxnet/gluon do not support einsum without changing to numpy. which doesn't work with the rest
