@@ -26,7 +26,8 @@ class ParsedExpression:
     non-mutable structure that contains information about one side of expression (e.g. 'b c (h w)')
     and keeps some information important for downstream
     """
-    def __init__(self, expression, *, allow_underscore: bool = False):
+    def __init__(self, expression, *, allow_underscore: bool = False,
+                 allow_duplicates: bool = False):
         self.has_ellipsis: bool = False
         self.has_ellipsis_parenthesized: Optional[bool] = None
         self.identifiers: Set[str] = set()
@@ -48,7 +49,7 @@ class ParsedExpression:
         def add_axis_name(x):
             if x is not None:
                 if x in self.identifiers:
-                    if not (allow_underscore and x == "_"):
+                    if not (allow_underscore and x == "_") and not allow_duplicates:
                         raise EinopsError('Indexing expression contains duplicate dimension "{}"'.format(x))
                 if x == _ellipsis:
                     self.identifiers.add(_ellipsis)

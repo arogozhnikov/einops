@@ -637,7 +637,10 @@ def _compatify_pattern_for_einsum(pattern: str) -> str:
     lefts = [left.strip() for left in lefts]
     
     # Parse:
-    lefts = [ParsedExpression(left, allow_underscore=True) for left in lefts]
+    lefts = [
+        ParsedExpression(left, allow_underscore=True, allow_duplicates=True)
+        for left in lefts
+    ]
     right = ParsedExpression(right, allow_underscore=True)
 
     output_pattern = ""
