@@ -236,9 +236,6 @@ class GluonBackend(AbstractBackend):
         from .layers import gluon
         return gluon
 
-    def einsum(self, pattern, *x):
-        return self.mx.np.einsum(pattern, *x)
-
 
 class MXNetBackend(AbstractBackend):
     framework_name = 'mxnet.symbol'
@@ -299,9 +296,6 @@ class MXNetBackend(AbstractBackend):
     def layers(self):
         from .layers import gluon
         return gluon
-
-    def einsum(self, pattern, *x):
-        return self.mx.np.einsum(pattern, *x)
 
 
 class TorchBackend(AbstractBackend):
