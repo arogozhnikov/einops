@@ -638,7 +638,7 @@ def _validate_einsum_axis_name(axis_name):
         raise RuntimeError("Encountered empty axis name in einsum.")
     if not isinstance(axis_name, str):
         raise RuntimeError("Axis name in einsum must be a string.")
-    if axis_name[0].isdigit()
+    if axis_name[0].isdigit():
         raise RuntimeError("Axis name in einsum must not start with a number.")
 
 
@@ -675,10 +675,10 @@ def _compactify_pattern_for_einsum(pattern: str) -> str:
             _validate_einsum_axis_name(raw_axis_name)
             axis_name = raw_axis_name[0]
             if axis_name not in axis_name_mapping:
-                axis_name_mapping[axis_name] = output_axis_names[i]
-                i += 1
                 if i >= len(output_axis_names):
                     raise RuntimeError("Too many axes in einsum.")
+                axis_name_mapping[axis_name] = output_axis_names[i]
+                i += 1
 
             left_pattern += axis_name_mapping[axis_name]
         left_patterns.append(left_pattern)
