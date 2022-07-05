@@ -179,7 +179,10 @@ def test_functional():
     # Functional tests:
     valid_backends = ['tensorflow', 'torch', 'jax', 'numpy',
                       'chainer', 'oneflow', 'cupy', 'tensorflow.keras']
-    for backend in collect_test_backends():
+    backends = collect_test_backends() + collect_test_backends(symbolic=True)
+    backends = set(backends)
+
+    for backend in backends:
         if backend.framework_name in valid_backends:
             for einops_pattern, true_pattern, in_shapes, out_shape in test_functional_cases:
                 print(f"Running '{einops_pattern}' for {backend.framework_name}")
