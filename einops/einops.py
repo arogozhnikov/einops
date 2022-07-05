@@ -656,6 +656,8 @@ def _compactify_pattern_for_einsum(pattern: str) -> str:
             if raw_axis_name == _ellipsis:
                 left_pattern += '...'
                 continue
+            elif len(raw_axis_name) == 0:
+                raise NotImplementedError("Singleton () axes are not yet supported in einsum.")
             elif len(raw_axis_name) > 1:
                 raise NotImplementedError("Shape rearrangement is not yet supported in einsum.")
 
@@ -676,6 +678,8 @@ def _compactify_pattern_for_einsum(pattern: str) -> str:
         if raw_axis_name == _ellipsis:
             output_pattern += '...'
             continue
+        elif len(raw_axis_name) == 0:
+            raise NotImplementedError("Singleton () axes are not yet supported in einsum.")
         elif len(raw_axis_name) > 1:
             raise NotImplementedError("Shape rearrangement is not yet supported in einsum.")
 
@@ -697,8 +701,8 @@ def einsum(pattern: str, *tensors: List[Tensor]) -> Tensor:
 
     Note that unlike other einops functions, here you must give
     the pattern before the tensor(s), rather than after.
-    Also, note that rearrange operations such as `"(batch chan) out"`
-    are not currently supported.
+    Also, note that rearrange operations such as `"(batch chan) out"`,
+    or singleton axes `()`, are not currently supported.
 
     Examples:
 
