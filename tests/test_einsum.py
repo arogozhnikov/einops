@@ -217,9 +217,33 @@ def test_functional():
                                                     decimal=5)
 
 
-def test_functional_error_paths():
-    # Test that error paths work as expected.
-    ...
+def test_functional_symbolic():
+    backends = filter(lambda x: x.framework_name in valid_backends_functional,
+                      collect_test_backends(symbolic=True, layers=False))
+    for backend in backends:
+        for einops_pattern, true_pattern, in_shapes, out_shape in test_functional_cases:
+            print(f"Running '{einops_pattern}' for symbolic {backend.framework_name}")
+            # Create pattern:
+            predicted_pattern = _compactify_pattern_for_einsum(einops_pattern)
+            assert predicted_pattern == true_pattern
+
+            rstate = np.random.RandomState(0)
+            in_syms = [backend.create_symbol(in_shape) for in_shape in in_shapes]
+            in_data = [rstate.uniform(size=in_shape).astype('float32') for in_shape in in_shapes]
+
+            expected_out_data = np.einsum(true_pattern, *in_data)
+            predicted_out_symbol = backend.einsum(predicted_pattern, *in_syms)
+            print(predicted_out_symbol)
+
+            predicted_out_data = backend.eval_symbol(
+                predicted_out_symbol,
+                list(zip(in_syms, in_data)),
+            )
+            assert predicted_out_data.shape == out_shape
+            assert np.testing.assert_array_almost_equal(predicted_out_data,
+                                                        expected_out_data,
+                                                        decimal=5)
+
 
 # mxnet/gluon do not support einsum without changing to numpy. which doesn't work with the rest
 # in future, after gluon migrated to a new codebase, all testing code will be moved to a new setup
