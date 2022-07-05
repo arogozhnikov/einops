@@ -626,6 +626,21 @@ def asnumpy(tensor) -> 'numpy.ndarray':
     """
     return get_backend(tensor).to_numpy(tensor)
 
+def _validate_einsum_axis_name(axis_name):
+    if len(axis_name) == 0:
+        raise NotImplementedError("Singleton () axes are not yet supported in einsum.")
+    if len(axis_name) > 1:
+        raise NotImplementedError("Shape rearrangement is not yet supported in einsum.")
+
+    axis_name = axis_name[0]
+
+    if len(axis_name) == 0:
+        raise RuntimeError("Encountered empty axis name in einsum.")
+    if not isinstance(axis_name, str):
+        raise RuntimeError("Axis name in einsum must be a string.")
+    if axis_name[0].isdigit()
+        raise RuntimeError("Axis name in einsum must not start with a number.")
+
 
 @functools.lru_cache(256)
 def _compactify_pattern_for_einsum(pattern: str) -> str:
@@ -656,13 +671,9 @@ def _compactify_pattern_for_einsum(pattern: str) -> str:
             if raw_axis_name == _ellipsis:
                 left_pattern += '...'
                 continue
-            elif len(raw_axis_name) == 0:
-                raise NotImplementedError("Singleton () axes are not yet supported in einsum.")
-            elif len(raw_axis_name) > 1:
-                raise NotImplementedError("Shape rearrangement is not yet supported in einsum.")
-
-            axis_name = raw_axis_name[0]
             
+            _validate_einsum_axis_name(raw_axis_name)
+            axis_name = raw_axis_name[0]
             if axis_name not in axis_name_mapping:
                 axis_name_mapping[axis_name] = output_axis_names[i]
                 i += 1
@@ -678,11 +689,8 @@ def _compactify_pattern_for_einsum(pattern: str) -> str:
         if raw_axis_name == _ellipsis:
             output_pattern += '...'
             continue
-        elif len(raw_axis_name) == 0:
-            raise NotImplementedError("Singleton () axes are not yet supported in einsum.")
-        elif len(raw_axis_name) > 1:
-            raise NotImplementedError("Shape rearrangement is not yet supported in einsum.")
 
+        _validate_einsum_axis_name(raw_axis_name)
         axis_name = raw_axis_name[0]
 
         if axis_name not in axis_name_mapping:
