@@ -239,7 +239,10 @@ def test_functional_symbolic():
                 predicted_out_symbol,
                 list(zip(in_syms, in_data)),
             )
-            assert predicted_out_data.shape == out_shape
+            if predicted_out_data.shape != out_shape:
+                raise ValueError(
+                    f"Expected output shape {out_shape} but got {predicted_out_data.shape}"
+                )
             assert np.testing.assert_array_almost_equal(predicted_out_data,
                                                         expected_out_data,
                                                         decimal=5)
