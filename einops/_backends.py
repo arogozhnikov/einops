@@ -12,6 +12,7 @@ Backends in `einops` are organized to meet the following requirements
 
 import sys
 import warnings
+import functools
 
 __author__ = 'Alex Rogozhnikov'
 
@@ -542,9 +543,8 @@ class KerasBackend(AbstractBackend):
         return self.keras.Input(batch_shape=shape)
 
     def eval_symbol(self, symbol, input_dict):
-        (variable, value), = input_dict
-        model = self.keras.models.Model(variable, symbol)
-        return model.predict_on_batch(value)
+        model = self.keras.models.Model([var for (var, _) in input_dict], symbol)
+        return model.predict_on_batch([val for (_, val) in input_dict])
 
     def arange(self, start, stop):
         return self.K.arange(start, stop)
@@ -579,7 +579,10 @@ class KerasBackend(AbstractBackend):
         return keras
 
     def einsum(self, pattern, *x):
-        return self.tf.einsum(pattern, *x)
+        return self.tf.vectorized_map(
+            functools.partial(self.tf.einsum, pattern),
+            *x
+        )
 
 
 class OneFlowBackend(AbstractBackend):
