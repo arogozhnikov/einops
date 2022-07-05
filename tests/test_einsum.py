@@ -1,6 +1,9 @@
+from venv import create
 from . import collect_test_backends
-from einops.einops import _compactify_pattern_for_einsum
+from einops.einops import _compactify_pattern_for_einsum, einsum
 import numpy as np
+from nose.tools import assert_raises
+import string
 
 
 class Arguments:
@@ -247,6 +250,59 @@ def test_functional_symbolic():
                                                         expected_out_data,
                                                         decimal=5)
 
+
+def test_functional_errors():
+    # Specific backend does not matter, as errors are raised
+    # during the pattern creation.
+
+    rstate = np.random.RandomState(0)
+    create_tensor = lambda *shape: rstate.uniform(size=shape).astype('float32')
+
+    # raise NotImplementedError("Singleton () axes are not yet supported in einsum.")
+    with assert_raises(NotImplementedError):
+        einsum(
+            "i () -> i",
+            create_tensor(5, 1),
+        )
+
+    # raise NotImplementedError("Shape rearrangement is not yet supported in einsum.")
+    with assert_raises(NotImplementedError):
+        einsum(
+            "a b -> (a b)",
+            create_tensor(5, 1),
+        )
+
+    # raise RuntimeError("Encountered empty axis name in einsum.")
+    # raise RuntimeError("Axis name in einsum must be a string.")
+    # ^ Not tested, these are just a failsafe in case an unexpected error occurs.
+
+    # raise RuntimeError("Axis name in einsum must not start with a number.")
+    with assert_raises(RuntimeError):
+        einsum(
+            "i 1j -> i",
+            create_tensor(5, 1),
+        )
+
+    # raise ValueError("Einsum pattern must contain '->'.")
+    with assert_raises(ValueError):
+        einsum(
+            "i j k",
+            create_tensor(5, 3, 2),
+        )
+
+    # raise RuntimeError("Too many axes in einsum.")
+    with assert_raises(RuntimeError):
+        einsum(
+            " ".join(string.ascii_letters) + " extra ->",
+            create_tensor(1),
+        )
+
+    # raise RuntimeError("Unknown axis on right side of einsum.")
+    with assert_raises(RuntimeError):
+        einsum(
+            "i j -> k",
+            create_tensor(5, 1),
+        )
 
 # mxnet/gluon do not support einsum without changing to numpy. which doesn't work with the rest
 # in future, after gluon migrated to a new codebase, all testing code will be moved to a new setup
