@@ -1,6 +1,6 @@
 from venv import create
 from . import collect_test_backends
-from einops.einops import _compactify_pattern_for_einsum, einsum
+from einops.einops import _compactify_pattern_for_einsum, einsum, EinopsError
 import numpy as np
 from nose.tools import assert_raises, assert_raises_regex
 import string
@@ -292,11 +292,18 @@ def test_functional_errors():
     # raise RuntimeError("Axis name in einsum must be a string.")
     # ^ Not tested, these are just a failsafe in case an unexpected error occurs.
 
-    # raise RuntimeError("Axis name in einsum must not start with a number.")
-    with assert_raises(RuntimeError):
+    # raise NotImplementedError("Anonymous axes are not yet supported in einsum.")
+    with assert_raises_regex(NotImplementedError, "^Anonymous axes"):
         einsum(
             create_tensor(5, 1),
-            "i 1j -> i",
+            "i 2 -> i",
+        )
+
+    # ParsedExpression error:
+    with assert_raises_regex(EinopsError, "^Invalid axis identifier"):
+        einsum(
+            create_tensor(5, 1),
+            "i 2j -> i",
         )
 
     # raise ValueError("Einsum pattern must contain '->'.")

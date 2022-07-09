@@ -634,12 +634,12 @@ def _validate_einsum_axis_name(axis_name):
 
     axis_name = axis_name[0]
 
+    if isinstance(axis_name, AnonymousAxis):
+        raise NotImplementedError("Anonymous axes are not yet supported in einsum.")
     if len(axis_name) == 0:
         raise RuntimeError("Encountered empty axis name in einsum.")
     if not isinstance(axis_name, str):
         raise RuntimeError("Axis name in einsum must be a string.")
-    if axis_name[0].isdigit():
-        raise RuntimeError("Axis name in einsum must not start with a number.")
 
 
 @functools.lru_cache(256)
