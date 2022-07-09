@@ -2,7 +2,7 @@ from venv import create
 from . import collect_test_backends
 from einops.einops import _compactify_pattern_for_einsum, einsum, EinopsError
 import numpy as np
-from nose.tools import assert_raises, assert_raises_regex
+from nose.tools import assert_raises_regex
 import string
 
 
