@@ -320,6 +320,29 @@ def test_functional_errors():
             "i j -> k",
         )
 
+    # raise ValueError(
+    # "The last argument passed to `einops.einsum` must be a string,"
+    # " representing the einsum pattern."
+    # )
+    with assert_raises(ValueError):
+        einsum(
+            "i j k -> i",
+            create_tensor(5, 4, 3),
+        )
+
+    # raise ValueError(
+    #     "`einops.einsum` takes at minimum two arguments: the tensors,"
+    #     " followed by the pattern."
+    # )
+    with assert_raises(ValueError):
+        einsum(
+            "i j k -> i",
+        )
+    with assert_raises(ValueError):
+        einsum(
+            create_tensor(5, 1),
+        )
+
 # mxnet/gluon do not support einsum without changing to numpy. which doesn't work with the rest
 # in future, after gluon migrated to a new codebase, all testing code will be moved to a new setup
 # def test_gluon():

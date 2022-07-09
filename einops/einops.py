@@ -763,6 +763,11 @@ def einsum(*tensors_and_pattern: List[Union[Tensor, str]]) -> Tensor:
         Tensor of the same type as input, after processing with einsum.
 
     """
+    if len(tensors_and_pattern) <= 1:
+        raise ValueError(
+            "`einops.einsum` takes at minimum two arguments: the tensors,"
+            " followed by the pattern."
+        )
     pattern = tensors_and_pattern[-1]
     if not isinstance(pattern, str):
         raise ValueError(
