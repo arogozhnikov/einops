@@ -22,8 +22,12 @@ def run(cmd, **env):
 
 
 # check we have nvidia-smi
-output, _ = Popen('which nvidia-smi'.split(' '), stdout=PIPE).communicate()
-have_cuda = b'nvidia' in output
+import shutil
+have_cuda = False
+if shutil.which('nvidia-smi') is not None:
+    output, _ = Popen('nvidia-smi'.split(' '), stdout=PIPE).communicate()
+    if b'failed because' not in output:
+        have_cuda = True
 
 # install cupy. It can't be installed without cuda available (with compilers).
 skip_cupy = not have_cuda
