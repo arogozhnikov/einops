@@ -701,14 +701,13 @@ def _compactify_pattern_for_einsum(pattern: str) -> str:
     return output_pattern
 
 
-def einsum(pattern: str, *tensors: List[Tensor]) -> Tensor:
+def einsum(*tensors_and_pattern: List[Union[Tensor, str]]) -> Tensor:
     """
     einops.einsum calls einsum operations with einops-style named
     axes indexing, computing tensor products with an arbitrary
-    number of tensors.
+    number of tensors. Unlike typical einsum syntax, here you must
+    pass tensors first, and then the pattern.
 
-    Note that unlike other einops functions, here you must give
-    the pattern before the tensor(s), rather than after.
     Also, note that rearrange operations such as `"(batch chan) out"`,
     or singleton axes `()`, are not currently supported.
 
@@ -717,7 +716,7 @@ def einsum(pattern: str, *tensors: List[Tensor]) -> Tensor:
     For a given pattern such as:
     ```python
     >>> x, y, z = np.random.randn(3, 20, 20, 20)
-    >>> output = einsum("a b c, c b d, a g k -> a b k", x, y, z)
+    >>> output = einsum(x, y, z, "a b c, c b d, a g k -> a b k")
 
     ```
     the following formula is computed:
@@ -733,8 +732,8 @@ def einsum(pattern: str, *tensors: List[Tensor]) -> Tensor:
     # Filter a set of images:
     >>> batched_images = np.random.randn(128, 16, 16)
     >>> filters = np.random.randn(16, 16, 30)
-    >>> result = einsum("batch h w, h w channel -> batch channel",
-    ...                 batched_images, filters) 
+    >>> result = einsum(batched_images, filters,
+    ...                 "batch h w, h w channel -> batch channel")
     >>> result.shape
     (128, 30)
 
@@ -742,14 +741,14 @@ def einsum(pattern: str, *tensors: List[Tensor]) -> Tensor:
     >>> batch_shape = (50, 30)
     >>> data = np.random.randn(*batch_shape, 20)
     >>> weights = np.random.randn(10, 20)
-    >>> result = einsum("out_dim in_dim, ... in_dim -> ... out_dim",
-    ...                 weights, data)
+    >>> result = einsum(weights, data,
+    ...                 "out_dim in_dim, ... in_dim -> ... out_dim")
     >>> result.shape
     (50, 30, 10)
 
     # Matrix trace on a single tensor:
     >>> matrix = np.random.randn(10, 10)
-    >>> result = einsum("i i ->", matrix)
+    >>> result = einsum(matrix, "i i ->")
     >>> result.shape
     ()
 
@@ -764,5 +763,12 @@ def einsum(pattern: str, *tensors: List[Tensor]) -> Tensor:
         Tensor of the same type as input, after processing with einsum.
 
     """
+    pattern = tensors_and_pattern[-1]
+    if not isinstance(pattern, str):
+        raise ValueError(
+            "The last argument passed to `einops.einsum` must be a string,"
+            " representing the einsum pattern."
+        )
+    tensors = tensors_and_pattern[:-1]
     pattern = _compactify_pattern_for_einsum(pattern)
     return get_backend(tensors[0]).einsum(pattern, *tensors)

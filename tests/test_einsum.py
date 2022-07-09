@@ -203,21 +203,27 @@ def test_functional():
                 backend.from_numpy(array) for array in in_arrays
             ]
             
-            # Actually run einsum:
-            out_array = backend.einsum(predicted_pattern, *in_arrays_framework)
-            
-            # Check shape:
-            if out_array.shape != out_shape:
-                raise ValueError(
-                    f"Expected output shape {out_shape} but got {out_array.shape}"
-                )
+            # Loop over whether we call it manually with the backend,
+            # or whether we use `einops.einsum`.
+            for do_manual_call in [True, False]:
+                # Actually run einsum:
+                if do_manual_call:
+                    out_array = backend.einsum(predicted_pattern, *in_arrays_framework)
+                else:
+                    out_array = einsum(*in_arrays_framework, einops_pattern)
 
-            # Check values:
-            true_out_array = np.einsum(true_pattern, *in_arrays)
-            predicted_out_array = backend.to_numpy(out_array)
-            np.testing.assert_array_almost_equal(predicted_out_array,
-                                                    true_out_array,
-                                                    decimal=5)
+                # Check shape:
+                if out_array.shape != out_shape:
+                    raise ValueError(
+                        f"Expected output shape {out_shape} but got {out_array.shape}"
+                    )
+
+                # Check values:
+                true_out_array = np.einsum(true_pattern, *in_arrays)
+                predicted_out_array = backend.to_numpy(out_array)
+                np.testing.assert_array_almost_equal(predicted_out_array,
+                                                        true_out_array,
+                                                        decimal=5)
 
 
 def test_functional_symbolic():
@@ -235,20 +241,24 @@ def test_functional_symbolic():
             in_data = [rstate.uniform(size=in_shape).astype('float32') for in_shape in in_shapes]
 
             expected_out_data = np.einsum(true_pattern, *in_data)
-            predicted_out_symbol = backend.einsum(predicted_pattern, *in_syms)
-            print(predicted_out_symbol)
 
-            predicted_out_data = backend.eval_symbol(
-                predicted_out_symbol,
-                list(zip(in_syms, in_data)),
-            )
-            if predicted_out_data.shape != out_shape:
-                raise ValueError(
-                    f"Expected output shape {out_shape} but got {predicted_out_data.shape}"
+            for do_manual_call in [True, False]:
+                if do_manual_call:
+                    predicted_out_symbol = backend.einsum(predicted_pattern, *in_syms)
+                else:
+                    predicted_out_symbol = einsum(*in_syms, einops_pattern)
+
+                predicted_out_data = backend.eval_symbol(
+                    predicted_out_symbol,
+                    list(zip(in_syms, in_data)),
                 )
-            assert np.testing.assert_array_almost_equal(predicted_out_data,
-                                                        expected_out_data,
-                                                        decimal=5)
+                if predicted_out_data.shape != out_shape:
+                    raise ValueError(
+                        f"Expected output shape {out_shape} but got {predicted_out_data.shape}"
+                    )
+                assert np.testing.assert_array_almost_equal(predicted_out_data,
+                                                            expected_out_data,
+                                                            decimal=5)
 
 
 def test_functional_errors():
@@ -261,15 +271,21 @@ def test_functional_errors():
     # raise NotImplementedError("Singleton () axes are not yet supported in einsum.")
     with assert_raises(NotImplementedError):
         einsum(
-            "i () -> i",
             create_tensor(5, 1),
+            "i () -> i",
         )
 
     # raise NotImplementedError("Shape rearrangement is not yet supported in einsum.")
     with assert_raises(NotImplementedError):
         einsum(
-            "a b -> (a b)",
             create_tensor(5, 1),
+            "a b -> (a b)",
+        )
+
+    with assert_raises(NotImplementedError):
+        einsum(
+            create_tensor(10, 1),
+            "(a b) -> a b",
         )
 
     # raise RuntimeError("Encountered empty axis name in einsum.")
@@ -279,29 +295,29 @@ def test_functional_errors():
     # raise RuntimeError("Axis name in einsum must not start with a number.")
     with assert_raises(RuntimeError):
         einsum(
-            "i 1j -> i",
             create_tensor(5, 1),
+            "i 1j -> i",
         )
 
     # raise ValueError("Einsum pattern must contain '->'.")
     with assert_raises(ValueError):
         einsum(
-            "i j k",
             create_tensor(5, 3, 2),
+            "i j k",
         )
 
     # raise RuntimeError("Too many axes in einsum.")
     with assert_raises(RuntimeError):
         einsum(
-            " ".join(string.ascii_letters) + " extra ->",
             create_tensor(1),
+            " ".join(string.ascii_letters) + " extra ->",
         )
 
     # raise RuntimeError("Unknown axis on right side of einsum.")
     with assert_raises(RuntimeError):
         einsum(
-            "i j -> k",
             create_tensor(5, 1),
+            "i j -> k",
         )
 
 # mxnet/gluon do not support einsum without changing to numpy. which doesn't work with the rest
