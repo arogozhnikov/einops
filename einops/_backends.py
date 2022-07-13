@@ -622,3 +622,70 @@ class OneFlowBackend(AbstractBackend):
     def layers(self):
         from .layers import oneflow
         return oneflow
+
+class JittorBackend(AbstractBackend):
+    framework_name = 'jittor'
+
+    def __init__(self):
+        import jittor
+        self.jittor = jittor
+
+    def is_appropriate_type(self, tensor):
+        return isinstance(tensor, self.jittor.jittor_core.Var)
+
+    def from_numpy(self, x):
+        variable = self.jittor.array(x)
+        if self.is_float_type(variable):
+            # attach grad only to floating types
+            variable.requires_grad = True
+        return variable
+
+    def to_numpy(self, x):
+        return x.detach().numpy()
+
+    def arange(self, start, stop):
+        return self.jittor.arange(start, stop, dtype='int64')
+
+    def shape(self, x):
+        return HashableTuple(tuple(x.shape))
+
+    def reshape(self, x, shape):
+        return self.jittor.reshape(x, shape)
+
+    def reduce(self, x, operation, reduced_axes):
+        for axis in sorted(reduced_axes, reverse=True):
+            if operation == 'min':
+                x = x.min(dim=axis)
+            elif operation == 'max':
+                x = x.max(dim=axis)
+            elif operation in ['sum', 'mean', 'prod']:
+                x = getattr(x, operation)(dim=axis)
+            else:
+                raise NotImplementedError('Unknown reduction ', operation)
+        return x
+
+    def transpose(self, x, axes):
+        return x.permute(axes)
+
+    def stack_on_zeroth_dimension(self, tensors: list):
+        return self.jittor.stack(tensors)
+
+    def add_axes(self, x, n_axes, pos2len):
+        repeats = [-1] * n_axes
+        for axis_position, axis_length in pos2len.items():
+            x = self.add_axis(x, axis_position)
+            repeats[axis_position] = axis_length
+        return x.expand(repeats)
+
+    def tile(self, x, repeats):
+        return x.repeat(repeats)
+
+    def add_axis(self, x, new_position):
+        return self.jittor.unsqueeze(x, new_position)
+
+    def is_float_type(self, x):
+        return x.dtype in ["float16", "float32", "float64"]
+
+    def layers(self):
+        from .layers import jittor
+        return jittor
