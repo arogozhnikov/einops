@@ -17,6 +17,8 @@ ReductionCallable = Callable[[Tensor, List[int]], Tensor]
 Reduction = Union[str, ReductionCallable]
 
 _reductions = ('min', 'max', 'sum', 'mean', 'prod')
+# magic integers are required to stay within
+# traceable subset of language
 _ellipsis_not_in_parenthesis: List[int] = [-999]
 _unknown_axis_length = -999999
 
