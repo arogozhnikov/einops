@@ -12,7 +12,6 @@ Backends in `einops` are organized to meet the following requirements
 
 import sys
 import warnings
-import functools
 
 __author__ = 'Alex Rogozhnikov'
 
@@ -577,12 +576,6 @@ class KerasBackend(AbstractBackend):
     def layers(self):
         from .layers import keras
         return keras
-
-    def einsum(self, pattern, *x):
-        return self.tf.vectorized_map(
-            functools.partial(self.tf.einsum, pattern),
-            *x
-        )
 
 
 class OneFlowBackend(AbstractBackend):
