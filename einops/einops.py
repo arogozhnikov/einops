@@ -581,11 +581,11 @@ def parse_shape(x, pattern: str):
         ellipsis_idx = exp.composition.index(_ellipsis)
         composition = (exp.composition[:ellipsis_idx] +
                        ['_'] * (len(shape) - len(exp.composition) + 1) +
-                       exp.composition[ellipsis_idx+1:])
+                       exp.composition[ellipsis_idx + 1:])
     else:
         composition = exp.composition
     result = {}
-    for (axis_name, ), axis_length in zip(composition, shape):
+    for (axis_name,), axis_length in zip(composition, shape):
         if axis_name != '_':
             result[axis_name] = axis_length
     return result
@@ -658,7 +658,7 @@ def _compactify_pattern_for_einsum(pattern: str) -> str:
 
     right = ParsedExpression(right, allow_underscore=True)
 
-    # Start from a, and go up to Z
+    # Start from 'a' and go up to 'Z'
     output_axis_names = string.ascii_letters
     i = 0
     axis_name_mapping = {}
@@ -671,7 +671,7 @@ def _compactify_pattern_for_einsum(pattern: str) -> str:
             if raw_axis_name == _ellipsis:
                 left_pattern += '...'
                 continue
-            
+
             _validate_einsum_axis_name(raw_axis_name)
             axis_name = raw_axis_name[0]
             if axis_name not in axis_name_mapping:
@@ -683,22 +683,32 @@ def _compactify_pattern_for_einsum(pattern: str) -> str:
             left_pattern += axis_name_mapping[axis_name]
         left_patterns.append(left_pattern)
 
-    output_pattern = ",".join(left_patterns) + "->"
+    compact_pattern = ",".join(left_patterns) + "->"
 
     for raw_axis_name in right.composition:
         if raw_axis_name == _ellipsis:
-            output_pattern += '...'
+            compact_pattern += '...'
             continue
 
         _validate_einsum_axis_name(raw_axis_name)
         axis_name = raw_axis_name[0]
 
         if axis_name not in axis_name_mapping:
-            raise RuntimeError("Unknown axis on right side of einsum.")
-        
-        output_pattern += axis_name_mapping[axis_name]
+            raise EinopsError(f"Unknown axis {axis_name} on right side of einsum {pattern}.")
 
-    return output_pattern
+        compact_pattern += axis_name_mapping[axis_name]
+
+    return compact_pattern
+
+
+@typing.overload
+def einsum(tensor: Tensor, pattern: str) -> Tensor: ...
+@typing.overload
+def einsum(tensor1: Tensor, tensor2: Tensor, pattern: str) -> Tensor: ...
+@typing.overload
+def einsum(tensor1: Tensor, tensor2: Tensor, tensor3: Tensor, pattern: str) -> Tensor: ...
+@typing.overload
+def einsum(tensor1: Tensor, tensor2: Tensor, tensor3: Tensor, tensor4: Tensor, pattern: str) -> Tensor: ...
 
 
 def einsum(*tensors_and_pattern: List[Union[Tensor, str]]) -> Tensor:
@@ -765,7 +775,7 @@ def einsum(*tensors_and_pattern: List[Union[Tensor, str]]) -> Tensor:
     """
     if len(tensors_and_pattern) <= 1:
         raise ValueError(
-            "`einops.einsum` takes at minimum two arguments: the tensors,"
+            "`einops.einsum` takes at minimum two arguments: the tensors (at least one),"
             " followed by the pattern."
         )
     pattern = tensors_and_pattern[-1]
