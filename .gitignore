@@ -111,3 +111,6 @@ design-einops.txt
 
 # logo and video generation
 logo
+
+# code of internal checks
+_uncommited_explorations

@@ -16,6 +16,7 @@ setup(
     classifiers=[
         'Intended Audience :: Science/Research',
         'Programming Language :: Python :: 3 ',
+        'License :: OSI Approved :: MIT License',
     ],
     keywords='deep learning, neural networks, tensor manipulation, machine learning, '
              'scientific computations, einops',
