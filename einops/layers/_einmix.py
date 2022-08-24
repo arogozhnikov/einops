@@ -49,8 +49,8 @@ class _EinmixMixin:
 
         Parameters
         :param pattern: transformation pattern, left side - dimensions of input, right side - dimensions of output
-        :param weight_shape: axes of weight. Tensor od this shape is created, stored, and optimized in a layer
-        :param bias_shape: axes of bias added to output.
+        :param weight_shape: axes of weight. A tensor of this shape is created, stored, and optimized in a layer
+        :param bias_shape: axes of bias added to output. Weights of this shape are created and stored. If `None` (the default), no bias is added.
         :param axes_lengths: dimensions of weight tensor
         """
         super().__init__()
