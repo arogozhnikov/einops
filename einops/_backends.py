@@ -166,7 +166,7 @@ class NumpyBackend(AbstractBackend):
         return self.np.tile(x, repeats)
 
     def is_float_type(self, x):
-        return x.dtype in ('float16', 'float32', 'float64', 'float128')
+        return x.dtype in ('float16', 'float32', 'float64', 'float128', 'bfloat16')
 
     def add_axis(self, x, new_position):
         return self.np.expand_dims(x, new_position)
@@ -353,7 +353,7 @@ class TorchBackend(AbstractBackend):
         return self.torch.unsqueeze(x, new_position)
 
     def is_float_type(self, x):
-        return x.dtype in [self.torch.float16, self.torch.float32, self.torch.float64]
+        return x.dtype in [self.torch.float16, self.torch.float32, self.torch.float64, self.torch.bfloat16]
 
     def layers(self):
         from .layers import torch
@@ -392,7 +392,7 @@ class CupyBackend(AbstractBackend):
         return self.cupy.expand_dims(x, new_position)
 
     def is_float_type(self, x):
-        return x.dtype in ('float16', 'float32', 'float64', 'float128')
+        return x.dtype in ('float16', 'float32', 'float64', 'float128', 'bfloat16')
 
     def einsum(self, pattern, *x):
         return self.cupy.einsum(pattern, *x)
@@ -434,7 +434,7 @@ class ChainerBackend(AbstractBackend):
         return self.chainer.functions.expand_dims(x, new_position)
 
     def is_float_type(self, x):
-        return x.dtype in ('float16', 'float32', 'float64', 'float128')
+        return x.dtype in ('float16', 'float32', 'float64', 'float128', 'bfloat16')
 
     def layers(self):
         from .layers import chainer
@@ -516,7 +516,7 @@ class TensorflowBackend(AbstractBackend):
         return self.tf.expand_dims(x, new_position)
 
     def is_float_type(self, x):
-        return x.dtype in ('float16', 'float32', 'float64', 'float128')
+        return x.dtype in ('float16', 'float32', 'float64', 'float128', 'bfloat16')
 
     def layers(self):
         from .layers import tensorflow
@@ -595,7 +595,7 @@ class OneFlowBackend(AbstractBackend):
             # attach grad only to floating types
             variable.requires_grad = True
         return variable
-    
+
     def to_numpy(self, x):
         return x.detach().cpu().numpy()
 
@@ -613,7 +613,7 @@ class OneFlowBackend(AbstractBackend):
             else:
                 raise NotImplementedError('Unknown reduction ', operation)
         return x
-    
+
     def transpose(self, x, axes):
         return x.permute(axes)
 
