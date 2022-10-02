@@ -422,13 +422,7 @@ def reduce(tensor: Tensor, pattern: str, reduction: Reduction, **axes_lengths: i
 
 
 
-@typing.overload
-def rearrange(tensor: Tensor, pattern: str, **axes_length: int) -> Tensor: ...
-@typing.overload
-def rearrange(tensor: List[Tensor], pattern: str, **axes_lengths: int) -> Tensor: ...
-
-
-def rearrange(tensor, pattern: str, **axes_lengths):
+def rearrange(tensor: Union[Tensor, List[Tensor]], pattern: str, **axes_lengths) -> Tensor:
     """
     einops.rearrange is a reader-friendly smart element reordering for multidimensional tensors.
     This operation includes functionality of transpose (axes permutation), reshape (view), squeeze, unsqueeze,
@@ -540,7 +534,7 @@ def repeat(tensor: Tensor, pattern: str, **axes_lengths) -> Tensor:
     return reduce(tensor, pattern, reduction='repeat', **axes_lengths)
 
 
-def parse_shape(x, pattern: str):
+def parse_shape(x, pattern: str) -> dict:
     """
     Parse a tensor shape to dictionary mapping axes names to their lengths.
 
