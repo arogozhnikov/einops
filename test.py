@@ -49,13 +49,14 @@ dependencies = [
     'jupyter',
     'parameterized',
     'pillow',
-    'nose',
+    'pytest',
 ]
 
 assert 0 == run('pip install {} --progress-bar off'.format(' '.join(dependencies)))
 
 # oneflow provides wheels for linux, but not mac, so it is tested only on linux
 skip_oneflow = 'linux' not in sys.platform
+skip_oneflow = True
 if not skip_oneflow:
     # oneflow installation: https://github.com/Oneflow-Inc/oneflow#install-with-pip-package
     assert 0 == run('pip install -f https://release.oneflow.info oneflow==0.7.0+cpu --user')
@@ -65,7 +66,7 @@ assert 0 == run('pip install -e .')
 
 
 return_code = run(
-    'python -m nose tests -vds',
+    'python -m pytest tests',
     EINOPS_SKIP_CUPY='1' if skip_cupy else '0',
     EINOPS_SKIP_ONEFLOW='1' if skip_oneflow else '0',
 )
