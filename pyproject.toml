@@ -1,0 +1,68 @@
+[build-system]
+requires = ["hatchling>=1.10.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "einops"
+description = "A new flavour of deep learning operations"
+readme = "README.md"
+requires-python = ">=3.7"
+
+keywords = ['deep learning', 'neural networks', 'tensor manipulation', 'machine learning',
+             'scientific computations', 'einops',]
+license = {text = 'MIT'}
+classifiers = [
+    'Intended Audience :: Science/Research',
+    'Programming Language :: Python :: 3',
+    'License :: OSI Approved :: MIT License',
+]
+dependencies = [
+    # no run-time or installation-time dependencies
+]
+dynamic = ["version"]
+authors = [{name = 'Alex Rogozhnikov'}]
+
+[project.urls]
+Homepage = 'https://github.com/arogozhnikov/einops'
+
+[tool.setuptools]
+packages = ['einops', 'einops.layers']
+
+[tool.hatch.version]
+path = "einops/__init__.py"
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+  "/.github",
+  "/.idea",
+  "/.pytest_cache",
+  "/build",
+  "/dist",
+  "/docs",
+  "/docs_src",
+  "/log",
+]
+
+[tool.hatch.build.targets.wheel]
+# should use packages from main section
+
+
+[tool.hatch.envs.docs]
+dependencies = [
+    "mkdocs~=1.4.0",
+    "mkdocs-material~=8.5.5",
+    "mkdocstrings[python-legacy]~=0.19.0",
+    "mkdocs-jupyter~=0.22.0",
+]
+[tool.hatch.envs.docs.scripts]
+# For examples to build one has to run: 
+# hatch run docs:build
+build = "mkdocs build --clean --strict {args}"
+serve = "mkdocs serve --dev-addr localhost:8000 {args}"
+deploy = "mkdocs build --clean --strict && mkdocs gh-deploy"
+
+
+[tool.hatch.envs.pypi.scripts]
+# hatch run pypi:deploy_test
+deploy_test = "hatch build --clean && hatch publish -r test"
+deploy = "hatch build --clean && hatch publish"
