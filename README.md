@@ -32,7 +32,7 @@ Supports numpy, pytorch, tensorflow, jax, and [others](#supported-frameworks).
 
 ## Recent updates:
 
-- einsum is not a part of einops
+- einsum is now a part of einops
 - [Einops paper](https://openreview.net/pdf?id=oapKSVM2bcj) is accepted for oral presentation at ICLR 2022 (yes, it worth reading)
 - flax and oneflow backend added
 - torch.jit.script is supported for pytorch layers
