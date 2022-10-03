@@ -32,8 +32,9 @@ Supports numpy, pytorch, tensorflow, jax, and [others](#supported-frameworks).
 
 ## Recent updates:
 
+- einsum is not a part of einops
 - [Einops paper](https://openreview.net/pdf?id=oapKSVM2bcj) is accepted for oral presentation at ICLR 2022 (yes, it worth reading)
-- oneflow backend added
+- flax and oneflow backend added
 - torch.jit.script is supported for pytorch layers
 - powerful EinMix added to einops. [Einmix tutorial notebook](https://github.com/arogozhnikov/einops/blob/master/docs/3-einmix-layer.ipynb) 
 
@@ -297,6 +298,7 @@ Einops works with ...
 - [tf.keras](https://www.tensorflow.org/guide/keras)
 - [mxnet](https://mxnet.apache.org/) (experimental)
 - [oneflow](https://github.com/Oneflow-Inc/oneflow) (experimental)
+- [flax](https://github.com/google/flax) (experimental)
 
 ## Citing einops <a name="Contributing"></a>
 
@@ -315,16 +317,6 @@ url={https://openreview.net/forum?id=oapKSVM2bcj}
 
 Link to paper at openreview: https://openreview.net/pdf?id=oapKSVM2bcj. 
 
-
-## Contributing <a name="Contributing"></a>
-
-Best ways to contribute are
-
-- spread the word about `einops`
-- if you like explaining things, more tutorials/tear-downs of implementations is welcome
-- tutorials in other languages are very welcome
-- do you have project/code example to share? Let me know in github discussions
-- use `einops` in your papers!
 
 ## Supported python versions
 
