@@ -74,4 +74,5 @@ return_code = run(
 assert return_code == 0
 
 if __name__ == '__main__':
+    # minor convenience for lazy me to start debugging in pycharm
     pass
