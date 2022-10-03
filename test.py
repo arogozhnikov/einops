@@ -44,6 +44,7 @@ dependencies = [
     'chainer',
     'jax',
     'jaxlib',
+    'flax',
     'nbformat',
     'nbconvert',
     'jupyter',
@@ -71,3 +72,6 @@ return_code = run(
     EINOPS_SKIP_ONEFLOW='1' if skip_oneflow else '0',
 )
 assert return_code == 0
+
+if __name__ == '__main__':
+    pass
