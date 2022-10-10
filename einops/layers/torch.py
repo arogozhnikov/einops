@@ -1,4 +1,4 @@
-from typing import Optional, Dict
+from typing import Optional, Dict, cast
 
 import torch
 
@@ -45,11 +45,11 @@ class EinMix(_EinmixMixin, torch.nn.Module):
                                  ):
         self.pre_rearrange = None
         if pre_reshape_pattern is not None:
-            self.pre_rearrange = Rearrange(pre_reshape_pattern, **pre_reshape_lengths)
+            self.pre_rearrange = Rearrange(pre_reshape_pattern, **cast(dict, pre_reshape_lengths))
 
         self.post_rearrange = None
         if post_reshape_pattern is not None:
-            self.post_rearrange = Rearrange(post_reshape_pattern, **post_reshape_lengths)
+            self.post_rearrange = Rearrange(post_reshape_pattern, **cast(dict, post_reshape_lengths))
 
     def forward(self, input):
         if self.pre_rearrange is not None:
