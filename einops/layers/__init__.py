@@ -1,6 +1,7 @@
 __author__ = 'Alex Rogozhnikov'
 
 import functools
+from typing import Any
 
 from einops.einops import _apply_recipe
 
@@ -18,13 +19,13 @@ class RearrangeMixin:
     See einops.rearrange for source_examples.
     """
 
-    def __init__(self, pattern, **axes_lengths):
+    def __init__(self, pattern: str, **axes_lengths: Any) -> None:
         super().__init__()
         self.pattern = pattern
         self.axes_lengths = axes_lengths
         self._recipe = self.recipe()  # checking parameters
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         params = repr(self.pattern)
         for axis, length in self.axes_lengths.items():
             params += ', {}={}'.format(axis, length)
@@ -53,7 +54,7 @@ class ReduceMixin:
     See einops.reduce for source_examples.
     """
 
-    def __init__(self, pattern, reduction, **axes_lengths):
+    def __init__(self, pattern: str, reduction: str, **axes_lengths: Any):
         super().__init__()
         self.pattern = pattern
         self.reduction = reduction
