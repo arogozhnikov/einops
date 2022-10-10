@@ -1,4 +1,4 @@
-from typing import Any, Optional, Dict
+from typing import Any, List, Optional, Dict
 
 from einops import EinopsError
 from einops.parsing import ParsedExpression
@@ -81,7 +81,7 @@ class _EinmixMixin:
         pre_reshape_lengths = None
         post_reshape_pattern = None
         if any(len(group) != 1 for group in left.composition):
-            names = []
+            names: List[str] = []
             for group in left.composition:
                 names += group
             composition = ' '.join(names)
@@ -143,8 +143,8 @@ class _EinmixMixin:
 
         # rewrite einsum expression with single-letter latin identifiers so that
         # expression will be understood by any framework
-        mapping2letters = {*left.identifiers, *right.identifiers, *weight.identifiers}
-        mapping2letters = {k: letter for letter, k in zip(string.ascii_lowercase, mapping2letters)}
+        mapped_identifiers = {*left.identifiers, *right.identifiers, *weight.identifiers}
+        mapping2letters = {k: letter for letter, k in zip(string.ascii_lowercase, mapped_identifiers)}
 
         def write_flat(axes: list):
             return ''.join(mapping2letters[axis] for axis in axes)
