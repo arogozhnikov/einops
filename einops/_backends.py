@@ -15,7 +15,7 @@ import warnings
 
 __author__ = 'Alex Rogozhnikov'
 
-_backends = {}
+_backends: dict = {}
 _debug_importing = False
 
 
@@ -54,7 +54,7 @@ def get_backend(tensor) -> 'AbstractBackend':
 
 class AbstractBackend:
     """ Base backend class, major part of methods are only for debugging purposes. """
-    framework_name = None
+    framework_name: str
 
     def is_appropriate_type(self, tensor):
         """ helper method should recognize tensors it can handle """
@@ -137,7 +137,7 @@ class UnknownSize:
         return self
 
     def __hash__(self):
-        return None.__hash__()
+        return hash(None)
 
 
 class NumpyBackend(AbstractBackend):
