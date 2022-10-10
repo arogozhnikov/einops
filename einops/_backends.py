@@ -322,16 +322,20 @@ class TorchBackend(AbstractBackend):
         return self.torch.arange(start, stop, dtype=self.torch.int64)
 
     def reduce(self, x, operation, reduced_axes):
-        for axis in sorted(reduced_axes, reverse=True):
-            if operation == 'min':
-                x, _ = x.min(dim=axis)
-            elif operation == 'max':
-                x, _ = x.max(dim=axis)
-            elif operation in ['sum', 'mean', 'prod']:
-                x = getattr(x, operation)(dim=axis)
-            else:
-                raise NotImplementedError('Unknown reduction ', operation)
-        return x
+        if operation == 'min':
+            return x.amin(dim=reduced_axes)
+        elif operation == 'max':
+            return x.amax(dim=reduced_axes)
+        elif operation == 'sum':
+            return x.sum(dim=reduced_axes)
+        elif operation == 'mean':
+            return x.mean(dim=reduced_axes)
+        elif operation == 'prod':
+            for i in list(sorted(reduced_axes))[::-1]:
+                x = x.prod(dim=i)
+            return x
+        else:
+            raise NotImplementedError('Unknown reduction ', operation)
 
     def transpose(self, x, axes):
         return x.permute(axes)
