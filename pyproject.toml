@@ -66,3 +66,9 @@ deploy = "mkdocs build --clean --strict && mkdocs gh-deploy"
 # hatch run pypi:deploy_test
 deploy_test = "hatch build --clean && hatch publish -r test"
 deploy = "hatch build --clean && hatch publish"
+
+
+[tool.hatch.envs.testing.scripts]
+# hatch run testing:test
+test = "python test.py"
+
