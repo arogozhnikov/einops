@@ -3,7 +3,7 @@ import itertools
 import string
 import typing
 from collections import OrderedDict
-from typing import Tuple, List, Dict, Union, Callable, Optional, TypeVar
+from typing import Set, Tuple, List, Dict, Union, Callable, Optional, TypeVar, cast
 
 if typing.TYPE_CHECKING:
     import numpy as np
@@ -13,7 +13,7 @@ from ._backends import get_backend
 from .parsing import ParsedExpression, _ellipsis, AnonymousAxis
 
 Tensor = TypeVar('Tensor')
-ReductionCallable = Callable[[Tensor, List[int]], Tensor]
+ReductionCallable = Callable[[Tensor, Tuple[int]], Tensor]
 Reduction = Union[str, ReductionCallable]
 
 _reductions = ('min', 'max', 'sum', 'mean', 'prod')
@@ -38,10 +38,9 @@ def _product(sequence: List[int]) -> int:
 
 
 def _reduce_axes(tensor, reduction_type: Reduction, reduced_axes: List[int], backend):
-    reduced_axes = tuple(reduced_axes)
     if callable(reduction_type):
         # custom callable
-        return reduction_type(tensor, reduced_axes)
+        return reduction_type(tensor, tuple(reduced_axes))
     else:
         # one of built-in operations
         if len(reduced_axes) == 0:
@@ -50,7 +49,7 @@ def _reduce_axes(tensor, reduction_type: Reduction, reduced_axes: List[int], bac
         if reduction_type == 'mean':
             if not backend.is_float_type(tensor):
                 raise NotImplementedError('reduce_mean is not available for non-floating tensors')
-        return backend.reduce(tensor, reduction_type, reduced_axes)
+        return backend.reduce(tensor, reduction_type, tuple(reduced_axes))
 
 
 def _optimize_transformation(init_shapes, reduced_axes, axes_reordering, final_shapes):
@@ -171,7 +170,7 @@ def _reconstruct_from_shape_uncached(self: TransformRecipe, shape: List[int]) ->
         after_ellipsis = input_axis + len(shape) - len(self.input_composite_axes)
         if input_axis == self.ellipsis_position_in_lhs:
             assert len(known_axes) == 0 and len(unknown_axes) == 1
-            unknown_axis, = unknown_axes
+            unknown_axis: int = unknown_axes[0]
             ellipsis_shape = shape[before_ellipsis:after_ellipsis + 1]
             for d in ellipsis_shape:
                 if d is None:
@@ -201,7 +200,7 @@ def _reconstruct_from_shape_uncached(self: TransformRecipe, shape: List[int]) ->
                     raise EinopsError("Shape mismatch, can't divide axis of length {} in chunks of {}".format(
                         length, known_product))
 
-                unknown_axis: int = unknown_axes[0]
+                unknown_axis = unknown_axes[0]
                 inferred_length: int = length // known_product
                 axes_lengths[unknown_axis] = inferred_length
 
@@ -249,9 +248,9 @@ def _prepare_transformation_recipe(pattern: str,
     """ Perform initial parsing of pattern and provided supplementary info
     axes_lengths is a tuple of tuples (axis_name, axis_length)
     """
-    left, rght = pattern.split('->')
-    left = ParsedExpression(left)
-    rght = ParsedExpression(rght)
+    left_str, rght_str = pattern.split('->')
+    left = ParsedExpression(left_str)
+    rght = ParsedExpression(rght_str)
 
     # checking that axes are in agreement - new axes appear only in repeat, while disappear only in reduction
     if not left.has_ellipsis and rght.has_ellipsis:
@@ -280,7 +279,7 @@ def _prepare_transformation_recipe(pattern: str,
         raise EinopsError('Unknown reduction {}. Expect one of {}.'.format(operation, _reductions))
 
     # parsing all dimensions to find out lengths
-    axis_name2known_length = OrderedDict()
+    axis_name2known_length: Dict[Union[str, AnonymousAxis], int]= OrderedDict()
     for composite_axis in left.composition:
         for axis_name in composite_axis:
             if isinstance(axis_name, AnonymousAxis):
@@ -302,7 +301,7 @@ def _prepare_transformation_recipe(pattern: str,
     axis_name2position = {name: position for position, name in enumerate(axis_name2known_length)}
     reduced_axes: List[int] = [position for axis, position in axis_name2position.items() if
                                axis not in rght.identifiers]
-    reduced_axes: List[int] = list(sorted(reduced_axes))
+    reduced_axes = list(sorted(reduced_axes))
 
     for elementary_axis, axis_length in axes_lengths:
         if not ParsedExpression.check_axis_name(elementary_axis):
@@ -314,8 +313,8 @@ def _prepare_transformation_recipe(pattern: str,
     input_axes_known_unknown = []
     # some of shapes will be inferred later - all information is prepared for faster inference
     for composite_axis in left.composition:
-        known = {axis for axis in composite_axis if axis_name2known_length[axis] != _unknown_axis_length}
-        unknown = {axis for axis in composite_axis if axis_name2known_length[axis] == _unknown_axis_length}
+        known: Set[str] = {axis for axis in composite_axis if axis_name2known_length[axis] != _unknown_axis_length}
+        unknown: Set[str] = {axis for axis in composite_axis if axis_name2known_length[axis] == _unknown_axis_length}
         if len(unknown) > 1:
             raise EinopsError('Could not infer sizes for {}'.format(unknown))
         assert len(unknown) + len(known) == len(composite_axis)
@@ -324,7 +323,7 @@ def _prepare_transformation_recipe(pattern: str,
              [axis_name2position[axis] for axis in unknown])
         )
 
-    axis_position_after_reduction = {}
+    axis_position_after_reduction: Dict[str, int] = {}
     for axis_name in itertools.chain(*left.composition):
         if axis_name in rght.identifiers:
             axis_position_after_reduction[axis_name] = len(axis_position_after_reduction)
@@ -481,7 +480,7 @@ def rearrange(tensor: Union[Tensor, List[Tensor]], pattern: str, **axes_lengths)
         if len(tensor) == 0:
             raise TypeError("Rearrange can't be applied to an empty list")
         tensor = get_backend(tensor[0]).stack_on_zeroth_dimension(tensor)
-    return reduce(tensor, pattern, reduction='rearrange', **axes_lengths)
+    return reduce(cast(Tensor, tensor), pattern, reduction='rearrange', **axes_lengths)
 
 
 def repeat(tensor: Tensor, pattern: str, **axes_lengths) -> Tensor:
@@ -581,7 +580,7 @@ def parse_shape(x, pattern: str) -> dict:
     else:
         composition = exp.composition
     result = {}
-    for (axis_name,), axis_length in zip(composition, shape):
+    for (axis_name,), axis_length in zip(composition, shape): # type: ignore
         if axis_name != '_':
             result[axis_name] = axis_length
     return result
@@ -644,15 +643,14 @@ def _compactify_pattern_for_einsum(pattern: str) -> str:
         # numpy allows this, so make sure users
         # don't accidentally do something like this.
         raise ValueError("Einsum pattern must contain '->'.")
-    lefts, right = pattern.split('->')
-    lefts = lefts.split(',')
+    lefts_str, right_str = pattern.split('->')
 
     lefts = [
         ParsedExpression(left, allow_underscore=True, allow_duplicates=True)
-        for left in lefts
+        for left in lefts_str.split(',')
     ]
 
-    right = ParsedExpression(right, allow_underscore=True)
+    right = ParsedExpression(right_str, allow_underscore=True)
 
     # Start from 'a' and go up to 'Z'
     output_axis_names = string.ascii_letters
@@ -698,16 +696,16 @@ def _compactify_pattern_for_einsum(pattern: str) -> str:
 
 
 @typing.overload
-def einsum(tensor: Tensor, pattern: str) -> Tensor: ...
+def einsum(tensor: Tensor, pattern: str, /) -> Tensor: ...
 @typing.overload
-def einsum(tensor1: Tensor, tensor2: Tensor, pattern: str) -> Tensor: ...
+def einsum(tensor1: Tensor, tensor2: Tensor, pattern: str, /) -> Tensor: ...
 @typing.overload
-def einsum(tensor1: Tensor, tensor2: Tensor, tensor3: Tensor, pattern: str) -> Tensor: ...
+def einsum(tensor1: Tensor, tensor2: Tensor, tensor3: Tensor, pattern: str, /) -> Tensor: ...
 @typing.overload
-def einsum(tensor1: Tensor, tensor2: Tensor, tensor3: Tensor, tensor4: Tensor, pattern: str) -> Tensor: ...
+def einsum(tensor1: Tensor, tensor2: Tensor, tensor3: Tensor, tensor4: Tensor, pattern: str, /) -> Tensor: ...
 
 
-def einsum(*tensors_and_pattern: List[Union[Tensor, str]]) -> Tensor:
+def einsum(*tensors_and_pattern: Union[Tensor, str]) -> Tensor:
     """
     einops.einsum calls einsum operations with einops-style named
     axes indexing, computing tensor products with an arbitrary
