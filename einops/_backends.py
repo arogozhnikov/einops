@@ -666,9 +666,6 @@ class PaddleBackend(AbstractBackend):
     def arange(self, start, stop):
         return self.paddle.arange(start, stop, dtype=self.paddle.int64)
 
-    def reduce(self, x, operation, reduced_axes):
-        x = getattr(x, operation)(axis=reduced_axes)
-
     def transpose(self, x, axes):
         return x.transpose(axes)
 
