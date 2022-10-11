@@ -642,3 +642,58 @@ class OneFlowBackend(AbstractBackend):
 
     def einsum(self, pattern, *x):
         return self.flow.einsum(pattern, *x)
+
+
+class PaddleBackend(AbstractBackend):
+    framework_name = "paddle"
+
+    def __init__(self):
+        import paddle
+        self.paddle = paddle
+
+    def is_appropriate_type(self, tensor):
+        return isinstance(tensor, self.paddle.Tensor)
+
+    def from_numpy(self, x):
+        variable = self.paddle.to_tensor(x)
+        if self.is_float_type(variable):
+            variable.stop_gradient = False
+        return variable
+
+    def to_numpy(self, x):
+        return x.detach().numpy()
+
+    def arange(self, start, stop):
+        return self.paddle.arange(start, stop, dtype=self.paddle.int64)
+
+    def reduce(self, x, operation, reduced_axes):
+        x = getattr(x, operation)(axis=reduced_axes)
+
+    def transpose(self, x, axes):
+        return x.transpose(axes)
+
+    def stack_on_zeroth_dimension(self, tensors: list):
+        return self.paddle.stack(tensors)
+
+    def add_axes(self, x, n_axes, pos2len):
+        repeats = [-1] * n_axes
+        for axis_position, axis_length in pos2len.items():
+            x = self.add_axis(x, axis_position)
+            repeats[axis_position] = axis_length
+        return x.expand(repeats)
+
+    def tile(self, x, repeats):
+        return x.tile(repeats)
+
+    def add_axis(self, x, new_position):
+        return self.paddle.unsqueeze(x, new_position)
+
+    def is_float_type(self, x):
+        return x.dtype in [self.paddle.float16, self.paddle.float32, self.paddle.float64]
+
+    def layers(self):
+        from .layers import paddle
+        return paddle
+
+    def einsum(self, pattern, *x):
+        return self.paddle.einsum(pattern, *x)
