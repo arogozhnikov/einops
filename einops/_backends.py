@@ -694,3 +694,6 @@ class PaddleBackend(AbstractBackend):
 
     def einsum(self, pattern, *x):
         return self.paddle.einsum(pattern, *x)
+
+    def shape(self, x):
+        return tuple(x.shape)
