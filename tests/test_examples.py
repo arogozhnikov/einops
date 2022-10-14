@@ -40,7 +40,7 @@ def test_rearrange_examples():
         # parsing parameters
         t = rearrange(x, 'b c h w -> (b h w) c')
         t = t[:, ::2]  # replacement for dot-product, just changes size of second axis
-        assert t.shape == (10 * 30 * 40, 10)
+        assert tuple(t.shape) == (10 * 30 * 40, 10)
 
         y = rearrange(t, '(b h w) c2 -> b c2 h w', **parse_shape(x, 'b _ h w'))
         assert tuple(y.shape) == (10, 10, 30, 40)
@@ -49,8 +49,8 @@ def test_rearrange_examples():
     def test7(x):
         # split of embedding into groups
         y1, y2 = rearrange(x, 'b (c g) h w -> g b c h w', g=2)
-        assert y1.shape == (10, 10, 30, 40)
-        assert y2.shape == (10, 10, 30, 40)
+        assert tuple(y1.shape) == (10, 10, 30, 40)
+        assert tuple(y2.shape) == (10, 10, 30, 40)
         return y1 + y2  # only one tensor is expected in output
 
     def test8(x):
