@@ -50,12 +50,11 @@ dependencies = [
     'jupyter',
     'parameterized',
     'pillow',
-    'pytest',
-    'paddlepaddle'
+    'pytest'
 ]
 
 assert 0 == run('pip install {} --progress-bar off'.format(' '.join(dependencies)))
-
+run('pip install paddlepaddle==0.0.0 -f https://www.paddlepaddle.org.cn/whl/linux/cpu-mkl/develop.html --user')
 # oneflow provides wheels for linux, but not mac, so it is tested only on linux
 skip_oneflow = 'linux' not in sys.platform
 skip_oneflow = True
