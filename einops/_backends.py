@@ -12,7 +12,6 @@ Backends in `einops` are organized to meet the following requirements
 
 import sys
 import warnings
-import numpy as np
 
 __author__ = 'Alex Rogozhnikov'
 
