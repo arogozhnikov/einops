@@ -666,6 +666,12 @@ class PaddleBackend(AbstractBackend):
         else:
             return super().reduce(x, operation, axes)
 
+    def reshape(self, x, shape):
+        if shape == []:
+            return x.squeeze(0)
+        else:
+            return super().reshape(x, shape)
+
     def to_numpy(self, x):
         return x.detach().numpy()
 
