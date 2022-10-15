@@ -12,6 +12,7 @@ Backends in `einops` are organized to meet the following requirements
 
 import sys
 import warnings
+import numpy as np
 
 __author__ = 'Alex Rogozhnikov'
 
@@ -655,7 +656,7 @@ class PaddleBackend(AbstractBackend):
         return isinstance(tensor, self.paddle.Tensor)
 
     def from_numpy(self, x):
-        variable = self.paddle.to_tensor(x)
+        variable = self.paddle.to_tensor(np.array(x))
         if self.is_float_type(variable):
             variable.stop_gradient = False
         return variable
