@@ -656,10 +656,16 @@ class PaddleBackend(AbstractBackend):
         return isinstance(tensor, self.paddle.Tensor)
 
     def from_numpy(self, x):
-        variable = self.paddle.to_tensor(np.array(x))
+        variable = self.paddle.to_tensor(x)
         if self.is_float_type(variable):
             variable.stop_gradient = False
         return variable
+
+    def reduce(self, x, operation, axes):
+        if len(axes) == x.ndim:
+            return super().reduce(x, operation, axes).squeeze(0)
+        else:
+            return super().reduce(x, operation, axes)
 
     def to_numpy(self, x):
         return x.detach().numpy()
