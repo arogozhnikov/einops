@@ -504,8 +504,8 @@ def repeat(tensor: Tensor, pattern: str, **axes_lengths) -> Tensor:
     (60, 40)
 
     # repeat image 2 time along height and 3 times along width
-    >>> repeat(image, 'h w -> h (repeat w)', repeat=3).shape
-    (30, 120)
+    >>> repeat(image, 'h w -> (h2 h) (w3 w)', h2=2, w3=3).shape
+    (60, 120)
 
     # convert each pixel to a small square 2x2. Upsample image by 2x
     >>> repeat(image, 'h w -> (h h2) (w w2)', h2=2, w2=2).shape
