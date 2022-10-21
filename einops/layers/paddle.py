@@ -51,7 +51,14 @@ class EinMix(_EinmixMixin, nn.Layer):
     def forward(self, input):
         if self.pre_rearrange is not None:
             input = self.pre_rearrange(input)
-        result = paddle.einsum(self.einsum_pattern, input, self.weight)
+
+        if input.ndim == 0:
+            result = paddle.einsum(self.einsum_pattern.replace(',', ''), self.weight) * input
+        elif self.weight.ndim == 0:
+            result = paddle.einsum(self.einsum_pattern.replace(',', ''), input) * self.weight
+        else:
+            result = paddle.einsum(self.einsum_pattern, input, self.weight)
+
         if self.bias is not None:
             result += self.bias
         if self.post_rearrange is not None:
