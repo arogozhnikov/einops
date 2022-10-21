@@ -53,9 +53,9 @@ class EinMix(_EinmixMixin, nn.Layer):
             input = self.pre_rearrange(input)
 
         if input.ndim == 0:
-            result = paddle.einsum(self.einsum_pattern.replace(',', ''), self.weight) * input
+            result = paddle.einsum(self.einsum_pattern.replace(',', ''), self.weight) * input.reshape([1])
         elif self.weight.ndim == 0:
-            result = paddle.einsum(self.einsum_pattern.replace(',', ''), input) * self.weight
+            result = paddle.einsum(self.einsum_pattern.replace(',', ''), input) * self.weight.reshape([1])
         else:
             result = paddle.einsum(self.einsum_pattern, input, self.weight)
 
