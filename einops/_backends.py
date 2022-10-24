@@ -661,16 +661,12 @@ class PaddleBackend(AbstractBackend):
         return variable
 
     def reduce(self, x, operation, axes):
+        # TODO
         if len(axes) == x.ndim:
             return super().reduce(x, operation, axes).squeeze(0)
         else:
             return super().reduce(x, operation, axes)
-
-    # def reshape(self, x, shape):
-    #     if shape == []:
-    #         return x.squeeze(0)
-    #     else:
-    #         return super().reshape(x, shape)
+        ###
 
     def to_numpy(self, x):
         return x.detach().numpy()
@@ -678,24 +674,24 @@ class PaddleBackend(AbstractBackend):
     def arange(self, start, stop):
         return self.paddle.arange(start, stop, dtype=self.paddle.int64)
 
-    def transpose(self, x, axes):
-        return x.transpose(axes)
+    # def transpose(self, x, axes):
+    #     return x.transpose(axes)
 
     def stack_on_zeroth_dimension(self, tensors: list):
         return self.paddle.stack(tensors)
 
-    def add_axes(self, x, n_axes, pos2len):
-        repeats = [-1] * n_axes
-        for axis_position, axis_length in pos2len.items():
-            x = self.add_axis(x, axis_position)
-            repeats[axis_position] = axis_length
-        return x.expand(repeats)
+    # def add_axes(self, x, n_axes, pos2len):
+    #     repeats = [-1] * n_axes
+    #     for axis_position, axis_length in pos2len.items():
+    #         x = self.add_axis(x, axis_position)
+    #         repeats[axis_position] = axis_length
+    #     return x.expand(repeats)
 
     def tile(self, x, repeats):
         return x.tile(repeats)
 
     def add_axis(self, x, new_position):
-        return self.paddle.unsqueeze(x, new_position)
+        return x.unsqueeze(new_position)
 
     def is_float_type(self, x):
         return x.dtype in [self.paddle.float16, self.paddle.float32, self.paddle.float64]

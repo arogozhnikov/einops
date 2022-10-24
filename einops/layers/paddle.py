@@ -52,12 +52,14 @@ class EinMix(_EinmixMixin, nn.Layer):
         if self.pre_rearrange is not None:
             input = self.pre_rearrange(input)
 
+        # TODO
         if input.ndim == 0:
             result = paddle.einsum(self.einsum_pattern.replace(',', ''), self.weight) * input.reshape([1])
         elif self.weight.ndim == 0:
             result = paddle.einsum(self.einsum_pattern.replace(',', ''), input) * self.weight.reshape([1])
         else:
             result = paddle.einsum(self.einsum_pattern, input, self.weight)
+        ###
 
         if self.bias is not None:
             result += self.bias
