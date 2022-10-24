@@ -674,18 +674,8 @@ class PaddleBackend(AbstractBackend):
     def arange(self, start, stop):
         return self.paddle.arange(start, stop, dtype=self.paddle.int64)
 
-    # def transpose(self, x, axes):
-    #     return x.transpose(axes)
-
     def stack_on_zeroth_dimension(self, tensors: list):
         return self.paddle.stack(tensors)
-
-    # def add_axes(self, x, n_axes, pos2len):
-    #     repeats = [-1] * n_axes
-    #     for axis_position, axis_length in pos2len.items():
-    #         x = self.add_axis(x, axis_position)
-    #         repeats[axis_position] = axis_length
-    #     return x.expand(repeats)
 
     def tile(self, x, repeats):
         return x.tile(repeats)
