@@ -53,6 +53,8 @@ class EinMix(_EinmixMixin, nn.Layer):
             input = self.pre_rearrange(input)
 
         # TODO
+        # Support all einsum operations
+        # Support binary operation of 0D Tensor
         if input.ndim == 0:
             result = paddle.einsum(self.einsum_pattern.replace(',', ''), self.weight) * input.reshape([1])
         elif self.weight.ndim == 0:

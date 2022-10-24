@@ -662,6 +662,7 @@ class PaddleBackend(AbstractBackend):
 
     def reduce(self, x, operation, axes):
         # TODO
+        # Support the reduce operation to output a 0D Tensor
         if len(axes) == x.ndim:
             return super().reduce(x, operation, axes).squeeze(0)
         else:
@@ -691,7 +692,10 @@ class PaddleBackend(AbstractBackend):
         return paddle
 
     def einsum(self, pattern, *x):
+        # TODO
+        # Support all einsum operations
         return self.paddle.einsum(pattern, *x)
+        ###
 
     def shape(self, x):
         return tuple(x.shape)
