@@ -4,7 +4,8 @@ from doctest import testmod
 from typing import Dict, List, Optional
 
 import numpy
-from nose.tools import assert_raises
+import pytest
+
 from parameterized import parameterized, parameterized_class
 
 import einops
@@ -110,10 +111,10 @@ class TestParseShapeImperative(unittest.TestCase):
         assert parsed1 == parsed2 == dict(a1=30, a1a111a=40)
 
     def test_repeating(self):
-        with assert_raises(einops.EinopsError):
+        with pytest.raises(einops.EinopsError):
             parse_shape(self.x, 'a a b b')
 
-        with assert_raises(einops.EinopsError):
+        with pytest.raises(einops.EinopsError):
             parse_shape(self.backend.from_numpy(self.x), 'a a b b')
 
     @parameterized.expand([

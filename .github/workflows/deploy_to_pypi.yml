@@ -18,10 +18,10 @@ jobs:
 
             - name: Install dependencies
               run: |
-                  pip install .
+                  pip install . && pip install hatch
             - name: Publish einops to PyPi
               env:
-                  TWINE_USERNAME: "__token__"
-                  TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+                  HATCH_INDEX_USER: "__token__"
+                  HATCH_INDEX_AUTH: ${{ secrets.PYPI_TOKEN }}
               run: |
-                  source scripts/deploy_to_pypi.sh
+                  hatch run pypi:deploy

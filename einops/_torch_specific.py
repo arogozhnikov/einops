@@ -59,7 +59,7 @@ class TorchJitBackend:
 
     @staticmethod
     def is_float_type(x):
-        return x.dtype in [torch.float16, torch.float32, torch.float64]
+        return x.dtype in [torch.float16, torch.float32, torch.float64, torch.bfloat16]
 
     @staticmethod
     def shape(x):

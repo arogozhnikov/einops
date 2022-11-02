@@ -1,4 +1,4 @@
-from nose.tools import assert_raises
+import pytest
 
 from einops import EinopsError
 from einops.parsing import ParsedExpression, AnonymousAxis, _ellipsis
@@ -36,33 +36,33 @@ def test_elementary_axis_name():
 def test_invalid_expressions():
     # double ellipsis should raise an error
     ParsedExpression('... a b c d')
-    with assert_raises(EinopsError):
+    with pytest.raises(EinopsError):
         ParsedExpression('... a b c d ...')
-    with assert_raises(EinopsError):
+    with pytest.raises(EinopsError):
         ParsedExpression('... a b c (d ...)')
-    with assert_raises(EinopsError):
+    with pytest.raises(EinopsError):
         ParsedExpression('(... a) b c (d ...)')
 
     # double/missing/enclosed parenthesis
     ParsedExpression('(a) b c (d ...)')
-    with assert_raises(EinopsError):
+    with pytest.raises(EinopsError):
         ParsedExpression('(a)) b c (d ...)')
-    with assert_raises(EinopsError):
+    with pytest.raises(EinopsError):
         ParsedExpression('(a b c (d ...)')
-    with assert_raises(EinopsError):
+    with pytest.raises(EinopsError):
         ParsedExpression('(a) (()) b c (d ...)')
-    with assert_raises(EinopsError):
+    with pytest.raises(EinopsError):
         ParsedExpression('(a) ((b c) (d ...))')
 
     # invalid identifiers
     ParsedExpression('camelCase under_scored cApiTaLs ß ...')
-    with assert_raises(EinopsError):
+    with pytest.raises(EinopsError):
         ParsedExpression('1a')
-    with assert_raises(EinopsError):
+    with pytest.raises(EinopsError):
         ParsedExpression('_pre')
-    with assert_raises(EinopsError):
+    with pytest.raises(EinopsError):
         ParsedExpression('...pre')
-    with assert_raises(EinopsError):
+    with pytest.raises(EinopsError):
         ParsedExpression('pre...')
 
 

@@ -2,7 +2,7 @@ from venv import create
 from . import collect_test_backends
 from einops.einops import _compactify_pattern_for_einsum, einsum, EinopsError
 import numpy as np
-from nose.tools import assert_raises_regex
+import pytest
 import string
 
 
@@ -269,20 +269,20 @@ def test_functional_errors():
     create_tensor = lambda *shape: rstate.uniform(size=shape).astype('float32')
 
     # raise NotImplementedError("Singleton () axes are not yet supported in einsum.")
-    with assert_raises_regex(NotImplementedError, "^Singleton"):
+    with pytest.raises(NotImplementedError, match="^Singleton"):
         einsum(
             create_tensor(5, 1),
             "i () -> i",
         )
 
     # raise NotImplementedError("Shape rearrangement is not yet supported in einsum.")
-    with assert_raises_regex(NotImplementedError, "^Shape rearrangement"):
+    with pytest.raises(NotImplementedError, match="^Shape rearrangement"):
         einsum(
             create_tensor(5, 1),
             "a b -> (a b)",
         )
 
-    with assert_raises_regex(NotImplementedError, "^Shape rearrangement"):
+    with pytest.raises(NotImplementedError, match="^Shape rearrangement"):
         einsum(
             create_tensor(10, 1),
             "(a b) -> a b",
@@ -293,35 +293,35 @@ def test_functional_errors():
     # ^ Not tested, these are just a failsafe in case an unexpected error occurs.
 
     # raise NotImplementedError("Anonymous axes are not yet supported in einsum.")
-    with assert_raises_regex(NotImplementedError, "^Anonymous axes"):
+    with pytest.raises(NotImplementedError, match="^Anonymous axes"):
         einsum(
             create_tensor(5, 1),
             "i 2 -> i",
         )
 
     # ParsedExpression error:
-    with assert_raises_regex(EinopsError, "^Invalid axis identifier"):
+    with pytest.raises(EinopsError, match="^Invalid axis identifier"):
         einsum(
             create_tensor(5, 1),
             "i 2j -> i",
         )
 
     # raise ValueError("Einsum pattern must contain '->'.")
-    with assert_raises_regex(ValueError, "^Einsum pattern"):
+    with pytest.raises(ValueError, match="^Einsum pattern"):
         einsum(
             create_tensor(5, 3, 2),
             "i j k",
         )
 
     # raise RuntimeError("Too many axes in einsum.")
-    with assert_raises_regex(RuntimeError, "^Too many axes"):
+    with pytest.raises(RuntimeError, match="^Too many axes"):
         einsum(
             create_tensor(1),
             " ".join(string.ascii_letters) + " extra ->",
         )
 
     # raise RuntimeError("Unknown axis on right side of einsum.")
-    with assert_raises_regex(RuntimeError, "^Unknown axis"):
+    with pytest.raises(RuntimeError, match="^Unknown axis"):
         einsum(
             create_tensor(5, 1),
             "i j -> k",
@@ -331,7 +331,7 @@ def test_functional_errors():
     # "The last argument passed to `einops.einsum` must be a string,"
     # " representing the einsum pattern."
     # )
-    with assert_raises_regex(ValueError, "^The last argument"):
+    with pytest.raises(ValueError, match="^The last argument"):
         einsum(
             "i j k -> i",
             create_tensor(5, 4, 3),
@@ -341,11 +341,11 @@ def test_functional_errors():
     #     "`einops.einsum` takes at minimum two arguments: the tensors,"
     #     " followed by the pattern."
     # )
-    with assert_raises_regex(ValueError, "^`einops.einsum` takes"):
+    with pytest.raises(ValueError, match="^`einops.einsum` takes"):
         einsum(
             "i j k -> i",
         )
-    with assert_raises_regex(ValueError, "^`einops.einsum` takes"):
+    with pytest.raises(ValueError, match="^`einops.einsum` takes"):
         einsum(
             create_tensor(5, 1),
         )

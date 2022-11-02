@@ -1,7 +1,7 @@
 import itertools
 
 import numpy
-from nose.tools import assert_raises
+import pytest
 
 from einops import EinopsError
 from einops.einops import (rearrange, reduce, _enumerate_directions, _reductions)
@@ -41,11 +41,11 @@ equivalent_reduction_patterns = [
 def test_collapsed_ellipsis_errors_out():
     x = numpy.zeros([1, 1, 1, 1, 1])
     rearrange(x, 'a b c d ... ->  a b c ... d')
-    with assert_raises(EinopsError):
+    with pytest.raises(EinopsError):
         rearrange(x, 'a b c d (...) ->  a b c ... d')
 
     rearrange(x, '... ->  (...)')
-    with assert_raises(EinopsError):
+    with pytest.raises(EinopsError):
         rearrange(x, '(...) -> (...)')
 
 

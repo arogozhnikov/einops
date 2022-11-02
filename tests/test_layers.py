@@ -213,12 +213,12 @@ def test_torch_layer():
 
         # tracing (freezing)
         model3 = torch.jit.trace(model2, example_inputs=input)
-        torch.testing.assert_allclose(model1(input), model3(input), atol=1e-3, rtol=1e-3)
-        torch.testing.assert_allclose(model1(input + 1), model3(input + 1), atol=1e-3, rtol=1e-3)
+        torch.testing.assert_close(model1(input), model3(input), atol=1e-3, rtol=1e-3)
+        torch.testing.assert_close(model1(input + 1), model3(input + 1), atol=1e-3, rtol=1e-3)
 
         model4 = torch.jit.trace(model2, example_inputs=input)
-        torch.testing.assert_allclose(model1(input), model4(input), atol=1e-3, rtol=1e-3)
-        torch.testing.assert_allclose(model1(input + 1), model4(input + 1), atol=1e-3, rtol=1e-3)
+        torch.testing.assert_close(model1(input), model4(input), atol=1e-3, rtol=1e-3)
+        torch.testing.assert_close(model1(input + 1), model4(input + 1), atol=1e-3, rtol=1e-3)
 
 
 def test_torch_layers_scripting():
@@ -381,3 +381,46 @@ def test_chainer_layer():
             chainer.serializers.load_npz(filename, model2)
 
         assert numpy.allclose(asnumpy(model1(x)), asnumpy(model2(x)))
+
+
+def test_flax_layers():
+    """
+    One-off simple tests for Flax layers.
+    Unfortunately, Flax layers have a different interface from other layers.
+    """
+    import jax
+    import jax.numpy as jnp
+
+    import flax
+    from flax import linen as nn
+    from einops.layers.flax import EinMix, Reduce, Rearrange
+
+    class NN(nn.Module):
+        @nn.compact
+        def __call__(self, x):
+            x = EinMix('b (h h2) (w w2) c -> b h w c_out', 'h2 w2 c c_out', 'c_out', sizes=dict(h2=2, w2=3, c=4, c_out=5) )(x)
+            x = Rearrange('b h w c -> b (w h c)', sizes=dict(c=5))(x)
+            x = Reduce('b hwc -> b', 'mean', dict(hwc=2 * 3 * 5))(x)
+            return x
+
+    model = NN()
+    fixed_input = jnp.ones([10, 2 * 2, 3 * 3, 4])
+    params = model.init(jax.random.PRNGKey(0), fixed_input)
+    eval_at_point = lambda params: jnp.linalg.norm(model.apply(params, fixed_input))
+
+    vandg = jax.value_and_grad(eval_at_point)
+    value0 = eval_at_point(params)
+    value1, grad1 = vandg(params)
+    assert jnp.allclose(value0, value1)
+
+    params2 = jax.tree_map(
+        lambda x1, x2: x1 - x2 * 0.001,
+        params, grad1
+    )
+
+    value2 = eval_at_point(params2)
+    assert value0 >= value2, (value0, value2)
+
+    # check serialization
+    fbytes = flax.serialization.to_bytes(params)
+    _loaded = flax.serialization.from_bytes(params, fbytes)
