@@ -72,8 +72,8 @@ class CompositionDecomposition:
         for x in composed_shape:
             flat_shape.extend(x)
 
-        self.compose_transposition: Tuple[int] = tuple([decomposed_shape.index(x) for x in flat_shape])
-        self.decompose_transposition: Tuple[int] = tuple([flat_shape.index(x) for x in decomposed_shape])
+        self.compose_transposition: Tuple[int, ...] = tuple([decomposed_shape.index(x) for x in flat_shape])
+        self.decompose_transposition: Tuple[int, ...] = tuple([flat_shape.index(x) for x in decomposed_shape])
         self.composed_shape = composed_shape
         self.decomposed_shape = decomposed_shape
 
