@@ -3,7 +3,7 @@ import itertools
 import string
 import typing
 from collections import OrderedDict
-from typing import Set, Tuple, List, Dict, Union, Callable, Optional, TypeVar, cast
+from typing import Set, Tuple, List, Dict, Union, Callable, Optional, TypeVar, cast, Any
 
 if typing.TYPE_CHECKING:
     import numpy as np
@@ -13,7 +13,7 @@ from ._backends import get_backend
 from .parsing import ParsedExpression, _ellipsis, AnonymousAxis
 
 Tensor = TypeVar('Tensor')
-ReductionCallable = Callable[[Tensor, Tuple[int]], Tensor]
+ReductionCallable = Callable[[Tensor, Tuple[int, ...]], Tensor]
 Reduction = Union[str, ReductionCallable]
 
 _reductions = ('min', 'max', 'sum', 'mean', 'prod')
@@ -279,7 +279,7 @@ def _prepare_transformation_recipe(pattern: str,
         raise EinopsError('Unknown reduction {}. Expect one of {}.'.format(operation, _reductions))
 
     # parsing all dimensions to find out lengths
-    axis_name2known_length: Dict[Union[str, AnonymousAxis], int]= OrderedDict()
+    axis_name2known_length: Dict[Union[str, AnonymousAxis], int] = OrderedDict()
     for composite_axis in left.composition:
         for axis_name in composite_axis:
             if isinstance(axis_name, AnonymousAxis):
@@ -580,7 +580,7 @@ def parse_shape(x, pattern: str) -> dict:
     else:
         composition = exp.composition
     result = {}
-    for (axis_name,), axis_length in zip(composition, shape): # type: ignore
+    for (axis_name,), axis_length in zip(composition, shape):  # type: ignore
         if axis_name != '_':
             result[axis_name] = axis_length
     return result
@@ -695,7 +695,7 @@ def _compactify_pattern_for_einsum(pattern: str) -> str:
     return compact_pattern
 
 
-# dunders in overloads turn arguments into positional-only. 
+# dunders in overloads turn arguments into positional-only.
 # After python 3.7 EOL this should be replaced with '/' as the last argument.
 
 @typing.overload
@@ -728,7 +728,7 @@ def einsum(*tensors_and_pattern: Union[Tensor, str]) -> Tensor:
     ```
     the following formula is computed:
     ```tex
-    output[a, b, k] = 
+    output[a, b, k] =
         \sum_{c, d, g} x[a, b, c] * y[c, b, d] * z[a, g, k]
     ```
     where the summation over `c`, `d`, and `g` is performed
