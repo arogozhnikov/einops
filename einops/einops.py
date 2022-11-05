@@ -609,7 +609,11 @@ def _enumerate_directions(x):
     return result
 
 
-def asnumpy(tensor) -> 'numpy.ndarray':
+# to avoid importing numpy
+np_ndarray = Any
+
+
+def asnumpy(tensor) -> np_ndarray:
     """
     Convert a tensor of an imperative framework (i.e. numpy/cupy/torch/gluon/etc.) to `numpy.ndarray`
 
@@ -620,6 +624,7 @@ def asnumpy(tensor) -> 'numpy.ndarray':
         `numpy.ndarray`, converted to numpy
     """
     return get_backend(tensor).to_numpy(tensor)
+
 
 def _validate_einsum_axis_name(axis_name):
     if len(axis_name) == 0:
