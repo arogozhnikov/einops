@@ -203,6 +203,11 @@ def test_pack_unpack_with_numpy():
 def test_pack_unpack_against_numpy():
     for backend in collect_test_backends(symbolic=False, layers=False):
         print(f'test packing against numpy for {backend.framework_name}')
+        check_zero_len = True
+        if 'mxnet' in backend.framework_name:
+            # some frameworks don't accept zero as a dimension
+            check_zero_len = False
+
         for case in cases:
             unpack_and_pack = unpack_and_pack_against_numpy
             shape = case.shape
@@ -223,7 +228,6 @@ def test_pack_unpack_against_numpy():
             unpack_and_pack(x, [[2], [-1], [2]], pattern)
             unpack_and_pack(x, [[-1], [1], [2]], pattern)
 
-            unpack_and_pack(x, [[2], [3], [-1]], pattern)
             # asking for more elements than available
             with pytest.raises(BaseException):
                 unpack(x, [[2], [4], [-1]], pattern)
@@ -252,10 +256,12 @@ def test_pack_unpack_against_numpy():
             with pytest.raises(BaseException):
                 unpack(x, [[3, -1], [2, 1], [1]], pattern)
 
-            # -1 takes zero
-            unpack_and_pack(x, [[0], [5], [-1]], pattern)
-            unpack_and_pack(x, [[0], [-1], [5]], pattern)
-            unpack_and_pack(x, [[-1], [5], [0]], pattern)
+            if check_zero_len:
+                # -1 takes zero
+                unpack_and_pack(x, [[2], [3], [-1]], pattern)
+                unpack_and_pack(x, [[0], [5], [-1]], pattern)
+                unpack_and_pack(x, [[0], [-1], [5]], pattern)
+                unpack_and_pack(x, [[-1], [5], [0]], pattern)
 
-            # -1 takes zero, -1
-            unpack_and_pack(x, [[2, -1], [1, 5]], pattern)
+                # -1 takes zero, -1
+                unpack_and_pack(x, [[2, -1], [1, 5]], pattern)
