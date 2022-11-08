@@ -767,9 +767,11 @@ def einsum(*tensors_and_pattern: Union[Tensor, str]) -> Tensor:
     ```
 
     Parameters:
-        tensors: tensors of any supported library (numpy, tensorflow, pytorch, jax).
-        pattern: string, einsum pattern, with commas
-                 separating specifications for each tensor.
+        tensors_and_pattern:
+            tensors: tensors of any supported library (numpy, tensorflow, pytorch, jax).
+            pattern: string, einsum pattern, with commas
+                separating specifications for each tensor.
+                pattern should be provided after all tensors.
 
     Returns:
         Tensor of the same type as input, after processing with einsum.
