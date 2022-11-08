@@ -41,7 +41,7 @@ def pack(tensors: Sequence[Tensor], pattern: str) -> Tuple[Tensor, List[Shape]]:
         pattern: pattern that is shared for all inputs and output, e.g. "i j * k" or "batch seq *"
 
     Returns:
-        (packed_tensor, parsed_shapes aka PS)
+        (packed_tensor, packed_shapes aka PS)
 
     Example:
     ```python
