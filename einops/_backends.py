@@ -106,6 +106,11 @@ class AbstractBackend:
         """repeats is a number of  """
         raise NotImplementedError()
 
+    def concat(self, tensors, axis: int):
+        """ concatenates tensors along axis.
+        Assume identical across tensors: devices, dtypes and shapes except selected axis."""
+        raise NotImplementedError()
+
     def is_float_type(self, x):
         # some backends (torch) can't compute average for non-floating types.
         # Decided to drop average for all backends if type is not floating
@@ -164,6 +169,9 @@ class NumpyBackend(AbstractBackend):
 
     def tile(self, x, repeats):
         return self.np.tile(x, repeats)
+
+    def concat(self, tensors, axis: int):
+        return self.np.concatenate(tensors, axis=axis)
 
     def is_float_type(self, x):
         return x.dtype in ('float16', 'float32', 'float64', 'float128', 'bfloat16')
@@ -226,6 +234,9 @@ class GluonBackend(AbstractBackend):
     def tile(self, x, repeats):
         return self.mx.nd.tile(x, repeats)
 
+    def concat(self, tensors, axis: int):
+        return self.mx.nd.concat(*tensors, dim=axis)
+
     def add_axis(self, x, new_position):
         return self.mx.nd.expand_dims(x, new_position)
 
@@ -286,6 +297,9 @@ class MXNetBackend(AbstractBackend):
 
     def tile(self, x, repeats):
         return self.mx.symbol.tile(x, repeats)
+
+    def concat(self, tensors, axis: int):
+        return self.mx.symbol.concat(tensors, dim=axis)
 
     def add_axis(self, x, new_position):
         return self.mx.symbol.expand_dims(x, new_position)
@@ -353,6 +367,9 @@ class TorchBackend(AbstractBackend):
     def tile(self, x, repeats):
         return x.repeat(repeats)
 
+    def concat(self, tensors, axis: int):
+        return self.torch.concat(tensors, dim=axis)
+
     def add_axis(self, x, new_position):
         return self.torch.unsqueeze(x, new_position)
 
@@ -391,6 +408,9 @@ class CupyBackend(AbstractBackend):
 
     def tile(self, x, repeats):
         return self.cupy.tile(x, repeats)
+
+    def concat(self, tensors, axis: int):
+        return self.cupy.concatenate(tensors, axis=axis)
 
     def add_axis(self, x, new_position):
         return self.cupy.expand_dims(x, new_position)
@@ -433,6 +453,9 @@ class ChainerBackend(AbstractBackend):
 
     def tile(self, x, repeats):
         return self.chainer.functions.tile(x, repeats)
+
+    def concat(self, tensors, axis: int):
+        return self.chainer.functions.concat(tensors, axis=axis)
 
     def add_axis(self, x, new_position):
         return self.chainer.functions.expand_dims(x, new_position)
@@ -516,6 +539,9 @@ class TensorflowBackend(AbstractBackend):
     def tile(self, x, repeats):
         return self.tf.tile(x, repeats)
 
+    def concat(self, tensors, axis: int):
+        return self.tf.concat(tensors, axis=axis)
+
     def add_axis(self, x, new_position):
         return self.tf.expand_dims(x, new_position)
 
@@ -570,6 +596,9 @@ class KerasBackend(AbstractBackend):
 
     def tile(self, x, repeats):
         return self.K.tile(x, repeats)
+
+    def concat(self, tensors, axis: int):
+        return self.K.concatenate(tensors, axis=axis)
 
     def add_axis(self, x, new_position):
         return self.K.expand_dims(x, new_position)
@@ -633,6 +662,9 @@ class OneFlowBackend(AbstractBackend):
 
     def tile(self, x, repeats):
         return x.repeat(repeats)
+
+    def concat(self, tensors, axis: int):
+        return self.flow.concat(tensors, dim=axis)
 
     def add_axis(self, x, new_position):
         return self.flow.unsqueeze(x, new_position)
