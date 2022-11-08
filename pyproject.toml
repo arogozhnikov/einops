@@ -53,9 +53,11 @@ dependencies = [
     "mkdocs-material~=8.5.5",
     "mkdocstrings[python-legacy]~=0.19.0",
     "mkdocs-jupyter~=0.22.0",
+    # required by codehilite (highlithing in mkdocs)
+    "pygments~=2.13.0",
 ]
 [tool.hatch.envs.docs.scripts]
-# For examples to build one has to run: 
+# For examples to build one has to run:
 # hatch run docs:build
 build = "mkdocs build --clean --strict {args}"
 serve = "mkdocs serve --dev-addr localhost:8000 {args}"
