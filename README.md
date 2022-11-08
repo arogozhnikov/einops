@@ -27,7 +27,7 @@ https://user-images.githubusercontent.com/6318811/177030658-66f0eb5d-e136-44d8-9
 ![Supported python versions](https://raw.githubusercontent.com/arogozhnikov/einops/master/docs/resources/python_badge.svg)
 
 
-Flexible and powerful tensor operations for readable and reliable code. 
+Flexible and powerful tensor operations for readable and reliable code. <br />
 Supports numpy, pytorch, tensorflow, jax, and [others](#supported-frameworks).
 
 ## Recent updates:
@@ -63,7 +63,7 @@ Supports numpy, pytorch, tensorflow, jax, and [others](#supported-frameworks).
 <img width="922" alt="Screen Shot 2022-07-03 at 1 00 15 AM" src="https://user-images.githubusercontent.com/6318811/177030789-89d349bf-ef75-4af5-a71f-609896d1c8d9.png">
 </a>
 
-Watch [a 15-minute talk](https://iclr.cc/virtual/2022/oral/6603) that focuses on main problems of standard tensor manipulation methods, and how einops improves this process.
+Watch [a 15-minute talk](https://iclr.cc/virtual/2022/oral/6603) focused on main problems of standard tensor manipulation methods, and how einops improves this process.
 
 
 ## Contents
@@ -304,18 +304,16 @@ Einops works with ...
 
 Please use the following bibtex record
 
-```
+```text
 @inproceedings{
-rogozhnikov2022einops,
-title={Einops: Clear and Reliable Tensor Manipulations with Einstein-like Notation},
-author={Alex Rogozhnikov},
-booktitle={International Conference on Learning Representations},
-year={2022},
-url={https://openreview.net/forum?id=oapKSVM2bcj}
+    rogozhnikov2022einops,
+    title={Einops: Clear and Reliable Tensor Manipulations with Einstein-like Notation},
+    author={Alex Rogozhnikov},
+    booktitle={International Conference on Learning Representations},
+    year={2022},
+    url={https://openreview.net/forum?id=oapKSVM2bcj}
 }
 ```
-
-Link to paper at openreview: https://openreview.net/pdf?id=oapKSVM2bcj. 
 
 
 ## Supported python versions
