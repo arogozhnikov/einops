@@ -44,9 +44,10 @@ def unpack_and_pack_against_numpy(x, ps, pattern: str):
         # neither failed, check results are identical
         assert np.allclose(asnumpy(packed), asnumpy(x))
         assert np.allclose(asnumpy(packed_np), asnumpy(x))
-        assert len(packed) == len(packed_np)
-        for a, b in zip(asnumpy(packed), packed_np):
-            assert np.allclose(a, b)
+        assert len(unpacked) == len(unpacked_np)
+        for a, b in zip(unpacked, unpacked_np):
+            assert np.allclose(asnumpy(a), b)
+
 
 
 class CaptureException:
@@ -130,6 +131,8 @@ class UnpackTestCase:
 
 
 cases = [
+    # NB: in all cases unpacked axis is of length 5.
+    # that's actively used in tests below
     UnpackTestCase((5,), '*'),
     UnpackTestCase((5, 7), '* seven'),
     UnpackTestCase((7, 5), 'seven *'),
@@ -150,6 +153,8 @@ def test_pack_unpack_with_numpy():
         # all correct, no minus 1
         unpack_and_pack(x, [[2], [1], [2]], pattern)
         # no -1, asking for wrong shapes
+        with pytest.raises(BaseException):
+            unpack_and_pack(x, [[2], [1], [2]], pattern + ' non_existent_axis')
         with pytest.raises(BaseException):
             unpack_and_pack(x, [[2], [1], [1]], pattern)
         with pytest.raises(BaseException):
