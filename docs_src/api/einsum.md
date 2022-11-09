@@ -1,0 +1,3 @@
+# einops.einsum
+
+::: einops.einsum
