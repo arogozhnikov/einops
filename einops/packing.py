@@ -75,7 +75,7 @@ def pack(tensors: Sequence[Tensor], pattern: str) -> Tuple[Tensor, List[Shape]]:
     reshaped_tensors: List[Tensor] = []
     packed_shapes: List[Shape] = []
     for i, tensor in enumerate(tensors):
-        shape = tensor.shape
+        shape = backend.shape(tensor)
         if len(shape) < min_axes:
             raise EinopsError(f'packed tensor #{i} (enumeration starts with 0) has shape {shape}, '
                               f'while pattern {pattern} assumes at least {min_axes} axes')
@@ -138,7 +138,8 @@ def unpack(tensor: Tensor, packed_shapes: List[Shape], pattern: str) -> List[Ten
     """
     n_axes_before, n_axes_after, min_axes = analyze_pattern(pattern, opname='unpack')
 
-    input_shape = tensor.shape
+    backend = get_backend(tensor)
+    input_shape = backend.shape(tensor)
     if len(input_shape) != n_axes_before + 1 + n_axes_after:
         raise EinopsError(f'unpack(..., {pattern}) received input of wrong dim with shape {input_shape}')
 
@@ -172,7 +173,6 @@ def unpack(tensor: Tensor, packed_shapes: List[Shape], pattern: str) -> List[Ten
         for j in range(unknown_composed_axis + 1, len(lengths_of_composed_axes))[::-1]:
             split_positions[j] = split_positions[j + 1] - lengths_of_composed_axes[j]
 
-    backend = get_backend(tensor)
     shape_start = input_shape[:unpacked_axis]
     shape_end = input_shape[unpacked_axis + 1:]
     slice_filler = (slice(None, None),) * unpacked_axis
