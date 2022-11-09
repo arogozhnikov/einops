@@ -3,6 +3,7 @@ import typing
 
 import numpy as np
 import pytest
+
 from einops import EinopsError, asnumpy, pack, unpack
 from tests import collect_test_backends
 
@@ -270,3 +271,7 @@ def test_pack_unpack_against_numpy():
 
                 # -1 takes zero, -1
                 unpack_and_pack(x, [[2, -1], [1, 5]], pattern)
+
+
+# NB there is no testing for symbolic backends
+# because mxnet symbols do not allow slicing with [...]
