@@ -318,4 +318,4 @@ Please use the following bibtex record
 
 ## Supported python versions
 
-`einops` works with python 3.6 or later. 
+`einops` works with python 3.7 or later.

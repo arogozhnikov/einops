@@ -14,6 +14,7 @@ nav:
   - Tutorials:
       - Einops Basics: 1-einops-basics.ipynb
       - Einops for Deep Learning: 2-einops-for-deep-learning.ipynb
+      - Einops.pack and unpack: 4-pack-and-unpack.ipynb
       - Einmix for great MLPs: 3-einmix-layer.ipynb
       - Pytorch: pytorch-examples.html
   - API Reference:
@@ -22,6 +23,8 @@ nav:
       - rearrange: api/rearrange.md
       - reduce: api/reduce.md
       - repeat: api/repeat.md
+      - einsum: api/einsum.md
+      - pack and unpack: api/pack_unpack.md
   - Testimonials: pages/testimonials.md
   - Projects: pages/projects.md
 extra:

@@ -59,9 +59,10 @@ dependencies = [
 [tool.hatch.envs.docs.scripts]
 # For examples to build one has to run:
 # hatch run docs:build
-build = "mkdocs build --clean --strict {args}"
-serve = "mkdocs serve --dev-addr localhost:8000 {args}"
-deploy = "mkdocs build --clean --strict && mkdocs gh-deploy"
+convert = "python scripts/convert_readme.py"
+build = "convert && mkdocs build --clean --strict {args}"
+serve = "convert && mkdocs serve --dev-addr localhost:8000 {args}"
+deploy = "convert && mkdocs build --clean --strict && mkdocs gh-deploy"
 
 
 [tool.hatch.envs.pypi.scripts]
