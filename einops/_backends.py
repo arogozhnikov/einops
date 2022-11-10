@@ -708,7 +708,7 @@ class PaddleBackend(AbstractBackend):
     def to_numpy(self, x):
         # TODO
         # Support reshape when x.shape == [0]
-        if x.shape == [0]:
+        if 0 in x.shape:
             return x.numpy()
         ###
         return x.detach().numpy()
