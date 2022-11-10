@@ -711,7 +711,7 @@ class PaddleBackend(AbstractBackend):
     def reshape(self, x, shape):
         # TODO
         # Support reshape when x.shape == [0]
-        if x.shape == [0]:
+        if x.shape == [0] and shape in [(-1,), [-1], (0,), [0], [], ()]:
             return x
         return x.reshape(shape)
         ###
