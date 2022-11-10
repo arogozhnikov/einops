@@ -1,7 +1,7 @@
 from einops import EinopsError
 import keyword
 import warnings
-from typing import List, Optional, Set, Tuple
+from typing import List, Optional, Set, Tuple, Union
 
 _ellipsis: str = '…'  # NB, this is a single unicode symbol. String is used as it is not a list, but can be iterated
 
@@ -26,7 +26,7 @@ class ParsedExpression:
     non-mutable structure that contains information about one side of expression (e.g. 'b c (h w)')
     and keeps some information important for downstream
     """
-    def __init__(self, expression, *, allow_underscore: bool = False,
+    def __init__(self, expression: str, *, allow_underscore: bool = False,
                  allow_duplicates: bool = False):
         self.has_ellipsis: bool = False
         self.has_ellipsis_parenthesized: Optional[bool] = None
@@ -34,7 +34,7 @@ class ParsedExpression:
         # that's axes like 2, 3, 4 or 5. Axes with size 1 are exceptional and replaced with empty composition
         self.has_non_unitary_anonymous_axes: bool = False
         # composition keeps structure of composite axes, see how different corner cases are handled in tests
-        self.composition = []
+        self.composition: List[Union[List[str], str]] = []
         if '.' in expression:
             if '...' not in expression:
                 raise EinopsError('Expression may contain dots only inside ellipsis (...)')
@@ -44,47 +44,47 @@ class ParsedExpression:
             expression = expression.replace('...', _ellipsis)
             self.has_ellipsis = True
 
-        bracket_group = None
+        bracket_group: Optional[List[str]] = None
 
         def add_axis_name(x):
-            if x is not None:
-                if x in self.identifiers:
-                    if not (allow_underscore and x == "_") and not allow_duplicates:
-                        raise EinopsError('Indexing expression contains duplicate dimension "{}"'.format(x))
-                if x == _ellipsis:
-                    self.identifiers.add(_ellipsis)
-                    if bracket_group is None:
-                        self.composition.append(_ellipsis)
-                        self.has_ellipsis_parenthesized = False
-                    else:
-                        bracket_group.append(_ellipsis)
-                        self.has_ellipsis_parenthesized = True
+            if x in self.identifiers:
+                if not (allow_underscore and x == "_") and not allow_duplicates:
+                    raise EinopsError('Indexing expression contains duplicate dimension "{}"'.format(x))
+            if x == _ellipsis:
+                self.identifiers.add(_ellipsis)
+                if bracket_group is None:
+                    self.composition.append(_ellipsis)
+                    self.has_ellipsis_parenthesized = False
                 else:
-                    is_number = str.isdecimal(x)
-                    if is_number and int(x) == 1:
-                        # handling the case of anonymous axis of length 1
-                        if bracket_group is None:
-                            self.composition.append([])
-                        else:
-                            pass  # no need to think about 1s inside parenthesis
-                        return
-                    is_axis_name, reason = self.check_axis_name_return_reason(x, allow_underscore=allow_underscore)
-                    if not (is_number or is_axis_name):
-                        raise EinopsError('Invalid axis identifier: {}\n{}'.format(x, reason))
-                    if is_number:
-                        x = AnonymousAxis(x)
-                    self.identifiers.add(x)
-                    if is_number:
-                        self.has_non_unitary_anonymous_axes = True
+                    bracket_group.append(_ellipsis)
+                    self.has_ellipsis_parenthesized = True
+            else:
+                is_number = str.isdecimal(x)
+                if is_number and int(x) == 1:
+                    # handling the case of anonymous axis of length 1
                     if bracket_group is None:
-                        self.composition.append([x])
+                        self.composition.append([])
                     else:
-                        bracket_group.append(x)
+                        pass  # no need to think about 1s inside parenthesis
+                    return
+                is_axis_name, reason = self.check_axis_name_return_reason(x, allow_underscore=allow_underscore)
+                if not (is_number or is_axis_name):
+                    raise EinopsError('Invalid axis identifier: {}\n{}'.format(x, reason))
+                if is_number:
+                    x = AnonymousAxis(x)
+                self.identifiers.add(x)
+                if is_number:
+                    self.has_non_unitary_anonymous_axes = True
+                if bracket_group is None:
+                    self.composition.append([x])
+                else:
+                    bracket_group.append(x)
 
         current_identifier = None
         for char in expression:
             if char in '() ':
-                add_axis_name(current_identifier)
+                if current_identifier is not None:
+                    add_axis_name(current_identifier)
                 current_identifier = None
                 if char == '(':
                     if bracket_group is not None:
@@ -105,7 +105,8 @@ class ParsedExpression:
 
         if bracket_group is not None:
             raise EinopsError('Imbalanced parentheses in expression: "{}"'.format(expression))
-        add_axis_name(current_identifier)
+        if current_identifier is not None:
+            add_axis_name(current_identifier)
 
     def flat_axes_order(self) -> List:
         result = []

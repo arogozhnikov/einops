@@ -1,3 +1,4 @@
+from typing import Any, Callable
 from venv import create
 from . import collect_test_backends
 from einops.einops import _compactify_pattern_for_einsum, einsum, EinopsError
@@ -7,11 +8,11 @@ import string
 
 
 class Arguments:
-    def __init__(self, *args, **kargs):
+    def __init__(self, *args: Any, **kargs: Any):
         self.args = args
         self.kwargs = kargs
 
-    def __call__(self, function):
+    def __call__(self, function: Callable):
         return function(*self.args, **self.kwargs)
 
 

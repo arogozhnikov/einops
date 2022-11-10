@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, cast
 
 import tensorflow as tf
 from tensorflow.keras.layers import Layer
@@ -59,11 +59,11 @@ class EinMix(_EinmixMixin, Layer):
                                  ):
         self.pre_rearrange = None
         if pre_reshape_pattern is not None:
-            self.pre_rearrange = Rearrange(pre_reshape_pattern, **pre_reshape_lengths)
+            self.pre_rearrange = Rearrange(pre_reshape_pattern, **cast(dict, pre_reshape_lengths))
 
         self.post_rearrange = None
         if post_reshape_pattern is not None:
-            self.post_rearrange = Rearrange(post_reshape_pattern, **post_reshape_lengths)
+            self.post_rearrange = Rearrange(post_reshape_pattern, **cast(dict, post_reshape_lengths))
 
     def build(self, input_shape):
         pass

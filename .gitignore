@@ -118,3 +118,6 @@ trash_notebooks
 
 # oneflow's output trash
 log
+
+# this file is auto-generated
+docs_src/index.md

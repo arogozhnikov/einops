@@ -1,4 +1,4 @@
-from typing import Optional, Dict
+from typing import Any, List, Optional, Dict
 
 from einops import EinopsError
 from einops.parsing import ParsedExpression
@@ -13,7 +13,7 @@ def _report_axes(axes: set, report_message: str):
 
 
 class _EinmixMixin:
-    def __init__(self, pattern, weight_shape, bias_shape=None, **axes_lengths):
+    def __init__(self, pattern: str, weight_shape: str, bias_shape: Optional[str]=None, **axes_lengths: Any):
         """
         EinMix - Einstein summation with automated tensor management and axis packing/unpacking.
 
@@ -60,7 +60,7 @@ class _EinmixMixin:
         self.axes_lengths = axes_lengths
         self.initialize_einmix(pattern=pattern, weight_shape=weight_shape, bias_shape=bias_shape, axes_lengths=axes_lengths)
 
-    def initialize_einmix(self, pattern, weight_shape, bias_shape, axes_lengths):
+    def initialize_einmix(self, pattern: str, weight_shape: str, bias_shape: Optional[str], axes_lengths: dict):
         left_pattern, right_pattern = pattern.split('->')
         left = ParsedExpression(left_pattern)
         right = ParsedExpression(right_pattern)
@@ -81,7 +81,7 @@ class _EinmixMixin:
         pre_reshape_lengths = None
         post_reshape_pattern = None
         if any(len(group) != 1 for group in left.composition):
-            names = []
+            names: List[str] = []
             for group in left.composition:
                 names += group
             composition = ' '.join(names)
@@ -143,8 +143,8 @@ class _EinmixMixin:
 
         # rewrite einsum expression with single-letter latin identifiers so that
         # expression will be understood by any framework
-        mapping2letters = {*left.identifiers, *right.identifiers, *weight.identifiers}
-        mapping2letters = {k: letter for letter, k in zip(string.ascii_lowercase, mapping2letters)}
+        mapped_identifiers = {*left.identifiers, *right.identifiers, *weight.identifiers}
+        mapping2letters = {k: letter for letter, k in zip(string.ascii_lowercase, mapped_identifiers)}
 
         def write_flat(axes: list):
             return ''.join(mapping2letters[axis] for axis in axes)

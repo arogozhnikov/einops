@@ -1,5 +1,5 @@
 from dataclasses import field
-from typing import Optional, Dict
+from typing import Optional, Dict, cast
 
 import flax.linen as nn
 import jax
@@ -63,11 +63,11 @@ class EinMix(nn.Module, _EinmixMixin):
                                  post_reshape_lengths: Optional[Dict]):
         self.pre_rearrange = None
         if pre_reshape_pattern is not None:
-            self.pre_rearrange = Rearrange(pre_reshape_pattern, sizes=pre_reshape_lengths)
+            self.pre_rearrange = Rearrange(pre_reshape_pattern, sizes=cast(dict, pre_reshape_lengths))
 
         self.post_rearrange = None
         if post_reshape_pattern is not None:
-            self.post_rearrange = Rearrange(post_reshape_pattern, sizes=post_reshape_lengths)
+            self.post_rearrange = Rearrange(post_reshape_pattern, sizes=cast(dict, post_reshape_lengths))
 
     def __call__(self, input):
         if self.pre_rearrange is not None:

@@ -228,7 +228,7 @@ def test_torch_layers_scripting():
         model2 = torch.jit.script(model1)
         input = torch.randn([10, 3, 32, 32])
 
-        torch.testing.assert_allclose(model1(input), model2(input), atol=1e-3, rtol=1e-3)
+        torch.testing.assert_close(model1(input), model2(input), atol=1e-3, rtol=1e-3)
 
 
 def test_keras_layer():
