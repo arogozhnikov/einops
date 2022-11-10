@@ -721,6 +721,11 @@ class PaddleBackend(AbstractBackend):
                 return x.unsqueeze(0).reshape([0 if item==-1 else item for item in shape])
             else:
                 return x.reshape([0 if item==-1 else item for item in shape])
+        elif x.ndim > 1 and 0 in x.shape:
+            if len(shape) > 1:
+                return x.reshape([0 if item==-1 else item for item in shape])
+            else:
+                return x.reshape([1] + [0 if item==-1 else item for item in shape]).squeeze(0)
         return x.reshape(shape)
         ###
 
