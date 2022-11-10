@@ -717,7 +717,10 @@ class PaddleBackend(AbstractBackend):
         # TODO
         # Support reshape when x.shape == [0]
         if x.shape == [0]:
-            return x.unsqueeze(0).reshape([0 if item==-1 else item for item in shape])
+            if len(shape) > 1:
+                return x.unsqueeze(0).reshape([0 if item==-1 else item for item in shape])
+            else:
+                return x.reshape([0 if item==-1 else item for item in shape])
         return x.reshape(shape)
         ###
 
