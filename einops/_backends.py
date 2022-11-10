@@ -717,6 +717,9 @@ class PaddleBackend(AbstractBackend):
     def tile(self, x, repeats):
         return x.tile(repeats)
 
+    def concat(self, tensors, axis: int):
+        return self.paddle.concat(tensors, axis=axis)
+
     def add_axis(self, x, new_position):
         return x.unsqueeze(new_position)
 
