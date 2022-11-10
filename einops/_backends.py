@@ -708,6 +708,14 @@ class PaddleBackend(AbstractBackend):
     def to_numpy(self, x):
         return x.detach().numpy()
 
+    def reshape(self, x, shape):
+        # TODO
+        # Support reshape when x.ndim == 0
+        if x.ndim == 0:
+            return x
+        return x.reshape(shape)
+        ###
+
     def arange(self, start, stop):
         return self.paddle.arange(start, stop, dtype=self.paddle.int64)
 
