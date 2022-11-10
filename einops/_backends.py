@@ -710,8 +710,8 @@ class PaddleBackend(AbstractBackend):
 
     def reshape(self, x, shape):
         # TODO
-        # Support reshape when x.ndim == 0
-        if x.ndim == 0:
+        # Support reshape when x.shape == [0]
+        if x.shape == [0]:
             return x
         return x.reshape(shape)
         ###
