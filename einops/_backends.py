@@ -716,16 +716,14 @@ class PaddleBackend(AbstractBackend):
     def reshape(self, x, shape):
         # TODO
         # Support reshape when x.shape == [0]
-        if x.shape == [0]:
-            if len(shape) > 1:
+            # shape = [0 if item==-1 else item for item in shape]
+        if 0 in x.shape:
+            if len(x.shape) < len(shape):
                 return x.unsqueeze(0).reshape([0 if item==-1 else item for item in shape])
-            else:
-                return x.reshape([0 if item==-1 else item for item in shape])
-        elif x.ndim > 1 and 0 in x.shape:
-            if len(shape) > 1:
-                return x.reshape([0 if item==-1 else item for item in shape])
-            else:
+            elif len(x.shape) > len(shape):
                 return x.reshape([1] + [0 if item==-1 else item for item in shape]).squeeze(0)
+            else:
+                return x.reshape([0 if item==-1 else item for item in shape])
         return x.reshape(shape)
         ###
 
