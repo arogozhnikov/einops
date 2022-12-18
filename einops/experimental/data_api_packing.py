@@ -1,5 +1,7 @@
 from typing import List, TypeVar, Tuple, Sequence
 
+from functools import reduce
+from operator import mul
 from einops import EinopsError
 
 T = TypeVar('T')
@@ -39,10 +41,7 @@ def pack(pattern: str, tensors: Sequence[T]) -> Tuple[T, List[Shape]]:
 
 
 def prod(x: Shape) -> int:
-    result = 1
-    for i in x:
-        result *= i
-    return result
+    return reduce(mul, x, 1)
 
 
 def unpack(pattern: str, tensor: T, packed_shapes: List[Shape]) -> List[T]:
