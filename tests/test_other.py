@@ -41,6 +41,9 @@ def test_backends_installed():
             # instantiate
             backend_type()
         except Exception as e:
+            if 'mxnet' in backend_type.framework_name:
+                # test mxnet only if it is installed. Not complain if not installed
+                continue
             errors.append(e)
     assert len(errors) == 0, errors
 
