@@ -2,7 +2,7 @@
 Usage: python test.py
 1. Installs part of dependencies (make sure `which pip` points to correct location)
 2. Installs current version of einops in editable mode
-3. Runs tests
+3. Runs the tests
 """
 
 import os
