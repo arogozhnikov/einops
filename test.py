@@ -56,7 +56,7 @@ assert 0 == run('pip install {} --progress-bar off'.format(' '.join(dependencies
 
 # oneflow provides wheels for linux, but not mac, so it is tested only on linux
 skip_oneflow = 'linux' not in sys.platform
-skip_oneflow = True
+
 if not skip_oneflow:
     # oneflow installation: https://github.com/Oneflow-Inc/oneflow#install-with-pip-package
     assert 0 == run('pip install -f https://release.oneflow.info oneflow==0.7.0+cpu --user')
