@@ -38,7 +38,6 @@ if not skip_cupy:
 # install dependencies
 dependencies = [
     'numpy',
-    'mxnet==1.*',
     'torch',
     'tensorflow',
     'chainer',
