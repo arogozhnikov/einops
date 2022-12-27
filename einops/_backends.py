@@ -248,7 +248,6 @@ class GluonBackend(AbstractBackend):
         return gluon
 
 
-
 class TorchBackend(AbstractBackend):
     framework_name = 'torch'
 
