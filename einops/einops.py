@@ -354,7 +354,7 @@ def _prepare_transformation_recipe(pattern: str,
     )
 
 
-def reduce(tensor: Tensor, pattern: str, reduction: Reduction, **axes_lengths: int) -> Tensor:
+def reduce(tensor: Union[Tensor, List[Tensor]], pattern: str, reduction: Reduction, **axes_lengths: int) -> Tensor:
     """
     einops.reduce provides combination of reordering and reduction using reader-friendly notation.
 
@@ -483,7 +483,7 @@ def rearrange(tensor: Union[Tensor, List[Tensor]], pattern: str, **axes_lengths)
     return reduce(cast(Tensor, tensor), pattern, reduction='rearrange', **axes_lengths)
 
 
-def repeat(tensor: Tensor, pattern: str, **axes_lengths) -> Tensor:
+def repeat(tensor: Union[Tensor, List[Tensor]], pattern: str, **axes_lengths) -> Tensor:
     """
     einops.repeat allows reordering elements and repeating them in arbitrary combinations.
     This operation includes functionality of repeat, tile, broadcast functions.
