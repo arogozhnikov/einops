@@ -304,7 +304,7 @@ class TorchBackend(AbstractBackend):
         return x.repeat(repeats)
 
     def concat(self, tensors, axis: int):
-        return self.torch.concat(tensors, dim=axis)
+        return self.torch.cat(tensors, dim=axis)
 
     def add_axis(self, x, new_position):
         return self.torch.unsqueeze(x, new_position)
