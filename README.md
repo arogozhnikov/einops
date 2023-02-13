@@ -72,7 +72,6 @@ Watch [a 15-minute talk](https://iclr.cc/virtual/2022/oral/6603) focused on main
 - [API micro-reference](#API)
 - [Why using einops](#Why-using-einops-notation)
 - [Supported frameworks](#Supported-frameworks)
-- [Contributing](#Contributing)
 - [Repository](https://github.com/arogozhnikov/einops) and [discussions](https://github.com/arogozhnikov/einops/discussions)
 
 ## Installation  <a name="Installation"></a>

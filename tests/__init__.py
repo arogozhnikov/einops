@@ -51,12 +51,9 @@ def collect_test_backends(symbolic=False, layers=False):
             ]
     else:
         if not layers:
-            backend_types = [
-                _backends.MXNetBackend,
-            ]
+            backend_types = []
         else:
             backend_types = [
-                _backends.MXNetBackend,
                 _backends.KerasBackend,
             ]
 

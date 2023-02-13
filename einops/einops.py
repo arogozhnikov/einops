@@ -395,7 +395,7 @@ def reduce(tensor: Tensor, pattern: str, reduction: Reduction, **axes_lengths: i
     ```
 
     Parameters:
-        tensor: tensor: tensor of any supported library (e.g. numpy.ndarray, tensorflow, pytorch, mxnet.ndarray).
+        tensor: tensor: tensor of any supported library (e.g. numpy.ndarray, tensorflow, pytorch).
             list of tensors is also accepted, those should be of the same type and shape
         pattern: string, reduction pattern
         reduction: one of available reductions ('min', 'max', 'sum', 'mean', 'prod'), case-sensitive
@@ -467,7 +467,7 @@ def rearrange(tensor: Union[Tensor, List[Tensor]], pattern: str, **axes_lengths)
     Find more examples in einops tutorial.
 
     Parameters:
-        tensor: tensor of any supported library (e.g. numpy.ndarray, tensorflow, pytorch, mxnet.ndarray).
+        tensor: tensor of any supported library (e.g. numpy.ndarray, tensorflow, pytorch).
                 list of tensors is also accepted, those should be of the same type and shape
         pattern: string, rearrangement pattern
         axes_lengths: any additional specifications for dimensions
@@ -521,7 +521,7 @@ def repeat(tensor: Tensor, pattern: str, **axes_lengths) -> Tensor:
     Find more examples in einops tutorial.
 
     Parameters:
-        tensor: tensor of any supported library (e.g. numpy.ndarray, tensorflow, pytorch, mxnet.ndarray).
+        tensor: tensor of any supported library (e.g. numpy.ndarray, tensorflow, pytorch).
             list of tensors is also accepted, those should be of the same type and shape
         pattern: string, rearrangement pattern
         axes_lengths: any additional specifications for dimensions

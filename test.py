@@ -2,7 +2,7 @@
 Usage: python test.py
 1. Installs part of dependencies (make sure `which pip` points to correct location)
 2. Installs current version of einops in editable mode
-3. Runs tests
+3. Runs the tests
 """
 
 import os
@@ -38,7 +38,6 @@ if not skip_cupy:
 # install dependencies
 dependencies = [
     'numpy',
-    'mxnet==1.*',
     'torch',
     'tensorflow',
     'chainer',
@@ -58,6 +57,7 @@ run('pip install paddlepaddle==0.0.0 -f https://www.paddlepaddle.org.cn/whl/linu
 # oneflow provides wheels for linux, but not mac, so it is tested only on linux
 skip_oneflow = 'linux' not in sys.platform
 skip_oneflow = True
+
 if not skip_oneflow:
     # oneflow installation: https://github.com/Oneflow-Inc/oneflow#install-with-pip-package
     assert 0 == run('pip install -f https://release.oneflow.info oneflow==0.7.0+cpu --user')

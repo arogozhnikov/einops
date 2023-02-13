@@ -39,7 +39,7 @@ def test_all_notebooks():
 
 def test_dl_notebook_with_all_backends():
     notebook, = Path(__file__).parent.with_name('docs').glob('2-*.ipynb')
-    backends = ['chainer', 'gluon', 'pytorch']
+    backends = ['chainer', 'pytorch']
     if 'tensorflow' in collect_test_backends(symbolic=False, layers=False):
         backends += ['tensorflow']
     for backend in backends:
