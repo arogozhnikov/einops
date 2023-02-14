@@ -274,7 +274,14 @@ def test_reduction_stress_imperatives():
             if reduction in ['mean', 'prod']:
                 dtype = 'float64'
                 coincide = numpy.allclose
-            for n_axes in range(6 if 'mxnet' in backend.framework_name else (7 if 'oneflow' in backend.framework_name else 11)):
+            max_dim = 11
+            if 'mxnet' in backend.framework_name:
+                max_dim = 6
+            if 'oneflow' in backend.framework_name:
+                max_dim = 7
+            if 'paddle' in backend.framework_name:
+                max_dim = 9
+            for n_axes in range(max_dim):
                 shape = numpy.random.randint(2, 4, size=n_axes)
                 permutation = numpy.random.permutation(n_axes)
                 skipped = 0 if reduction == 'rearrange' else numpy.random.randint(n_axes + 1)

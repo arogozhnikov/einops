@@ -50,6 +50,7 @@ dependencies = [
     'parameterized',
     'pillow',
     'pytest',
+    'paddlepaddle'
 ]
 
 assert 0 == run('pip install {} --progress-bar off'.format(' '.join(dependencies)))

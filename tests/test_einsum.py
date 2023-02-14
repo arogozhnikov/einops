@@ -180,7 +180,7 @@ def test_layer():
 
 
 valid_backends_functional = ['tensorflow', 'torch', 'jax', 'numpy',
-                             'chainer', 'oneflow', 'cupy', 'tensorflow.keras']
+                             'chainer', 'oneflow', 'cupy', 'tensorflow.keras', 'paddle']
 
 def test_functional():
     # Functional tests:
