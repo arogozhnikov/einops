@@ -214,7 +214,7 @@ def test_functional():
                     out_array = einsum(*in_arrays_framework, einops_pattern)
 
                 # Check shape:
-                if out_array.shape != out_shape:
+                if tuple(out_array.shape) != out_shape:
                     raise ValueError(
                         f"Expected output shape {out_shape} but got {out_array.shape}"
                     )

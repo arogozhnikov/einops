@@ -624,7 +624,7 @@ class PaddleBackend(AbstractBackend):
         self.paddle = paddle
 
     def is_appropriate_type(self, tensor):
-        return isinstance(tensor, self.paddle.Tensor, self.paddle.static.Variable)
+        return isinstance(tensor, (self.paddle.Tensor, self.paddle.static.Variable))
 
     def from_numpy(self, x):
         tensor = self.paddle.to_tensor(x)
@@ -648,7 +648,7 @@ class PaddleBackend(AbstractBackend):
         return x.transpose(axes)
 
     def add_axes(self, x, n_axes, pos2len):
-        repeats = [1] * n_axes
+        repeats = [-1] * n_axes
         for axis_position, axis_length in pos2len.items():
             x = self.add_axis(x, axis_position)
             repeats[axis_position] = axis_length
