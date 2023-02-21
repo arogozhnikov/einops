@@ -50,10 +50,14 @@ dependencies = [
     'parameterized',
     'pillow',
     'pytest',
-    'paddlepaddle'
 ]
 
 assert 0 == run('pip install {} --progress-bar off'.format(' '.join(dependencies)))
+
+# install paddle. It's need to install the latest version.
+assert 0 == run('pip install paddlepaddle==0.0.0 -f https://www.paddlepaddle.org.cn/whl/linux/cpu-mkl/develop.html --user')
+# latest paddle requires >=3.20.2, so use 3.20.3
+assert 0 == run('pip install protobuf==3.20.3')
 
 # oneflow provides wheels for linux, but not mac, so it is tested only on linux
 skip_oneflow = 'linux' not in sys.platform
