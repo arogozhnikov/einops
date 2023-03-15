@@ -352,23 +352,3 @@ def test_functional_errors():
         )
 
     # TODO: Include check for giving normal einsum pattern rather than einops.
-
-# mxnet/gluon do not support einsum without changing to numpy. which doesn't work with the rest
-# in future, after gluon migrated to a new codebase, all testing code will be moved to a new setup
-# def test_gluon():
-#     for backend in collect_test_backends(layers=True, symbolic=False):
-#         if backend.framework_name == 'mxnet.ndarray':
-#             import mxnet as mx
-#
-#             mx.npx.set_np()
-#             layer_type = backend.layers().EinMix
-#
-#             for args, in_shape, out_shape in test_cases:
-#                 layer = args(layer_type)
-#                 # gluon requires initialization
-#                 layer.initialize()
-#                 input = np.random.uniform(size=in_shape).astype('float32')
-#                 input_framework = mx.np.array(input)
-#                 output_framework = layer(input_framework)
-#                 output = backend.to_numpy(output_framework)
-#                 assert output.shape == out_shape

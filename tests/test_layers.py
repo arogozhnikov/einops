@@ -189,27 +189,27 @@ def test_reduce_symbolic():
 def create_torch_model(use_reduce=False, add_scripted_layer=False):
     if not is_backend_tested("torch"):
         pytest.skip()
+    else:
+        from torch.nn import Sequential, Conv2d, MaxPool2d, Linear, ReLU
+        from einops.layers.torch import Rearrange, Reduce, EinMix
+        import torch.jit
 
-    from torch.nn import Sequential, Conv2d, MaxPool2d, Linear, ReLU
-    from einops.layers.torch import Rearrange, Reduce, EinMix
-    import torch.jit
-
-    return Sequential(
-        Conv2d(3, 6, kernel_size=(5, 5)),
-        Reduce("b c (h h2) (w w2) -> b c h w", "max", h2=2, w2=2) if use_reduce else MaxPool2d(kernel_size=2),
-        Conv2d(6, 16, kernel_size=(5, 5)),
-        Reduce("b c (h h2) (w w2) -> b c h w", "max", h2=2, w2=2),
-        torch.jit.script(Rearrange("b c h w -> b (c h w)"))
-        if add_scripted_layer
-        else Rearrange("b c h w -> b (c h w)"),
-        Linear(16 * 5 * 5, 120),
-        ReLU(),
-        Linear(120, 84),
-        ReLU(),
-        EinMix("b c1 -> (b c2)", weight_shape="c1 c2", bias_shape="c2", c1=84, c2=84),
-        EinMix("(b c2) -> b c3", weight_shape="c2 c3", bias_shape="c3", c2=84, c3=84),
-        Linear(84, 10),
-    )
+        return Sequential(
+            Conv2d(3, 6, kernel_size=(5, 5)),
+            Reduce("b c (h h2) (w w2) -> b c h w", "max", h2=2, w2=2) if use_reduce else MaxPool2d(kernel_size=2),
+            Conv2d(6, 16, kernel_size=(5, 5)),
+            Reduce("b c (h h2) (w w2) -> b c h w", "max", h2=2, w2=2),
+            torch.jit.script(Rearrange("b c h w -> b (c h w)"))
+            if add_scripted_layer
+            else Rearrange("b c h w -> b (c h w)"),
+            Linear(16 * 5 * 5, 120),
+            ReLU(),
+            Linear(120, 84),
+            ReLU(),
+            EinMix("b c1 -> (b c2)", weight_shape="c1 c2", bias_shape="c2", c1=84, c2=84),
+            EinMix("(b c2) -> b c3", weight_shape="c2 c3", bias_shape="c3", c2=84, c3=84),
+            Linear(84, 10),
+        )
 
 
 def test_torch_layer():
@@ -303,10 +303,10 @@ def test_keras_layer():
 
 
 def test_gluon_layer():
-    gluon_is_present = any(
-        "mxnet" in backend.framework_name for backend in collect_test_backends(symbolic=False, layers=True)
-    )
-    if gluon_is_present:
+    if not is_backend_tested("mxnet"):
+        # currenlty mxnet is not tested, so this test will always be skipped
+        pytest.skip()
+    else:
         # checked that gluon present
         import mxnet
         from mxnet.gluon.nn import HybridSequential, Dense, Conv2D, LeakyReLU

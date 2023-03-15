@@ -239,10 +239,7 @@ def test_reduction_symbolic():
                  input],
             ]
             for pattern, axes_lengths, expected_numpy_result in test_cases:
-                shapes = [input.shape]
-                if backend.framework_name != 'mxnet.symbol':
-                    # mxnet can't handle non-specified shapes
-                    shapes.append([None for _ in input.shape])
+                shapes = [input.shape, [None for _ in input.shape]]
                 for shape in shapes:
                     sym = backend.create_symbol(shape)
                     result_sym = reduce(sym, pattern, reduction=reduction, **axes_lengths)
