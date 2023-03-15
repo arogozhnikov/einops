@@ -60,13 +60,8 @@ def test_rearrange_imperative():
 
             just_sum = backend.layers().Reduce("...->", reduction="sum")
 
-            if "mxnet" in backend.framework_name:
-                with backend.mx.autograd.record():
-                    variable = backend.from_numpy(x)
-                    result = just_sum(layer(variable))
-            else:
-                variable = backend.from_numpy(x)
-                result = just_sum(layer(variable))
+            variable = backend.from_numpy(x)
+            result = just_sum(layer(variable))
 
             result.backward()
             assert numpy.allclose(backend.to_numpy(variable.grad), 1)
@@ -80,9 +75,8 @@ def test_rearrange_symbolic():
             x = numpy.arange(numpy.prod(input_shape), dtype="float32").reshape(input_shape)
             result_numpy = rearrange(x, pattern, **axes_lengths)
             layer = backend.layers().Rearrange(pattern, **axes_lengths)
-            shapes = [input_shape]
-            if "mxnet" not in backend.framework_name:
-                shapes.append([None] * len(input_shape))
+            input_shape_of_nones = [None] * len(input_shape)
+            shapes = [input_shape, input_shape_of_nones]
 
             for shape in shapes:
                 symbol = backend.create_symbol(shape)
@@ -140,13 +134,8 @@ def test_reduce_imperative():
 
                 just_sum = backend.layers().Reduce("...->", reduction="sum")
 
-                if "mxnet" in backend.framework_name:
-                    with backend.mx.autograd.record():
-                        variable = backend.from_numpy(x)
-                        result = just_sum(layer(variable))
-                else:
-                    variable = backend.from_numpy(x)
-                    result = just_sum(layer(variable))
+                variable = backend.from_numpy(x)
+                result = just_sum(layer(variable))
 
                 result.backward()
                 grad = backend.to_numpy(variable.grad)
@@ -168,9 +157,8 @@ def test_reduce_symbolic():
                 x /= x.mean()
                 result_numpy = reduce(x, pattern, reduction, **axes_lengths)
                 layer = backend.layers().Reduce(pattern, reduction, **axes_lengths)
-                shapes = [input_shape]
-                if "mxnet" not in backend.framework_name:
-                    shapes.append([None] * len(input_shape))
+                input_shape_of_nones = [None] * len(input_shape)
+                shapes = [input_shape, input_shape_of_nones]
 
                 for shape in shapes:
                     symbol = backend.create_symbol(shape)
