@@ -1,7 +1,7 @@
 import numpy
 
 from einops import rearrange, parse_shape, reduce
-from tests import collect_test_backends
+from tests import parse_backends_to_test
 from tests.test_ops import imp_op_backends
 
 
@@ -179,8 +179,9 @@ def tensor_train_example_numpy():
 
 
 def test_pytorch_yolo_fragment():
-    if not any(b.framework_name == 'torch' for b in collect_test_backends(symbolic=False, layers=False)):
+    if 'torch' not in parse_backends_to_test():
         return
+    
     import torch
 
     def old_way(input, num_classes, num_anchors, anchors, stride_h, stride_w):

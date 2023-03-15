@@ -2,7 +2,7 @@ from typing import Dict
 
 from io import StringIO
 
-from tests import collect_test_backends
+from tests import parse_backends_to_test
 
 __author__ = "Alex Rogozhnikov"
 
@@ -39,13 +39,11 @@ def test_notebook_1():
 
 def test_notebook_2_with_all_backends():
     [notebook] = Path(__file__).parent.with_name("docs").glob("2-*.ipynb")
-    backends = []
-    if "chainer" in collect_test_backends(symbolic=False, layers=True):
-        backends += ["chainer"]
-    if "pytorch" in collect_test_backends(symbolic=False, layers=True):
-        backends += ["pytorch"]
-    if "tensorflow" in collect_test_backends(symbolic=False, layers=False):
-        backends += ["tensorflow"]
+    backends = ['chainer', 'torch', 'tensorflow']
+    backends = [b for b in backends if b in parse_backends_to_test()]
+    if len(backends) == 0:
+        pytest.skip()
+
     for backend in backends:
         print("Testing {} with backend {}".format(notebook, backend))
         replacements = {"flavour = 'pytorch'": "flavour = '{}'".format(backend)}
@@ -56,13 +54,13 @@ def test_notebook_2_with_all_backends():
 
 def test_notebook_3():
     [notebook] = Path(__file__).parent.with_name("docs").glob("3-*.ipynb")
-    if "pytorch" not in collect_test_backends(symbolic=False, layers=True):
+    if "torch" not in parse_backends_to_test():
         pytest.skip()
     render_notebook(notebook, replacements={})
 
 
 def test_notebook_4():
     [notebook] = Path(__file__).parent.with_name("docs").glob("4-*.ipynb")
-    if "pytorch" not in collect_test_backends(symbolic=False, layers=True):
+    if "torch" not in parse_backends_to_test():
         pytest.skip()
     render_notebook(notebook, replacements={})
