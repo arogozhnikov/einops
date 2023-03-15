@@ -39,8 +39,15 @@ def test_notebook_1():
 
 def test_notebook_2_with_all_backends():
     [notebook] = Path(__file__).parent.with_name("docs").glob("2-*.ipynb")
-    backends = ["chainer", "torch", "tensorflow"]
-    backends = [b for b in backends if b in parse_backends_to_test()]
+    backends = []
+    if is_backend_tested("torch"):
+        # notebook uses name pytorch
+        backends.append("pytorch")
+    if is_backend_tested("tensorflow"):
+        backends.append("tensorflow")
+    if is_backend_tested("chainer"):
+        backends.append("chainer")
+
     if len(backends) == 0:
         pytest.skip()
 
