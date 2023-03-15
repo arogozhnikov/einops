@@ -289,10 +289,11 @@ Einops works with ...
 - [jax](https://github.com/google/jax)
 - [cupy](https://cupy.chainer.org/)
 - [chainer](https://chainer.org/)
-- [gluon](https://gluon.mxnet.io/)
 - [tf.keras](https://www.tensorflow.org/guide/keras)
 - [oneflow](https://github.com/Oneflow-Inc/oneflow) (experimental)
 - [flax](https://github.com/google/flax) (experimental)
+- [paddle](https://github.com/PaddlePaddle/Paddle) (experimental)
+- [gluon](https://gluon.mxnet.io/) (deprecated)
 
 ## Citing einops <a name="Contributing"></a>
 
