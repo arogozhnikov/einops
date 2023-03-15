@@ -8,6 +8,7 @@ __author__ = "Alex Rogozhnikov"
 
 from pathlib import Path
 import nbformat
+import pytest
 from nbconvert.preprocessors import ExecutePreprocessor
 
 
@@ -31,14 +32,13 @@ def render_notebook(filename: Path, replacements: Dict[str, str]) -> str:
     return result_as_stream.getvalue()
 
 
-def test_all_notebooks():
-    notebooks = Path(__file__).parent.with_name("docs").glob("*.ipynb")
-    for notebook in notebooks:
-        render_notebook(notebook, replacements={})
+def test_notebook_1():
+    [notebook] = Path(__file__).parent.with_name("docs").glob("1-*.ipynb")
+    render_notebook(notebook, replacements={})
 
 
-def test_dl_notebook_with_all_backends():
-    (notebook,) = Path(__file__).parent.with_name("docs").glob("2-*.ipynb")
+def test_notebook_2_with_all_backends():
+    [notebook] = Path(__file__).parent.with_name("docs").glob("2-*.ipynb")
     backends = []
     if "chainer" in collect_test_backends(symbolic=False, layers=True):
         backends += ["chainer"]
@@ -52,3 +52,17 @@ def test_dl_notebook_with_all_backends():
         expected_string = "selected {} backend".format(backend)
         result = render_notebook(notebook, replacements=replacements)
         assert expected_string in result
+
+
+def test_notebook_3():
+    [notebook] = Path(__file__).parent.with_name("docs").glob("3-*.ipynb")
+    if "pytorch" not in collect_test_backends(symbolic=False, layers=True):
+        pytest.skip()
+    render_notebook(notebook, replacements={})
+
+
+def test_notebook_4():
+    [notebook] = Path(__file__).parent.with_name("docs").glob("4-*.ipynb")
+    if "pytorch" not in collect_test_backends(symbolic=False, layers=True):
+        pytest.skip()
+    render_notebook(notebook, replacements={})
