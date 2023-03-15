@@ -35,14 +35,14 @@ def main():
     _executable, *frameworks = sys.argv
     framework_name2installation = {
         "numpy": ["numpy"],
-        "pytorch": ["torch"],
+        "torch": ["torch"],
         "jax": ["jax", "jaxlib"],
         "flax": ["flax", "jax", "jaxlib"],
         "tensorflow": ["tensorflow"],
         "chainer": ["chainer"],
         "cupy": ["cupy"],
         "paddle": ["paddlepaddle==0.0.0 -f https://www.paddlepaddle.org.cn/whl/linux/cpu-mkl/develop.html"],
-        "oneflow": ["oneflow==0.7.0+cpu -f https://release.oneflow.info"],
+        "oneflow": ["oneflow==0.9.0+cpu -f https://release.oneflow.info"],
     }
 
     usage = f"""
@@ -57,7 +57,7 @@ def main():
     else:
         synonyms = {
             "tf": "tensorflow",
-            "torch": "pytorch",
+            "pytorch": "torch",
             "paddlepaddle": "paddle",
         }
         frameworks = [synonyms.get(f, f) for f in frameworks]
