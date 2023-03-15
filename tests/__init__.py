@@ -48,7 +48,7 @@ def unparse_backends(backend_names: List[str]) -> Tuple[str, str]:
     return FLAG_NAME, ",".join(backend_names)
 
 
-def collect_test_backends(symbolic=False, layers=False):
+def collect_test_backends(symbolic=False, layers=False) -> List[_backends.AbstractBackend]:
     """
     :param symbolic: symbolic or imperative frameworks?
     :param layers: layers or operations?
