@@ -36,8 +36,7 @@ def main():
     framework_name2installation = {
         "numpy": ["numpy"],
         "torch": ["torch"],
-        "jax": ["jax", "jaxlib"],
-        "flax": ["flax", "jax", "jaxlib"],
+        "jax": ["jax", "jaxlib", "flax"],
         "tensorflow": ["tensorflow"],
         "chainer": ["chainer"],
         "cupy": ["cupy"],

@@ -39,6 +39,11 @@ def parse_backends_to_test() -> List[str]:
 
     return parsed_backends
 
+def is_backend_tested(backend: str) -> bool:
+    if backend not in find_names_of_all_frameworks():
+        raise RuntimeError(f'Unknown framework {backend}')
+    return backend in parse_backends_to_test()
+
 
 def unparse_backends(backend_names: List[str]) -> Tuple[str, str]:
     _known_backends = find_names_of_all_frameworks()

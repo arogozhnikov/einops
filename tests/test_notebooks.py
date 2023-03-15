@@ -2,7 +2,7 @@ from typing import Dict
 
 from io import StringIO
 
-from tests import parse_backends_to_test
+from tests import parse_backends_to_test, is_backend_tested
 
 __author__ = "Alex Rogozhnikov"
 
@@ -39,7 +39,7 @@ def test_notebook_1():
 
 def test_notebook_2_with_all_backends():
     [notebook] = Path(__file__).parent.with_name("docs").glob("2-*.ipynb")
-    backends = ['chainer', 'torch', 'tensorflow']
+    backends = ["chainer", "torch", "tensorflow"]
     backends = [b for b in backends if b in parse_backends_to_test()]
     if len(backends) == 0:
         pytest.skip()
@@ -54,13 +54,13 @@ def test_notebook_2_with_all_backends():
 
 def test_notebook_3():
     [notebook] = Path(__file__).parent.with_name("docs").glob("3-*.ipynb")
-    if "torch" not in parse_backends_to_test():
+    if not is_backend_tested("torch"):
         pytest.skip()
     render_notebook(notebook, replacements={})
 
 
 def test_notebook_4():
     [notebook] = Path(__file__).parent.with_name("docs").glob("4-*.ipynb")
-    if "torch" not in parse_backends_to_test():
+    if not is_backend_tested("torch"):
         pytest.skip()
     render_notebook(notebook, replacements={})

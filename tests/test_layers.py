@@ -7,7 +7,7 @@ import pytest
 
 from einops import rearrange, reduce
 from einops.einops import _reductions
-from . import collect_test_backends
+from . import collect_test_backends, is_backend_tested
 
 __author__ = "Alex Rogozhnikov"
 
@@ -186,14 +186,9 @@ def test_reduce_symbolic():
                     assert numpy.allclose(result1, result2)
 
 
-is_torch_tested = any(
-    backend.framework_name == "torch" for backend in collect_test_backends(symbolic=False, layers=True)
-)
-
-
 def create_torch_model(use_reduce=False, add_scripted_layer=False):
-    if not is_torch_tested:
-        pytest.skip("Torch not tested")
+    if not is_backend_tested("torch"):
+        pytest.skip()
 
     from torch.nn import Sequential, Conv2d, MaxPool2d, Linear, ReLU
     from einops.layers.torch import Rearrange, Reduce, EinMix
@@ -218,51 +213,49 @@ def create_torch_model(use_reduce=False, add_scripted_layer=False):
 
 
 def test_torch_layer():
-    if not is_torch_tested:
-        pytest.skip("Torch not tested")
+    if not is_backend_tested("torch"):
+        pytest.skip()
+    else:
+        # checked that torch present
+        import torch
+        import torch.jit
 
-    # checked that torch present
-    import torch
-    import torch.jit
+        model1 = create_torch_model(use_reduce=True)
+        model2 = create_torch_model(use_reduce=False)
+        input = torch.randn([10, 3, 32, 32])
+        # random models have different predictions
+        assert not torch.allclose(model1(input), model2(input))
+        model2.load_state_dict(pickle.loads(pickle.dumps(model1.state_dict())))
+        assert torch.allclose(model1(input), model2(input))
 
-    model1 = create_torch_model(use_reduce=True)
-    model2 = create_torch_model(use_reduce=False)
-    input = torch.randn([10, 3, 32, 32])
-    # random models have different predictions
-    assert not torch.allclose(model1(input), model2(input))
-    model2.load_state_dict(pickle.loads(pickle.dumps(model1.state_dict())))
-    assert torch.allclose(model1(input), model2(input))
+        # tracing (freezing)
+        model3 = torch.jit.trace(model2, example_inputs=input)
+        torch.testing.assert_close(model1(input), model3(input), atol=1e-3, rtol=1e-3)
+        torch.testing.assert_close(model1(input + 1), model3(input + 1), atol=1e-3, rtol=1e-3)
 
-    # tracing (freezing)
-    model3 = torch.jit.trace(model2, example_inputs=input)
-    torch.testing.assert_close(model1(input), model3(input), atol=1e-3, rtol=1e-3)
-    torch.testing.assert_close(model1(input + 1), model3(input + 1), atol=1e-3, rtol=1e-3)
-
-    model4 = torch.jit.trace(model2, example_inputs=input)
-    torch.testing.assert_close(model1(input), model4(input), atol=1e-3, rtol=1e-3)
-    torch.testing.assert_close(model1(input + 1), model4(input + 1), atol=1e-3, rtol=1e-3)
+        model4 = torch.jit.trace(model2, example_inputs=input)
+        torch.testing.assert_close(model1(input), model4(input), atol=1e-3, rtol=1e-3)
+        torch.testing.assert_close(model1(input + 1), model4(input + 1), atol=1e-3, rtol=1e-3)
 
 
 def test_torch_layers_scripting():
-    if not is_torch_tested:
-        pytest.skip("Torch not tested")
+    if not is_backend_tested("torch"):
+        pytest.skip()
+    else:
+        import torch
 
-    import torch
+        for script_layer in [False, True]:
+            model1 = create_torch_model(use_reduce=True, add_scripted_layer=script_layer)
+            model2 = torch.jit.script(model1)
+            input = torch.randn([10, 3, 32, 32])
 
-    for script_layer in [False, True]:
-        model1 = create_torch_model(use_reduce=True, add_scripted_layer=script_layer)
-        model2 = torch.jit.script(model1)
-        input = torch.randn([10, 3, 32, 32])
-
-        torch.testing.assert_close(model1(input), model2(input), atol=1e-3, rtol=1e-3)
+            torch.testing.assert_close(model1(input), model2(input), atol=1e-3, rtol=1e-3)
 
 
 def test_keras_layer():
-    if any(
-        backend.framework_name == "tensorflow.keras" for backend in collect_test_backends(symbolic=True, layers=True)
-    ):
-        # checked that keras present
-
+    if not is_backend_tested("tensorflow"):
+        pytest.skip()
+    else:
         import tensorflow as tf
         from tensorflow.keras.models import Sequential
         from tensorflow.keras.layers import Conv2D as Conv2d, Dense as Linear, ReLU
@@ -418,10 +411,9 @@ def test_flax_layers():
     One-off simple tests for Flax layers.
     Unfortunately, Flax layers have a different interface from other layers.
     """
-    flax_is_present = any(
-        "flax" in backend.framework_name for backend in collect_test_backends(symbolic=False, layers=True)
-    )
-    if flax_is_present:
+    if not is_backend_tested("jax"):
+        pytest.skip()
+    else:
         import jax
         import jax.numpy as jnp
 

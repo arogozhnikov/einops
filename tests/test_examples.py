@@ -1,7 +1,8 @@
 import numpy
+import pytest
 
 from einops import rearrange, parse_shape, reduce
-from tests import parse_backends_to_test
+from tests import is_backend_tested
 from tests.test_ops import imp_op_backends
 
 
@@ -179,11 +180,10 @@ def tensor_train_example_numpy():
 
 
 def test_pytorch_yolo_fragment():
-    if 'torch' not in parse_backends_to_test():
-        return
-    
-    import torch
+    if not is_backend_tested('torch'):
+        pytest.skip()
 
+    import torch
     def old_way(input, num_classes, num_anchors, anchors, stride_h, stride_w):
         # https://github.com/BobLiu20/YOLOv3_PyTorch/blob/c6b483743598b5f64d520d81e7e5f47ba936d4c9/nets/yolo_loss.py#L28-L44
         bs = input.size(0)
