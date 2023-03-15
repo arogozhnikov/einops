@@ -167,7 +167,7 @@ test_functional_cases = [
 
 def test_layer():
     for backend in collect_test_backends(layers=True, symbolic=False):
-        if backend.framework_name in ['tensorflow', 'torch', 'chainer', 'oneflow']:
+        if backend.framework_name in ['tensorflow', 'torch', 'chainer', 'oneflow', 'paddle']:
             layer_type = backend.layers().EinMix
             for args, in_shape, out_shape in test_layer_cases:
                 layer = args(layer_type)
@@ -180,7 +180,7 @@ def test_layer():
 
 
 valid_backends_functional = ['tensorflow', 'torch', 'jax', 'numpy',
-                             'chainer', 'oneflow', 'cupy', 'tensorflow.keras']
+                             'chainer', 'oneflow', 'cupy', 'tensorflow.keras', 'paddle']
 
 def test_functional():
     # Functional tests:
@@ -214,7 +214,7 @@ def test_functional():
                     out_array = einsum(*in_arrays_framework, einops_pattern)
 
                 # Check shape:
-                if out_array.shape != out_shape:
+                if tuple(out_array.shape) != out_shape:
                     raise ValueError(
                         f"Expected output shape {out_shape} but got {out_array.shape}"
                     )

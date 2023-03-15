@@ -8,7 +8,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.7, 3.9]
+        python-version: ['3.8', '3.10']
+        # currently there is conflict between tf, oneflow and paddle in protobuf versions.
+        # cupy is not tested because it demands gpu
+        frameworks: ['numpy pytorch tensorflow jax oneflow', 'numpy paddle chainer']
 
     steps:
       - uses: actions/checkout@v3
@@ -18,4 +21,4 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Run tests
         run: |
-          python test.py
+          python test.py ${{ matrix.frameworks }}

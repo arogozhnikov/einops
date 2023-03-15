@@ -1,7 +1,8 @@
 import numpy
+import pytest
 
 from einops import rearrange, parse_shape, reduce
-from tests import collect_test_backends
+from tests import is_backend_tested
 from tests.test_ops import imp_op_backends
 
 
@@ -9,76 +10,76 @@ def test_rearrange_examples():
     def test1(x):
         # transpose
         y = rearrange(x, 'b c h w -> b h w c')
-        assert y.shape == (10, 30, 40, 20)
+        assert tuple(y.shape) == (10, 30, 40, 20)
         return y
 
     def test2(x):
         # view / reshape
         y = rearrange(x, 'b c h w -> b (c h w)')
-        assert y.shape == (10, 20 * 30 * 40)
+        assert tuple(y.shape) == (10, 20 * 30 * 40)
         return y
 
     def test3(x):
         # depth-to-space
         y = rearrange(x, 'b (c h1 w1) h w -> b c (h h1) (w w1)', h1=2, w1=2)
-        assert y.shape == (10, 5, 30 * 2, 40 * 2)
+        assert tuple(y.shape) == (10, 5, 30 * 2, 40 * 2)
         return y
 
     def test4(x):
         # space-to-depth
         y = rearrange(x, 'b c (h h1) (w w1) -> b (h1 w1 c) h w', h1=2, w1=2)
-        assert y.shape == (10, 20 * 4, 30 // 2, 40 // 2)
+        assert tuple(y.shape) == (10, 20 * 4, 30 // 2, 40 // 2)
         return y
 
     def test5(x):
         # simple transposition
         y = rearrange(x, 'b1 sound b2 letter -> b1 b2 sound letter')
-        assert y.shape == (10, 30, 20, 40)
+        assert tuple(y.shape) == (10, 30, 20, 40)
         return y
 
     def test6(x):
         # parsing parameters
         t = rearrange(x, 'b c h w -> (b h w) c')
         t = t[:, ::2]  # replacement for dot-product, just changes size of second axis
-        assert t.shape == (10 * 30 * 40, 10)
+        assert tuple(t.shape) == (10 * 30 * 40, 10)
 
         y = rearrange(t, '(b h w) c2 -> b c2 h w', **parse_shape(x, 'b _ h w'))
-        assert y.shape == (10, 10, 30, 40)
+        assert tuple(y.shape) == (10, 10, 30, 40)
         return y
 
     def test7(x):
         # split of embedding into groups
         y1, y2 = rearrange(x, 'b (c g) h w -> g b c h w', g=2)
-        assert y1.shape == (10, 10, 30, 40)
-        assert y2.shape == (10, 10, 30, 40)
+        assert tuple(y1.shape) == (10, 10, 30, 40)
+        assert tuple(y2.shape) == (10, 10, 30, 40)
         return y1 + y2  # only one tensor is expected in output
 
     def test8(x):
         # max-pooling
         y = reduce(x, 'b c (h h1) (w w1) -> b c h w', reduction='max', h1=2, w1=2)
-        assert y.shape == (10, 20, 30 // 2, 40 // 2)
+        assert tuple(y.shape) == (10, 20, 30 // 2, 40 // 2)
         return y
 
     def test9(x):
         # squeeze - unsqueeze
         y = reduce(x, 'b c h w -> b c () ()', reduction='max')
-        assert y.shape == (10, 20, 1, 1)
+        assert tuple(y.shape) == (10, 20, 1, 1)
         y = rearrange(y, 'b c () () -> c b')
-        assert y.shape == (20, 10)
+        assert tuple(y.shape) == (20, 10)
         return y
 
     def test10(x):
         # stack
         tensors = list(x + 0)  # 0 is needed https://github.com/tensorflow/tensorflow/issues/23185
         tensors = rearrange(tensors, 'b c h w -> b h w c')
-        assert tensors.shape == (10, 30, 40, 20)
+        assert tuple(tensors.shape) == (10, 30, 40, 20)
         return tensors
 
     def test11(x):
         # concatenate
         tensors = list(x + 0)  # 0 is needed https://github.com/tensorflow/tensorflow/issues/23185
         tensors = rearrange(tensors, 'b c h w -> h (b w) c')
-        assert tensors.shape == (30, 10 * 40, 20)
+        assert tuple(tensors.shape) == (30, 10 * 40, 20)
         return tensors
 
     def shufflenet(x, convolve, c1, c2):
@@ -179,10 +180,10 @@ def tensor_train_example_numpy():
 
 
 def test_pytorch_yolo_fragment():
-    if not any(b.framework_name == 'torch' for b in collect_test_backends(symbolic=False, layers=False)):
-        return
-    import torch
+    if not is_backend_tested('torch'):
+        pytest.skip()
 
+    import torch
     def old_way(input, num_classes, num_anchors, anchors, stride_h, stride_w):
         # https://github.com/BobLiu20/YOLOv3_PyTorch/blob/c6b483743598b5f64d520d81e7e5f47ba936d4c9/nets/yolo_loss.py#L28-L44
         bs = input.size(0)
