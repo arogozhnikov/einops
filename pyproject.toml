@@ -8,9 +8,15 @@ description = "A new flavour of deep learning operations"
 readme = "README.md"
 requires-python = ">=3.7"
 
-keywords = ['deep learning', 'neural networks', 'tensor manipulation', 'machine learning',
-             'scientific computations', 'einops',]
-license = {text = 'MIT'}
+keywords = [
+    'deep learning',
+    'neural networks',
+    'tensor manipulation',
+    'machine learning',
+    'scientific computations',
+    'einops',
+]
+license = { text = 'MIT' }
 classifiers = [
     'Intended Audience :: Science/Research',
     'Programming Language :: Python :: 3',
@@ -20,7 +26,7 @@ dependencies = [
     # no run-time or installation-time dependencies
 ]
 dynamic = ["version"]
-authors = [{name = 'Alex Rogozhnikov'}]
+authors = [{ name = 'Alex Rogozhnikov' }]
 
 [project.urls]
 Homepage = 'https://github.com/arogozhnikov/einops'
@@ -33,14 +39,14 @@ path = "einops/__init__.py"
 
 [tool.hatch.build.targets.sdist]
 exclude = [
-  "/.github",
-  "/.idea",
-  "/.pytest_cache",
-  "/build",
-  "/dist",
-  "/docs",
-  "/docs_src",
-  "/log",
+    "/.github",
+    "/.idea",
+    "/.pytest_cache",
+    "/build",
+    "/dist",
+    "/docs",
+    "/docs_src",
+    "/log",
 ]
 
 [tool.hatch.build.targets.wheel]
