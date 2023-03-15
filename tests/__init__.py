@@ -1,24 +1,52 @@
+import logging
 import os
+from functools import lru_cache
 
 from einops import _backends
 import warnings
 
-__author__ = 'Alex Rogozhnikov'
+__author__ = "Alex Rogozhnikov"
 
-import logging
 
 # minimize noise in tests logging
-logging.getLogger('tensorflow').disabled = True
-logging.getLogger('matplotlib').disabled = True
+logging.getLogger("tensorflow").disabled = True
+logging.getLogger("matplotlib").disabled = True
 
-flag_to_bool = {
-    '': False,
-    '0': False,
-    '1': True,
-}
 
-skip_cupy = flag_to_bool[os.environ.get('EINOPS_SKIP_CUPY', '1')]
-skip_oneflow = flag_to_bool[os.environ.get('EINOPS_SKIP_ONEFLOW', '1')]
+def find_names_of_all_frameworks() -> list[str]:
+    backend_subclasses = []
+    backends = _backends.AbstractBackend.__subclasses__()
+    while backends:
+        backend = backends.pop()
+        backends += backend.__subclasses__()
+        backend_subclasses.append(backend)
+    return [b.framework_name for b in backend_subclasses]
+
+
+FLAG_NAME = "EINOPS_TEST_BACKENDS"
+
+
+@lru_cache(maxsize=1)
+def parse_backends_to_test() -> list[str]:
+    if FLAG_NAME not in os.environ:
+        raise RuntimeError(
+            f"Testing frameworks were not specified, flag {FLAG_NAME} not set"
+        )
+    parsed_backends = os.environ[FLAG_NAME].split(",")
+    _known_backends = find_names_of_all_frameworks()
+    for backend_name in parsed_backends:
+        if backend_name not in _known_backends:
+            raise RuntimeError(f"Unknown framework: {backend_name}")
+
+    return parsed_backends
+
+
+def unparse_backends(backend_names: list[str]) -> tuple[str, str]:
+    _known_backends = find_names_of_all_frameworks()
+    for backend_name in backend_names:
+        if backend_name not in _known_backends:
+            raise RuntimeError(f"Unknown framework: {backend_name}")
+    return FLAG_NAME, ",".join(backend_names)
 
 
 def collect_test_backends(symbolic=False, layers=False):
@@ -38,9 +66,8 @@ def collect_test_backends(symbolic=False, layers=False):
                 _backends.TensorflowBackend,
                 _backends.OneFlowBackend,
                 _backends.PaddleBackend,
+                _backends.CupyBackend,
             ]
-            if not skip_cupy:
-                backend_types += [_backends.CupyBackend]
         else:
             backend_types = [
                 _backends.TorchBackend,
@@ -57,12 +84,17 @@ def collect_test_backends(symbolic=False, layers=False):
                 _backends.KerasBackend,
             ]
 
+    backend_names_to_test = parse_backends_to_test()
     result = []
     for backend_type in backend_types:
+        if backend_type.framework_name not in backend_names_to_test:
+            continue
         try:
             result.append(backend_type())
         except ImportError:
             # problem with backend installation fails a specific test function,
             # but will be skipped in all other test cases
-            warnings.warn('backend could not be initialized for tests: {}'.format(backend_type))
+            warnings.warn(
+                "backend could not be initialized for tests: {}".format(backend_type)
+            )
     return result
