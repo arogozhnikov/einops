@@ -1,6 +1,7 @@
 import logging
 import os
 from functools import lru_cache
+from typing import List, Tuple
 
 from einops import _backends
 import warnings
@@ -13,7 +14,7 @@ logging.getLogger("tensorflow").disabled = True
 logging.getLogger("matplotlib").disabled = True
 
 
-def find_names_of_all_frameworks() -> list[str]:
+def find_names_of_all_frameworks() -> List[str]:
     backend_subclasses = []
     backends = _backends.AbstractBackend.__subclasses__()
     while backends:
@@ -27,11 +28,9 @@ FLAG_NAME = "EINOPS_TEST_BACKENDS"
 
 
 @lru_cache(maxsize=1)
-def parse_backends_to_test() -> list[str]:
+def parse_backends_to_test() -> List[str]:
     if FLAG_NAME not in os.environ:
-        raise RuntimeError(
-            f"Testing frameworks were not specified, flag {FLAG_NAME} not set"
-        )
+        raise RuntimeError(f"Testing frameworks were not specified, flag {FLAG_NAME} not set")
     parsed_backends = os.environ[FLAG_NAME].split(",")
     _known_backends = find_names_of_all_frameworks()
     for backend_name in parsed_backends:
@@ -41,7 +40,7 @@ def parse_backends_to_test() -> list[str]:
     return parsed_backends
 
 
-def unparse_backends(backend_names: list[str]) -> tuple[str, str]:
+def unparse_backends(backend_names: List[str]) -> Tuple[str, str]:
     _known_backends = find_names_of_all_frameworks()
     for backend_name in backend_names:
         if backend_name not in _known_backends:
@@ -94,7 +93,5 @@ def collect_test_backends(symbolic=False, layers=False):
         except ImportError:
             # problem with backend installation fails a specific test function,
             # but will be skipped in all other test cases
-            warnings.warn(
-                "backend could not be initialized for tests: {}".format(backend_type)
-            )
+            warnings.warn("backend could not be initialized for tests: {}".format(backend_type))
     return result
