@@ -5,24 +5,25 @@ but it can also help to see einops in action.
 
 Here are some open-source projects that can teach how to leverage einops for your problems
 
-- lambda networks (non-conventional architecture) implemented by [@lucidrains](https://github.com/lucidrains)
+
+- [@lucidrains](https://github.com/lucidrains) has a dramatic [collection of vision transformers](https://github.com/lucidrains/vit-pytorch)
+    - there is a plenty of good examples how to use einops efficiently in your projects
+
+
+- lambda networks (non-conventional architecture) implemented by @lucidrains
     - nice demonstration how clearer code can be with einops, even compared to description in the paper 
     - [implementation](https://github.com/lucidrains/lambda-networks) and [video](https://www.youtube.com/watch?v=3qxJ2WD8p4w)
 
 
 - capsule networks (aka capsnets) [implemented in einops](https://github.com/arogozhnikov/readable_capsnet)
-    - blazingly fast, concise, and 3x-more memory efficient capsule networks, written with einops  
-
-
-- @lucidrains has a dramatic [collection of vision transformers](https://github.com/lucidrains/vit-pytorch)
-    - there is a plenty of good examples how to use einops efficiently in your projects
+    - blazingly fast, concise (3-10 times less code), and memory efficient (3 times lower memory consumption) capsule networks, written with einops  
 
 
 - [NuX](https://github.com/Information-Fusion-Lab-Umass/NuX) — normalizing flows in Jax
     - different rearrangement patterns in normalizing flows have nice mapping to einops
 
 
-- As for video recognition, look at [MotionFormer](https://github.com/facebookresearch/Motionformer) 
+- For video recognition, look at [MotionFormer](https://github.com/facebookresearch/Motionformer) 
   and [TimeSFormer](https://github.com/lucidrains/TimeSformer-pytorch) implementations
 
 
@@ -33,6 +34,9 @@ Here are some open-source projects that can teach how to leverage einops for you
 
 Tutorial in the AI summer about einops and einsum:
 <https://theaisummer.com/einsum-attention/>
+
+Introduction to einops by Kapil Sachdeva
+<https://www.youtube.com/watch?v=xGy75Pjsqzo>
 
 Implementing visual transformer in pytorch:
 <https://towardsdatascience.com/implementing-visualttransformer-in-pytorch-184f9f16f632>

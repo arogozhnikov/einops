@@ -80,34 +80,31 @@ Tim Dettmers, PhD Student at UoW and visiting researcher at Facebook AI
 Daniel Havir, Apple [(ref)](https://twitter.com/danielhavir/status/1389070232853966849)
 
 
-Comment: some of 'late to the party' tweets are 2 years old now. You can never be late to this party.
-
-
-
 > I recently discovered the beauty of torch.einsum and einops.rearrange <br /> 
 > and at this point I'm confused why I even bothered with other tensor operations in the first place.
 
 Robin M. Schmidt, AI/ML Resident at Apple [(ref)](https://twitter.com/robinschmidt_/status/1363709832788852736)
 
  
-[comment]: <> (> The einops library, in particular, is magical. Best thing since baked bread and brewed beer.)
 
 > I end up using einops for ridiculously simple things, <br />
 > simply to be nice to my future self (because the code takes so little effort to read).
 
 Nasim Rahaman, MILA [(ref)](https://twitter.com/nasim_rahaman/status/1390027557546901504)
 
+
 > I love Einops for this kind of stuff, it makes code very readable, <br /> 
 > even if you are just doing a simple squeeze or expand_dims. [...]
 
 Cristian Garcia, ML Engineer @quansightai, [(ref)](https://twitter.com/cgarciae88/status/1331968395110211586)
 
+
 > i might be late to the party, but einsum and the einops package are unbelievably useful
 
 Samson Koelle, Stat PhD candidate at UoW, [(ref)](https://twitter.com/SeattleStatSam/status/1338673646898794496)
 
-> I really recommend einops for tensor shape manipulation
 
+> I really recommend einops for tensor shape manipulation
 
 Alex Mordvintsev, DeepDream creator, [(ref)](https://twitter.com/zzznah/status/1315297985585123328)
 
