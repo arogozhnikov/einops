@@ -99,6 +99,7 @@ Tutorials are the most convenient way to see `einops` in action
 - part 3: [packing and unpacking](https://github.com/arogozhnikov/einops/blob/master/docs/4-pack-and-unpack.ipynb)
 - part 4: [improve pytorch code with einops](http://einops.rocks/pytorch-examples.html)   
 
+Kapil Sachdeva recorded a small [intro to einops](https://www.youtube.com/watch?v=xGy75Pjsqzo).
 
 ## API <a name="API"></a>
 
