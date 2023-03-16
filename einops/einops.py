@@ -615,7 +615,7 @@ np_ndarray = Any
 
 def asnumpy(tensor) -> np_ndarray:
     """
-    Convert a tensor of an imperative framework (i.e. numpy/cupy/torch/gluon/etc.) to `numpy.ndarray`
+    Convert a tensor of an imperative framework (i.e. numpy/cupy/torch/jax/etc.) to `numpy.ndarray`
 
     Parameters:
         tensor: tensor of any of known imperative framework

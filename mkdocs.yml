@@ -26,7 +26,7 @@ nav:
       - einsum: api/einsum.md
       - pack and unpack: api/pack_unpack.md
   - Testimonials: pages/testimonials.md
-  - Projects: pages/projects.md
+  - Community/Ecosystem: pages/projects.md
 extra:
   search:
     language: en

@@ -83,11 +83,6 @@ def check_op_against_numpy(backend, numpy_input, pattern, axes_lengths, reductio
     numpy_result = operation(numpy_input)
     check_equal = numpy.array_equal
     p_none_dimension = 0.5
-    if 'mxnet' in backend.framework_name:
-        # known bug in mxnet: it can't work with scalars - so use allclose instead
-        check_equal = numpy.allclose
-        # mxnet can't work unless shape is completely specified
-        p_none_dimension = 0
     if is_symbolic:
         symbol_shape = [d if numpy.random.random() >= p_none_dimension else None for d in numpy_input.shape]
         symbol = backend.create_symbol(shape=symbol_shape)
@@ -239,10 +234,7 @@ def test_reduction_symbolic():
                  input],
             ]
             for pattern, axes_lengths, expected_numpy_result in test_cases:
-                shapes = [input.shape]
-                if backend.framework_name != 'mxnet.symbol':
-                    # mxnet can't handle non-specified shapes
-                    shapes.append([None for _ in input.shape])
+                shapes = [input.shape, [None for _ in input.shape]]
                 for shape in shapes:
                     sym = backend.create_symbol(shape)
                     result_sym = reduce(sym, pattern, reduction=reduction, **axes_lengths)
@@ -275,8 +267,6 @@ def test_reduction_stress_imperatives():
                 dtype = 'float64'
                 coincide = numpy.allclose
             max_dim = 11
-            if 'mxnet' in backend.framework_name:
-                max_dim = 6
             if 'oneflow' in backend.framework_name:
                 max_dim = 7
             if 'paddle' in backend.framework_name:
@@ -296,9 +286,6 @@ def test_reduction_stress_imperatives():
                 if skipped > 0:
                     result2 = getattr(result2, reduction)(axis=tuple(range(skipped)))
                 assert coincide(result1, result2)
-                if n_axes == 0 and 'mxnet' in backend.framework_name:
-                    # known mxnet bug, can't attach gradients to scalar
-                    continue
                 check_op_against_numpy(backend, x, pattern, reduction=reduction, axes_lengths={}, is_symbolic=False)
 
 
@@ -359,9 +346,6 @@ def test_enumerating_directions():
     for backend in imp_op_backends:
         print('testing directions for', backend.framework_name)
         for shape in [[], [1], [1, 1, 1], [2, 3, 5, 7]]:
-            if backend.framework_name == 'mxnet.ndarray' and len(shape) == 0:
-                # known bug of mxnet
-                continue
             x = numpy.arange(numpy.prod(shape)).reshape(shape)
             axes1 = _enumerate_directions(x)
             axes2 = _enumerate_directions(backend.from_numpy(x))
@@ -378,9 +362,6 @@ def test_concatenations_and_stacking():
         for n_arrays in [1, 2, 5]:
             shapes = [[], [1], [1, 1], [2, 3, 5, 7], [1] * 6]
             for shape in shapes:
-                if backend.framework_name == 'mxnet.ndarray' and len(shape) == 0:
-                    # known bug of mxnet
-                    continue
                 arrays1 = [numpy.arange(i, i + numpy.prod(shape)).reshape(shape) for i in range(n_arrays)]
                 arrays2 = [backend.from_numpy(array) for array in arrays1]
                 result0 = numpy.asarray(arrays1)
@@ -403,14 +384,12 @@ def test_gradients_imperatives():
             y0 = backend.from_numpy(x)
             if not hasattr(y0, 'grad'):
                 continue
-            if 'mxnet' in backend.framework_name:
-                backend.mx.autograd.set_recording(True)
+
             y1 = reduce(y0, 'a b c -> c a', reduction=reduction)
             y2 = reduce(y1, 'c a -> a c', reduction=reduction)
             y3 = reduce(y2, 'a (c1 c2) -> a', reduction=reduction, c1=2)
             y4 = reduce(y3, '... -> ', reduction=reduction)
-            if 'mxnet' in backend.framework_name:
-                backend.mx.autograd.set_recording(False)
+
             y4.backward()
             grad = backend.to_numpy(y0.grad)
             results[backend.framework_name] = grad

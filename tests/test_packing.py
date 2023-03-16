@@ -50,7 +50,6 @@ def unpack_and_pack_against_numpy(x, ps, pattern: str):
             assert np.allclose(asnumpy(a), b)
 
 
-
 class CaptureException:
     def __enter__(self):
         self.exception = None
@@ -74,49 +73,49 @@ def test_numpy_trivial(H=13, W=17):
 
     check(
         np.stack([r, g, b], axis=2),
-        pack([r, g, b], 'h w *')[0],
+        pack([r, g, b], "h w *")[0],
     )
     check(
         np.stack([r, g, b], axis=1),
-        pack([r, g, b], 'h * w')[0],
+        pack([r, g, b], "h * w")[0],
     )
     check(
         np.stack([r, g, b], axis=0),
-        pack([r, g, b], '* h w')[0],
+        pack([r, g, b], "* h w")[0],
     )
 
     check(
         np.concatenate([r, g, b], axis=1),
-        pack([r, g, b], 'h *')[0],
+        pack([r, g, b], "h *")[0],
     )
     check(
         np.concatenate([r, g, b], axis=0),
-        pack([r, g, b], '* w')[0],
+        pack([r, g, b], "* w")[0],
     )
 
     i = np.index_exp[:, :, None]
     check(
         np.concatenate([r[i], g[i], b[i], embeddings], axis=2),
-        pack([r, g, b, embeddings], 'h w *')[0],
+        pack([r, g, b, embeddings], "h w *")[0],
     )
 
     with pytest.raises(EinopsError):
-        pack([r, g, b, embeddings], 'h w nonexisting_axis *')
+        pack([r, g, b, embeddings], "h w nonexisting_axis *")
 
-    pack([r, g, b], 'some_name_for_H some_name_for_w1 *')
+    pack([r, g, b], "some_name_for_H some_name_for_w1 *")
 
     with pytest.raises(EinopsError):
-        pack([r, g, b, embeddings], 'h _w *')  # no leading underscore
+        pack([r, g, b, embeddings], "h _w *")  # no leading underscore
     with pytest.raises(EinopsError):
-        pack([r, g, b, embeddings], 'h_ w *')  # no trailing underscore
+        pack([r, g, b, embeddings], "h_ w *")  # no trailing underscore
     with pytest.raises(EinopsError):
-        pack([r, g, b, embeddings], '1h_ w *')
+        pack([r, g, b, embeddings], "1h_ w *")
     with pytest.raises(EinopsError):
-        pack([r, g, b, embeddings], '1 w *')
+        pack([r, g, b, embeddings], "1 w *")
     with pytest.raises(EinopsError):
-        pack([r, g, b, embeddings], 'h h *')
+        pack([r, g, b, embeddings], "h h *")
     # capital and non-capital are different
-    pack([r, g, b, embeddings], 'h H *')
+    pack([r, g, b, embeddings], "h H *")
 
 
 @dataclasses.dataclass
@@ -125,7 +124,7 @@ class UnpackTestCase:
     pattern: str
 
     def dim(self):
-        return self.pattern.split().index('*')
+        return self.pattern.split().index("*")
 
     def selfcheck(self):
         assert self.shape[self.dim()] == 5
@@ -134,12 +133,12 @@ class UnpackTestCase:
 cases = [
     # NB: in all cases unpacked axis is of length 5.
     # that's actively used in tests below
-    UnpackTestCase((5,), '*'),
-    UnpackTestCase((5, 7), '* seven'),
-    UnpackTestCase((7, 5), 'seven *'),
-    UnpackTestCase((5, 3, 4), '* three four'),
-    UnpackTestCase((4, 5, 3), 'four * three'),
-    UnpackTestCase((3, 4, 5), 'three four *'),
+    UnpackTestCase((5,), "*"),
+    UnpackTestCase((5, 7), "* seven"),
+    UnpackTestCase((7, 5), "seven *"),
+    UnpackTestCase((5, 3, 4), "* three four"),
+    UnpackTestCase((4, 5, 3), "four * three"),
+    UnpackTestCase((3, 4, 5), "three four *"),
 ]
 
 
@@ -155,7 +154,7 @@ def test_pack_unpack_with_numpy():
         unpack_and_pack(x, [[2], [1], [2]], pattern)
         # no -1, asking for wrong shapes
         with pytest.raises(BaseException):
-            unpack_and_pack(x, [[2], [1], [2]], pattern + ' non_existent_axis')
+            unpack_and_pack(x, [[2], [1], [2]], pattern + " non_existent_axis")
         with pytest.raises(BaseException):
             unpack_and_pack(x, [[2], [1], [1]], pattern)
         with pytest.raises(BaseException):
@@ -208,11 +207,8 @@ def test_pack_unpack_with_numpy():
 
 def test_pack_unpack_against_numpy():
     for backend in collect_test_backends(symbolic=False, layers=False):
-        print(f'test packing against numpy for {backend.framework_name}')
+        print(f"test packing against numpy for {backend.framework_name}")
         check_zero_len = True
-        if 'mxnet' in backend.framework_name:
-            # some frameworks don't accept zero as a dimension
-            check_zero_len = False
 
         for case in cases:
             unpack_and_pack = unpack_and_pack_against_numpy
@@ -271,7 +267,3 @@ def test_pack_unpack_against_numpy():
 
                 # -1 takes zero, -1
                 unpack_and_pack(x, [[2, -1], [1, 5]], pattern)
-
-
-# NB there is no testing for symbolic backends
-# because mxnet symbols do not allow slicing with [...]

@@ -60,13 +60,8 @@ def test_rearrange_imperative():
 
             just_sum = backend.layers().Reduce("...->", reduction="sum")
 
-            if "mxnet" in backend.framework_name:
-                with backend.mx.autograd.record():
-                    variable = backend.from_numpy(x)
-                    result = just_sum(layer(variable))
-            else:
-                variable = backend.from_numpy(x)
-                result = just_sum(layer(variable))
+            variable = backend.from_numpy(x)
+            result = just_sum(layer(variable))
 
             result.backward()
             assert numpy.allclose(backend.to_numpy(variable.grad), 1)
@@ -80,9 +75,8 @@ def test_rearrange_symbolic():
             x = numpy.arange(numpy.prod(input_shape), dtype="float32").reshape(input_shape)
             result_numpy = rearrange(x, pattern, **axes_lengths)
             layer = backend.layers().Rearrange(pattern, **axes_lengths)
-            shapes = [input_shape]
-            if "mxnet" not in backend.framework_name:
-                shapes.append([None] * len(input_shape))
+            input_shape_of_nones = [None] * len(input_shape)
+            shapes = [input_shape, input_shape_of_nones]
 
             for shape in shapes:
                 symbol = backend.create_symbol(shape)
@@ -140,13 +134,8 @@ def test_reduce_imperative():
 
                 just_sum = backend.layers().Reduce("...->", reduction="sum")
 
-                if "mxnet" in backend.framework_name:
-                    with backend.mx.autograd.record():
-                        variable = backend.from_numpy(x)
-                        result = just_sum(layer(variable))
-                else:
-                    variable = backend.from_numpy(x)
-                    result = just_sum(layer(variable))
+                variable = backend.from_numpy(x)
+                result = just_sum(layer(variable))
 
                 result.backward()
                 grad = backend.to_numpy(variable.grad)
@@ -168,9 +157,8 @@ def test_reduce_symbolic():
                 x /= x.mean()
                 result_numpy = reduce(x, pattern, reduction, **axes_lengths)
                 layer = backend.layers().Reduce(pattern, reduction, **axes_lengths)
-                shapes = [input_shape]
-                if "mxnet" not in backend.framework_name:
-                    shapes.append([None] * len(input_shape))
+                input_shape_of_nones = [None] * len(input_shape)
+                shapes = [input_shape, input_shape_of_nones]
 
                 for shape in shapes:
                     symbol = backend.create_symbol(shape)
@@ -189,27 +177,27 @@ def test_reduce_symbolic():
 def create_torch_model(use_reduce=False, add_scripted_layer=False):
     if not is_backend_tested("torch"):
         pytest.skip()
+    else:
+        from torch.nn import Sequential, Conv2d, MaxPool2d, Linear, ReLU
+        from einops.layers.torch import Rearrange, Reduce, EinMix
+        import torch.jit
 
-    from torch.nn import Sequential, Conv2d, MaxPool2d, Linear, ReLU
-    from einops.layers.torch import Rearrange, Reduce, EinMix
-    import torch.jit
-
-    return Sequential(
-        Conv2d(3, 6, kernel_size=(5, 5)),
-        Reduce("b c (h h2) (w w2) -> b c h w", "max", h2=2, w2=2) if use_reduce else MaxPool2d(kernel_size=2),
-        Conv2d(6, 16, kernel_size=(5, 5)),
-        Reduce("b c (h h2) (w w2) -> b c h w", "max", h2=2, w2=2),
-        torch.jit.script(Rearrange("b c h w -> b (c h w)"))
-        if add_scripted_layer
-        else Rearrange("b c h w -> b (c h w)"),
-        Linear(16 * 5 * 5, 120),
-        ReLU(),
-        Linear(120, 84),
-        ReLU(),
-        EinMix("b c1 -> (b c2)", weight_shape="c1 c2", bias_shape="c2", c1=84, c2=84),
-        EinMix("(b c2) -> b c3", weight_shape="c2 c3", bias_shape="c3", c2=84, c3=84),
-        Linear(84, 10),
-    )
+        return Sequential(
+            Conv2d(3, 6, kernel_size=(5, 5)),
+            Reduce("b c (h h2) (w w2) -> b c h w", "max", h2=2, w2=2) if use_reduce else MaxPool2d(kernel_size=2),
+            Conv2d(6, 16, kernel_size=(5, 5)),
+            Reduce("b c (h h2) (w w2) -> b c h w", "max", h2=2, w2=2),
+            torch.jit.script(Rearrange("b c h w -> b (c h w)"))
+            if add_scripted_layer
+            else Rearrange("b c h w -> b (c h w)"),
+            Linear(16 * 5 * 5, 120),
+            ReLU(),
+            Linear(120, 84),
+            ReLU(),
+            EinMix("b c1 -> (b c2)", weight_shape="c1 c2", bias_shape="c2", c1=84, c2=84),
+            EinMix("(b c2) -> b c3", weight_shape="c2 c3", bias_shape="c3", c2=84, c3=84),
+            Linear(84, 10),
+        )
 
 
 def test_torch_layer():
@@ -302,66 +290,62 @@ def test_keras_layer():
         assert numpy.allclose(model1.predict_on_batch(input), model2.predict_on_batch(input))
 
 
-def test_gluon_layer():
-    gluon_is_present = any(
-        "mxnet" in backend.framework_name for backend in collect_test_backends(symbolic=False, layers=True)
-    )
-    if gluon_is_present:
-        # checked that gluon present
-        import mxnet
-        from mxnet.gluon.nn import HybridSequential, Dense, Conv2D, LeakyReLU
-        from einops.layers.gluon import Rearrange, Reduce, EinMix
-        from einops import asnumpy
+def _deprecated_check_gluon_layer():
+    # currently gluon is not tested, and will be removed
+    import mxnet
+    from mxnet.gluon.nn import HybridSequential, Dense, Conv2D, LeakyReLU
+    from einops.layers.gluon import Rearrange, Reduce, EinMix
+    from einops import asnumpy
 
-        def create_model():
-            model = HybridSequential()
-            layers = [
-                Conv2D(6, kernel_size=5),
-                Reduce("b c (h h2) (w w2) -> b c h w", "max", h2=2, w2=2),
-                Conv2D(16, kernel_size=5),
-                Reduce("b c (h h2) (w w2) -> b c h w", "max", h2=2, w2=2),
-                Rearrange("b c h w -> b (c h w)"),
-                Dense(120),
-                LeakyReLU(alpha=0.0),
-                Dense(84),
-                LeakyReLU(alpha=0.0),
-                Dense(10),
-            ]
-            for layer in layers:
-                model.add(layer)
-            model.initialize(mxnet.init.Xavier(), ctx=mxnet.cpu())
-            return model
+    def create_model():
+        model = HybridSequential()
+        layers = [
+            Conv2D(6, kernel_size=5),
+            Reduce("b c (h h2) (w w2) -> b c h w", "max", h2=2, w2=2),
+            Conv2D(16, kernel_size=5),
+            Reduce("b c (h h2) (w w2) -> b c h w", "max", h2=2, w2=2),
+            Rearrange("b c h w -> b (c h w)"),
+            Dense(120),
+            LeakyReLU(alpha=0.0),
+            Dense(84),
+            LeakyReLU(alpha=0.0),
+            Dense(10),
+        ]
+        for layer in layers:
+            model.add(layer)
+        model.initialize(mxnet.init.Xavier(), ctx=mxnet.cpu())
+        return model
 
-        model1 = create_model()
-        model2 = create_model()
-        x = mxnet.ndarray.random_normal(shape=[10, 3, 32, 32])
-        assert not numpy.allclose(asnumpy(model1(x)), asnumpy(model2(x)))
+    model1 = create_model()
+    model2 = create_model()
+    x = mxnet.ndarray.random_normal(shape=[10, 3, 32, 32])
+    assert not numpy.allclose(asnumpy(model1(x)), asnumpy(model2(x)))
 
-        with tempfile.NamedTemporaryFile(mode="r+b") as fp:
-            model1.save_parameters(fp.name)
-            model2.load_parameters(fp.name)
+    with tempfile.NamedTemporaryFile(mode="r+b") as fp:
+        model1.save_parameters(fp.name)
+        model2.load_parameters(fp.name)
 
-        assert numpy.allclose(asnumpy(model1(x)), asnumpy(model2(x)))
+    assert numpy.allclose(asnumpy(model1(x)), asnumpy(model2(x)))
 
-        # testing with symbolic (NB with fixed dimensions!)
-        input = mxnet.sym.Variable("data", shape=x.shape)
-        json = model1(input).tojson()
-        model3 = mxnet.gluon.SymbolBlock(outputs=mxnet.sym.load_json(json), inputs=input)
-        model4 = mxnet.gluon.SymbolBlock(outputs=mxnet.sym.load_json(json), inputs=input)
-        model3.initialize(ctx=mxnet.cpu())
-        model3(x)
+    # testing with symbolic (NB with fixed dimensions!)
+    input = mxnet.sym.Variable("data", shape=x.shape)
+    json = model1(input).tojson()
+    model3 = mxnet.gluon.SymbolBlock(outputs=mxnet.sym.load_json(json), inputs=input)
+    model4 = mxnet.gluon.SymbolBlock(outputs=mxnet.sym.load_json(json), inputs=input)
+    model3.initialize(ctx=mxnet.cpu())
+    model3(x)
 
-        with tempfile.NamedTemporaryFile(mode="r+b") as fp:
-            model3.save_parameters(fp.name)
-            model4.load_parameters(fp.name)
-        assert numpy.allclose(asnumpy(model3(x)), asnumpy(model4(x)))
+    with tempfile.NamedTemporaryFile(mode="r+b") as fp:
+        model3.save_parameters(fp.name)
+        model4.load_parameters(fp.name)
+    assert numpy.allclose(asnumpy(model3(x)), asnumpy(model4(x)))
 
-        try:
-            model1.hybridize(static_alloc=True, static_shape=True)
-            model1(x)
-        except:
-            # hybridization is not supported
-            pass
+    try:
+        model1.hybridize(static_alloc=True, static_shape=True)
+        model1(x)
+    except:
+        # hybridization is not supported
+        pass
 
 
 def test_chainer_layer():

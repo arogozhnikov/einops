@@ -41,9 +41,6 @@ def test_backends_installed():
             # instantiate
             backend_type()
         except Exception as e:
-            if "mxnet" in backend_type.framework_name:
-                # test mxnet only if it is installed. Not complain if not installed
-                continue
             errors.append(e)
     assert len(errors) == 0, errors
 
@@ -160,6 +157,7 @@ _SYMBOLIC_BACKENDS = [
 @parameterized_class(_SYMBOLIC_BACKENDS)
 class TestParseShapeSymbolic(unittest.TestCase):
     backend: AbstractBackend
+
     @parameterized.expand(
         [
             ([10, 20, 30, 40],),
@@ -169,9 +167,6 @@ class TestParseShapeSymbolic(unittest.TestCase):
     )
     def test_parse_shape_symbolic(self, shape):
         print("special shape parsing for", self.backend.framework_name)
-        if self.backend.framework_name in ["mxnet.symbol"]:
-            # mxnet can't normally run inference
-            shape = [10, 20, 30, 40]
         input_symbol = self.backend.create_symbol(shape)
 
         shape_placeholder = parse_shape(input_symbol, "a b c d")
@@ -209,9 +204,6 @@ class TestParseShapeSymbolic(unittest.TestCase):
     def test_ellipsis(
         self, static_shape: List[int], shape: List[Optional[int]], pattern: str, expected: Dict[str, int]
     ):
-        if self.backend.framework_name in ["mxnet.symbol"]:
-            # mxnet can't normally run inference
-            shape = static_shape
         input_symbol = self.backend.create_symbol(shape)
         shape_placeholder = parse_shape(input_symbol, pattern)
         out_shape = {}

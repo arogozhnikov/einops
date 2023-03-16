@@ -121,3 +121,6 @@ log
 
 # this file is auto-generated
 docs_src/index.md
+
+# vs code 
+*.code-workspace
