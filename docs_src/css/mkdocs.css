@@ -1,13 +1,15 @@
-div.highlight{
+div.highlight {
     /* this was introduced to fix size of documentation script */
-    font-size: 12px;
+    font-size: 13px;
+    background-color: #f2f2f2;
 }
 
-div.highlight>pre{
+div.highlight>pre {
     padding: 3px;
 }
 
-.md-typeset ul li, .md-typeset ol li {
+.md-typeset ul li,
+.md-typeset ol li {
     /*original padding makes lists huge*/
     margin-bottom: 0.2em;
 }
