@@ -1,4 +1,3 @@
-
 div.highlight>pre {
     padding: 3px;
 }
@@ -18,6 +17,11 @@ html {
 .jupyter-wrapper {
     /* set css var used by markdown */
     --jp-code-font-size: 90% !important;
+}
+
+.md-grid {
+    /* change max width of page, looks much better on bigger screens */
+    max-width: 72rem !important;
 }
 
 div.highlight {
