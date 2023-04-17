@@ -232,8 +232,9 @@ def test_torch_compile():
     """
     Test ensures that allow_ops_in_compiled_graph allows compiling in a single graph
     Additionally we ensure that after compilation cache works properly
-    (by changing shapes and patterns)
-    We additionally check that pack/unpack still can be handled despite variable number of inputs/outputs
+     (by changing shapes and patterns)
+    We additionally check that pack/unpack still can be handled
+     despite variable number of inputs/outputs
     """
     if not is_backend_tested('torch'):
         pytest.skip()
@@ -243,7 +244,7 @@ def test_torch_compile():
     from einops._torch_specific import allow_ops_in_compiled_graph
 
     allow_ops_in_compiled_graph()
-    class TestClass(nn.Module):
+    class TorchModuleWithOperations(nn.Module):
         def __init__(self) -> None:
             super().__init__()
 
@@ -253,7 +254,8 @@ def test_torch_compile():
             def suf(pattern):
                 parts = pattern.split()
                 return ' '.join([p if p[-1] not in 'acd' else p + suffix for p in parts])
-
+            # patterns look a bit strange because names a, c, d will be modified on every run
+            # by suf function
             x_abcd = repeat(x_abc, suf('a b c -> a b c 4'))
             x_abc = reduce(x_abcd, suf('a b c d -> a b c'), 'min')
             x_abdc, ps = pack([x_abc] * (2 + len(suffix)), suf('a b * c'))
@@ -263,11 +265,11 @@ def test_torch_compile():
             addition = einsum(x_abc, x_abcd, suf('a b c , a b c d -> d'))[0]
             return x1 + addition
 
-    original = TestClass()
-    compiled = torch.compile(original, fullgraph=True)
+    original = TorchModuleWithOperations()
+    compiled = torch.compile(original, fullgraph=True, backend='aot_eager')
     for size in [10, 20, 40]:
-        x = torch.zeros([size, size + 1, size + 2])
+        x = torch.rand([size, size + 1, size + 2])
         for suffix in ['', 'suf1', 'other_suffix']:
-            result1 = original(x)
-            result2 = compiled(x, suffix)
+            result1 = compiled(x, suffix)
+            result2 = original(x, suffix)
             assert torch.allclose(result1, result2)
