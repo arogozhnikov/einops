@@ -5,7 +5,6 @@ from typing import Dict, List, Optional
 
 import numpy
 import pytest
-import torch
 
 from parameterized import parameterized, parameterized_class
 
@@ -238,6 +237,7 @@ def test_torch_compile():
     """
     if not is_backend_tested('torch'):
         pytest.skip()
+    import torch
     from torch import nn
     from einops import repeat, reduce, pack, unpack, einsum
     from einops._torch_specific import allow_ops_in_compiled_graph
