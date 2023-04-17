@@ -7,7 +7,7 @@ a number of changes is required, and this layer helps.
 
 Importantly, whole lib is designed so that you can't use it
 """
-
+import warnings
 from typing import Dict, List
 
 import torch
@@ -82,3 +82,21 @@ def apply_for_scriptable_torch(recipe: TransformRecipe, tensor: torch.Tensor, re
     if len(added_axes) > 0:
         tensor = backend.add_axes(tensor, n_axes=len(axes_reordering) + len(added_axes), pos2len=added_axes)
     return backend.reshape(tensor, final_shapes)
+
+
+def allow_ops_in_compiled_graph():
+    try:
+        from torch._dynamo import allow_in_graph
+    except ImportError:
+        from warnings import warn
+        warnings.warn("allow_ops_in_compiled_graph failed to import torch: ensure pytorch >=2.0", ImportWarning)
+
+    from .einops import rearrange, reduce, repeat, einsum
+    from .packing import pack, unpack
+
+    allow_in_graph(rearrange)
+    allow_in_graph(reduce)
+    allow_in_graph(repeat)
+    allow_in_graph(einsum)
+    allow_in_graph(pack)
+    allow_in_graph(unpack)
