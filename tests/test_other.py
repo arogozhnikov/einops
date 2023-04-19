@@ -13,7 +13,7 @@ import einops.layers
 import einops.parsing
 from einops._backends import AbstractBackend
 from einops.einops import rearrange, parse_shape, _optimize_transformation
-from . import collect_test_backends
+from . import collect_test_backends, is_backend_tested
 
 __author__ = "Alex Rogozhnikov"
 
@@ -226,3 +226,50 @@ def test_is_float_type():
             if "chainer" in backend.framework_name and not is_float:
                 continue  # chainer doesn't allow non-floating tensors
             assert backend.is_float_type(input) == is_float, (dtype, backend, input.dtype)
+
+
+def test_torch_compile():
+    """
+    Test ensures that allow_ops_in_compiled_graph allows compiling in a single graph
+    Additionally we ensure that after compilation cache works properly
+     (by changing shapes and patterns)
+    We additionally check that pack/unpack still can be handled
+     despite variable number of inputs/outputs
+    """
+    if not is_backend_tested('torch'):
+        pytest.skip()
+    import torch
+    from torch import nn
+    from einops import repeat, reduce, pack, unpack, einsum
+    from einops._torch_specific import allow_ops_in_compiled_graph
+
+    allow_ops_in_compiled_graph()
+    class TorchModuleWithOperations(nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+
+        def forward(self, x_abc, suffix=''):
+            a, b, c = x_abc.shape
+
+            def suf(pattern):
+                parts = pattern.split()
+                return ' '.join([p if p[-1] not in 'acd' else p + suffix for p in parts])
+            # patterns look a bit strange because names a, c, d will be modified on every run
+            # by suf function
+            x_abcd = repeat(x_abc, suf('a b c -> a b c 4'))
+            x_abc = reduce(x_abcd, suf('a b c d -> a b c'), 'min')
+            x_abdc, ps = pack([x_abc] * (2 + len(suffix)), suf('a b * c'))
+            x_array = unpack(rearrange(x_abdc, suf('a b d c -> (a b ) 1 c d')), ps, 'ab one1 c *')
+            x1 = x_array[0] + len(x_array)
+            x1 = rearrange(x1, suf('(a b ) 1 c -> a b c'), b=b)
+            addition = einsum(x_abc, x_abcd, suf('a b c , a b c d -> d'))[0]
+            return x1 + addition
+
+    original = TorchModuleWithOperations()
+    compiled = torch.compile(original, fullgraph=True, backend='aot_eager')
+    for size in [10, 20, 40]:
+        x = torch.rand([size, size + 1, size + 2])
+        for suffix in ['', 'suf1', 'other_suffix']:
+            result1 = compiled(x, suffix)
+            result2 = original(x, suffix)
+            assert torch.allclose(result1, result2)
