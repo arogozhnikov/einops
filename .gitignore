@@ -124,3 +124,6 @@ docs_src/index.md
 
 # vs code 
 *.code-workspace
+
+# macos files
+.DS_Store
