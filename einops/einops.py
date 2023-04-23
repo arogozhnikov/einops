@@ -21,6 +21,8 @@ _reductions = ("min", "max", "sum", "mean", "prod")
 # traceable subset of language
 _ellipsis_not_in_parenthesis: List[int] = [-999]
 _unknown_axis_length = -999999
+# this one is used inline, again, because of restrictions of torch scripting
+# _position_of_non_existent_ellipsis = 10000
 
 
 def is_ellipsis_not_in_parenthesis(group: List[int]) -> bool:
@@ -157,14 +159,12 @@ def _reconstruct_from_shape_uncached(self: TransformRecipe, shape: List[int]) ->
     known axes can be integers or symbols, but not Nones.
     """
     axes_lengths: List[int] = list(self.elementary_axes_lengths)
-    if self.ellipsis_position_in_lhs != 10000:
+    if self.ellipsis_position_in_lhs != 10_000:  # _position_of_non_existent_ellipsis
         if len(shape) < len(self.input_composite_axes) - 1:
-            raise EinopsError(
-                "Expected at least {} dimensions, got {}".format(len(self.input_composite_axes) - 1, len(shape))
-            )
+            raise EinopsError(f"Expected at least {len(self.input_composite_axes) - 1} dimensions, got {len(shape)}")
     else:
         if len(shape) != len(self.input_composite_axes):
-            raise EinopsError("Expected {} dimensions, got {}".format(len(self.input_composite_axes), len(shape)))
+            raise EinopsError(f"Expected {len(self.input_composite_axes)} dimensions, got {len(shape)}")
 
     ellipsis_shape: List[int] = []
     for input_axis, (known_axes, unknown_axes) in enumerate(self.input_composite_axes):
@@ -190,7 +190,7 @@ def _reconstruct_from_shape_uncached(self: TransformRecipe, shape: List[int]) ->
 
             if len(unknown_axes) == 0:
                 if isinstance(length, int) and isinstance(known_product, int) and length != known_product:
-                    raise EinopsError("Shape mismatch, {} != {}".format(length, known_product))
+                    raise EinopsError(f"Shape mismatch, {length} != {known_product}")
             # this is enforced when recipe is created
             # elif len(unknown_axes) > 1:
             #     raise EinopsError(
@@ -200,7 +200,7 @@ def _reconstruct_from_shape_uncached(self: TransformRecipe, shape: List[int]) ->
             else:
                 if isinstance(length, int) and isinstance(known_product, int) and length % known_product != 0:
                     raise EinopsError(
-                        "Shape mismatch, can't divide axis of length {} in chunks of {}".format(length, known_product)
+                        f"Shape mismatch, can't divide axis of length {length} in chunks of {known_product}"
                     )
 
                 unknown_axis = unknown_axes[0]
@@ -350,7 +350,9 @@ def _prepare_transformation_recipe(
         if axis_name not in left.identifiers
     }
 
-    ellipsis_left = None if _ellipsis not in left.composition else left.composition.index(_ellipsis)
+    ellipsis_left = 10_000  # _position_of_non_existent_ellipsis
+    if _ellipsis in left.composition:
+        ellipsis_left = left.composition.index(_ellipsis)
 
     return TransformRecipe(
         elementary_axes_lengths=list(axis_name2known_length.values()),
@@ -570,23 +572,13 @@ def parse_shape(x, pattern: str) -> dict:
     exp = ParsedExpression(pattern, allow_underscore=True)
     shape = get_backend(x).shape(x)
     if exp.has_composed_axes():
-        raise RuntimeError(
-            "Can't parse shape with composite axes: {pattern} {shape}".format(pattern=pattern, shape=shape)
-        )
+        raise RuntimeError(f"Can't parse shape with composite axes: {pattern} {shape}")
     if len(shape) != len(exp.composition):
         if exp.has_ellipsis:
             if len(shape) < len(exp.composition) - 1:
-                raise RuntimeError(
-                    "Can't parse shape with this number of dimensions: {pattern} {shape}".format(
-                        pattern=pattern, shape=shape
-                    )
-                )
+                raise RuntimeError(f"Can't parse shape with this number of dimensions: {pattern} {shape}")
         else:
-            raise RuntimeError(
-                "Can't parse shape with different number of dimensions: {pattern} {shape}".format(
-                    pattern=pattern, shape=shape
-                )
-            )
+            raise RuntimeError(f"Can't parse shape with different number of dimensions: {pattern} {shape}")
     if exp.has_ellipsis:
         ellipsis_idx = exp.composition.index(_ellipsis)
         composition = (
