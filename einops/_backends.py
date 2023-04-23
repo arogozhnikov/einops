@@ -11,7 +11,6 @@ Backends in `einops` are organized to meet the following requirements
 """
 
 import sys
-import warnings
 
 __author__ = 'Alex Rogozhnikov'
 
