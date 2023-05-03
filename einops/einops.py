@@ -17,18 +17,11 @@ ReductionCallable = Callable[[Tensor, Tuple[int, ...]], Tensor]
 Reduction = Union[str, ReductionCallable]
 
 _reductions = ("min", "max", "sum", "mean", "prod")
+
 # magic integers are required to stay within
 # traceable subset of language
-_ellipsis_not_in_parenthesis: List[int] = [-999]
 _unknown_axis_length = -999999
-# this one is used inline, again, because of restrictions of torch scripting
-# _position_of_non_existent_ellipsis = 10000
-
-
-def is_ellipsis_not_in_parenthesis(group: List[int]) -> bool:
-    if len(group) != 1:
-        return False
-    return group[0] == -999
+_expected_axis_length = -99999
 
 
 def _product(sequence: List[int]) -> int:
@@ -109,7 +102,10 @@ def _optimize_transformation(init_shapes, reduced_axes, axes_reordering, final_s
     return init_shapes, reduced_axes, axes_reordering, final_shapes
 
 
-CookedRecipe = Tuple[List[int], List[int], List[int], Dict[int, int], List[int]]
+# This
+CookedRecipe = Tuple[Optional[List[int]], Optional[List[int]], List[int], Dict[int, int], Optional[List[int]], int]
+
+HashableAxesLengths = List[Tuple[str, int]]
 
 
 class TransformRecipe:
@@ -119,136 +115,141 @@ class TransformRecipe:
     """
 
     # structure is non-mutable. In future, this can be non-mutable dataclass (python 3.7+)
+    # update: pytorch 2.0 torch.jit.script seems to have problems with dataclasses unless they were explicitly provided
 
     def __init__(
         self,
-        # list of expressions (or just sizes) for elementary axes as they appear in left expression.
+        # list of sizes (or just sizes) for elementary axes as they appear in left expression.
         # this is what (after computing unknown parts) will be a shape after first transposition.
-        # If ellipsis is present, it forms one dimension here (in the right position).
+        # This does not include any ellipsis dimensions.
         elementary_axes_lengths: List[int],
+        # if additional axes are provided, they should be set in prev array
+        # This shows mapping from name to position
+        axis_name2elementary_axis: Dict[str, int],
         # each dimension in input can help to reconstruct length of one elementary axis
-        # or verify one of dimensions. Each element points to element of elementary_axes_lengths
-        input_composite_axes: List[Tuple[List[int], List[int]]],
-        # indices of axes to be squashed
-        reduced_elementary_axes: List[int],
-        # in which order should axes be reshuffled after reduction
+        # or verify one of dimensions. Each element points to element of elementary_axes_lengths.
+        input_composition_known_unknown: List[Tuple[List[int], List[int]]],
+        # permutation applied to elementary axes, if ellipsis is absent
         axes_permutation: List[int],
-        # at which positions which of elementary axes should appear
+        # permutation puts reduced axes in the end, we only need to know the first position.
+        first_reduced_axis: int,
+        # at which positions which of elementary axes should appear. Axis position -> axis index.
         added_axes: Dict[int, int],
         # ids of axes as they appear in result, again pointers to elementary_axes_lengths,
         # only used to infer result dimensions
         output_composite_axes: List[List[int]],
-        # positions of ellipsis in lhs and rhs of expression
-        ellipsis_position_in_lhs: Optional[int] = None,
     ):
         self.elementary_axes_lengths: List[int] = elementary_axes_lengths
-        self.input_composite_axes: List[Tuple[List[int], List[int]]] = input_composite_axes
-        self.output_composite_axes: List[List[int]] = output_composite_axes
+        self.axis_name2elementary_axis: Dict[str, int] = axis_name2elementary_axis
+        self.input_composition_known_unknown: List[Tuple[List[int], List[int]]] = input_composition_known_unknown
         self.axes_permutation: List[int] = axes_permutation
+
+        self.first_reduced_axis: int = first_reduced_axis
         self.added_axes: Dict[int, int] = added_axes
-        # This is redundant information, but more convenient to use
-        self.reduced_elementary_axes: List[int] = reduced_elementary_axes
-        # setting to a large number to avoid handling Nones in reconstruct_from_shape
-        self.ellipsis_position_in_lhs: int = ellipsis_position_in_lhs if ellipsis_position_in_lhs is not None else 10000
+        self.output_composite_axes: List[List[int]] = output_composite_axes
 
 
-def _reconstruct_from_shape_uncached(self: TransformRecipe, shape: List[int]) -> CookedRecipe:
+def _reconstruct_from_shape_uncached(
+    self: TransformRecipe, shape: List[int], axes_dims: HashableAxesLengths
+) -> CookedRecipe:
     """
     Reconstruct all actual parameters using shape.
-    Shape is a tuple that may contain integers, shape symbols (tf, keras, theano) and UnknownSize (keras, mxnet)
+    Shape is a tuple that may contain integers, shape symbols (tf, theano) and UnknownSize (tf, previously mxnet)
     known axes can be integers or symbols, but not Nones.
     """
+    # magic number
+    need_init_reshape = False
+
+    # last axis is allocated for collapsed ellipsis
     axes_lengths: List[int] = list(self.elementary_axes_lengths)
-    if self.ellipsis_position_in_lhs != 10_000:  # _position_of_non_existent_ellipsis
-        if len(shape) < len(self.input_composite_axes) - 1:
-            raise EinopsError(f"Expected at least {len(self.input_composite_axes) - 1} dimensions, got {len(shape)}")
-    else:
-        if len(shape) != len(self.input_composite_axes):
-            raise EinopsError(f"Expected {len(self.input_composite_axes)} dimensions, got {len(shape)}")
+    for axis, dim in axes_dims:
+        axes_lengths[self.axis_name2elementary_axis[axis]] = dim
 
-    ellipsis_shape: List[int] = []
-    for input_axis, (known_axes, unknown_axes) in enumerate(self.input_composite_axes):
-        before_ellipsis = input_axis
-        after_ellipsis = input_axis + len(shape) - len(self.input_composite_axes)
-        if input_axis == self.ellipsis_position_in_lhs:
-            assert len(known_axes) == 0 and len(unknown_axes) == 1
-            unknown_axis: int = unknown_axes[0]
-            ellipsis_shape = shape[before_ellipsis : after_ellipsis + 1]
-            for d in ellipsis_shape:
-                if d is None:
-                    raise EinopsError("Couldn't infer shape for one or more axes represented by ellipsis")
-            total_dim_size: int = _product(ellipsis_shape)
-            axes_lengths[unknown_axis] = total_dim_size
+    for input_axis, (known_axes, unknown_axes) in enumerate(self.input_composition_known_unknown):
+        length = shape[input_axis]
+        if len(known_axes) == 0 and len(unknown_axes) == 1:
+            # shortcut for the most common case
+            axes_lengths[unknown_axes[0]] = length
+            continue
+
+        known_product = 1
+        for axis in known_axes:
+            known_product *= axes_lengths[axis]
+
+        if len(unknown_axes) == 0:
+            if isinstance(length, int) and isinstance(known_product, int) and length != known_product:
+                raise EinopsError(f"Shape mismatch, {length} != {known_product}")
         else:
-            if input_axis < self.ellipsis_position_in_lhs:
-                length = shape[before_ellipsis]
-            else:
-                length = shape[after_ellipsis]
-            known_product = 1
-            for axis in known_axes:
-                known_product *= axes_lengths[axis]
+            # assert len(unknown_axes) == 1, 'this is enforced when recipe is created, so commented out'
+            if isinstance(length, int) and isinstance(known_product, int) and length % known_product != 0:
+                raise EinopsError(f"Shape mismatch, can't divide axis of length {length} in chunks of {known_product}")
 
-            if len(unknown_axes) == 0:
-                if isinstance(length, int) and isinstance(known_product, int) and length != known_product:
-                    raise EinopsError(f"Shape mismatch, {length} != {known_product}")
-            # this is enforced when recipe is created
-            # elif len(unknown_axes) > 1:
-            #     raise EinopsError(
-            #         "Lengths of two or more axes in parenthesis not provided (dim={}), can't infer dimensions".
-            #             format(known_product)
-            #     )
-            else:
-                if isinstance(length, int) and isinstance(known_product, int) and length % known_product != 0:
-                    raise EinopsError(
-                        f"Shape mismatch, can't divide axis of length {length} in chunks of {known_product}"
-                    )
+            unknown_axis = unknown_axes[0]
+            inferred_length: int = length // known_product
+            axes_lengths[unknown_axis] = inferred_length
 
-                unknown_axis = unknown_axes[0]
-                inferred_length: int = length // known_product
-                axes_lengths[unknown_axis] = inferred_length
+        if len(known_axes) + len(unknown_axes) != 1:
+            need_init_reshape = True
 
     # at this point all axes_lengths are computed (either have values or variables, but not Nones)
 
-    # TODO more readable expression
-    init_shapes = axes_lengths[: len(axes_lengths) - len(self.added_axes)]
+    # elementary axes are ordered as they appear in input, then all added axes
+    init_shapes: Optional[List[int]] = axes_lengths[: len(self.axes_permutation)] if need_init_reshape else None
+
+    need_final_reshape = False
     final_shapes: List[int] = []
-    for output_axis, grouping in enumerate(self.output_composite_axes):
-        if is_ellipsis_not_in_parenthesis(grouping):
-            final_shapes.extend(ellipsis_shape)
-        else:
-            lengths = [axes_lengths[elementary_axis] for elementary_axis in grouping]
-            final_shapes.append(_product(lengths))
-    reduced_axes = self.reduced_elementary_axes
-    axes_reordering = self.axes_permutation
+    for grouping in self.output_composite_axes:
+        lengths = [axes_lengths[elementary_axis] for elementary_axis in grouping]
+        final_shapes.append(_product(lengths))
+        if len(lengths) != 1:
+            need_final_reshape = True
+
     added_axes: Dict[int, int] = {
         pos: axes_lengths[pos_in_elementary] for pos, pos_in_elementary in self.added_axes.items()
     }
-    # if optimize:
-    #     assert len(self.added_axes) == 0
-    #     return _optimize_transformation(init_shapes, reduced_axes, axes_reordering, final_shapes)
-    return init_shapes, reduced_axes, axes_reordering, added_axes, final_shapes
+
+    # this list can be empty
+    reduced_axes = list(range(self.first_reduced_axis, len(self.axes_permutation)))
+
+    n_axes_after_adding_axes = len(added_axes) + len(self.axes_permutation)
+
+    axes_reordering: Optional[List[int]] = self.axes_permutation
+    if self.axes_permutation == list(range(len(self.axes_permutation))):
+        axes_reordering = None
+
+    _final_shapes = final_shapes if need_final_reshape else None
+    return init_shapes, axes_reordering, reduced_axes, added_axes, _final_shapes, n_axes_after_adding_axes
 
 
 _reconstruct_from_shape = functools.lru_cache(1024)(_reconstruct_from_shape_uncached)
 
 
-def _apply_recipe(recipe: TransformRecipe, tensor: Tensor, reduction_type: Reduction) -> Tensor:
+def _apply_recipe(
+    backend, recipe: TransformRecipe, tensor: Tensor, reduction_type: Reduction, axes_lengths: HashableAxesLengths
+) -> Tensor:
     # this method works for all backends but not compilable with
-    backend = get_backend(tensor)
-    init_shapes, reduced_axes, axes_reordering, added_axes, final_shapes = _reconstruct_from_shape(
-        recipe, backend.shape(tensor)
+    init_shapes, axes_reordering, reduced_axes, added_axes, final_shapes, n_axes_w_added = _reconstruct_from_shape(
+        recipe, backend.shape(tensor), axes_lengths
     )
-    tensor = backend.reshape(tensor, init_shapes)
-    tensor = _reduce_axes(tensor, reduction_type=reduction_type, reduced_axes=reduced_axes, backend=backend)
-    tensor = backend.transpose(tensor, axes_reordering)
+    if init_shapes is not None:
+        tensor = backend.reshape(tensor, init_shapes)
+    if axes_reordering is not None:
+        tensor = backend.transpose(tensor, axes_reordering)
+    if len(reduced_axes) > 0:
+        tensor = _reduce_axes(tensor, reduction_type=reduction_type, reduced_axes=reduced_axes, backend=backend)
     if len(added_axes) > 0:
-        tensor = backend.add_axes(tensor, n_axes=len(axes_reordering) + len(added_axes), pos2len=added_axes)
-    return backend.reshape(tensor, final_shapes)
+        tensor = backend.add_axes(tensor, n_axes=n_axes_w_added, pos2len=added_axes)
+    if final_shapes is not None:
+        tensor = backend.reshape(tensor, final_shapes)
+    return tensor
 
 
 @functools.lru_cache(256)
 def _prepare_transformation_recipe(
-    pattern: str, operation: Reduction, axes_lengths: Tuple[Tuple, ...]
+    pattern: str,
+    operation: Reduction,
+    axes_names: Tuple[str, ...],
+    ndim: int,
 ) -> TransformRecipe:
     """Perform initial parsing of pattern and provided supplementary info
     axes_lengths is a tuple of tuples (axis_name, axis_length)
@@ -261,11 +262,11 @@ def _prepare_transformation_recipe(
     if not left.has_ellipsis and rght.has_ellipsis:
         raise EinopsError("Ellipsis found in right side, but not left side of a pattern {}".format(pattern))
     if left.has_ellipsis and left.has_ellipsis_parenthesized:
-        raise EinopsError("Ellipsis is parenthesis in the left side is not allowed: {}".format(pattern))
+        raise EinopsError("Ellipsis inside parenthesis in the left side is not allowed: {}".format(pattern))
     if operation == "rearrange":
-        difference = set.symmetric_difference(left.identifiers, rght.identifiers)
         if left.has_non_unitary_anonymous_axes or rght.has_non_unitary_anonymous_axes:
             raise EinopsError("Non-unitary anonymous axes are not supported in rearrange (exception is length 1)")
+        difference = set.symmetric_difference(left.identifiers, rght.identifiers)
         if len(difference) > 0:
             raise EinopsError("Identifiers only on one side of expression (should be on both): {}".format(difference))
     elif operation == "repeat":
@@ -274,7 +275,7 @@ def _prepare_transformation_recipe(
             raise EinopsError("Unexpected identifiers on the left side of repeat: {}".format(difference))
         axes_without_size = set.difference(
             {ax for ax in rght.identifiers if not isinstance(ax, AnonymousAxis)},
-            {*left.identifiers, *(ax for ax, _ in axes_lengths)},
+            {*left.identifiers, *axes_names},
         )
         if len(axes_without_size) > 0:
             raise EinopsError("Specify sizes for new axes in repeat: {}".format(axes_without_size))
@@ -285,9 +286,48 @@ def _prepare_transformation_recipe(
     else:
         raise EinopsError("Unknown reduction {}. Expect one of {}.".format(operation, _reductions))
 
+    if left.has_ellipsis:
+        n_other_dims = len(left.composition) - 1
+        if ndim < n_other_dims:
+            raise EinopsError(f"Wrong shape: expected >={n_other_dims} dims. Received {ndim}-dim tensor.")
+        ellipsis_ndim = ndim - n_other_dims
+        ell_axes = [_ellipsis + str(i) for i in range(ellipsis_ndim)]
+        left_composition = []
+        for composite_axis in left.composition:
+            if composite_axis == _ellipsis:
+                for axis in ell_axes:
+                    left_composition.append([axis])
+            else:
+                left_composition.append(composite_axis)
+
+        rght_composition = []
+        for composite_axis in rght.composition:
+            if composite_axis == _ellipsis:
+                for axis in ell_axes:
+                    rght_composition.append([axis])
+            else:
+                group = []
+                for axis in composite_axis:
+                    if axis == _ellipsis:
+                        group.extend(ell_axes)
+                    else:
+                        group.append(axis)
+                rght_composition.append(group)
+
+        left.identifiers.update(ell_axes)
+        left.identifiers.remove(_ellipsis)
+        if rght.has_ellipsis:
+            rght.identifiers.update(ell_axes)
+            rght.identifiers.remove(_ellipsis)
+    else:
+        if ndim != len(left.composition):
+            raise EinopsError(f"Wrong shape: expected {len(left.composition)} dims. Received {ndim}-dim tensor.")
+        left_composition = left.composition
+        rght_composition = rght.composition
+
     # parsing all dimensions to find out lengths
     axis_name2known_length: Dict[Union[str, AnonymousAxis], int] = OrderedDict()
-    for composite_axis in left.composition:
+    for composite_axis in left_composition:
         for axis_name in composite_axis:
             if isinstance(axis_name, AnonymousAxis):
                 axis_name2known_length[axis_name] = axis_name.value
@@ -306,21 +346,18 @@ def _prepare_transformation_recipe(
             repeat_axes_names.append(axis_name)
 
     axis_name2position = {name: position for position, name in enumerate(axis_name2known_length)}
-    reduced_axes: List[int] = [
-        position for axis, position in axis_name2position.items() if axis not in rght.identifiers
-    ]
-    reduced_axes = list(sorted(reduced_axes))
 
-    for elementary_axis, axis_length in axes_lengths:
+    # axes provided as kwargs
+    for elementary_axis in axes_names:
         if not ParsedExpression.check_axis_name(elementary_axis):
             raise EinopsError("Invalid name for an axis", elementary_axis)
         if elementary_axis not in axis_name2known_length:
             raise EinopsError("Axis {} is not used in transform".format(elementary_axis))
-        axis_name2known_length[elementary_axis] = axis_length
+        axis_name2known_length[elementary_axis] = _expected_axis_length
 
     input_axes_known_unknown = []
-    # some of shapes will be inferred later - all information is prepared for faster inference
-    for composite_axis in left.composition:
+    # some shapes are inferred later - all information is prepared for faster inference
+    for i, composite_axis in enumerate(left_composition):
         known: Set[str] = {axis for axis in composite_axis if axis_name2known_length[axis] != _unknown_axis_length}
         unknown: Set[str] = {axis for axis in composite_axis if axis_name2known_length[axis] == _unknown_axis_length}
         if len(unknown) > 1:
@@ -331,38 +368,54 @@ def _prepare_transformation_recipe(
         )
 
     axis_position_after_reduction: Dict[str, int] = {}
-    for axis_name in itertools.chain(*left.composition):
+    for axis_name in itertools.chain(*left_composition):
         if axis_name in rght.identifiers:
             axis_position_after_reduction[axis_name] = len(axis_position_after_reduction)
 
-    result_axes_grouping: List[List[int]] = []
-    for composite_axis in rght.composition:
-        if composite_axis == _ellipsis:
-            result_axes_grouping.append(_ellipsis_not_in_parenthesis)
-        else:
-            result_axes_grouping.append([axis_name2position[axis] for axis in composite_axis])
+    result_axes_grouping: List[List[int]] = [
+        [axis_name2position[axis] for axis in composite_axis] for i, composite_axis in enumerate(rght_composition)
+    ]
 
-    ordered_axis_right = list(itertools.chain(*rght.composition))
-    axes_permutation = [axis_position_after_reduction[axis] for axis in ordered_axis_right if axis in left.identifiers]
+    ordered_axis_left = list(itertools.chain(*left_composition))
+    ordered_axis_rght = list(itertools.chain(*rght_composition))
+    reduced_axes = [axis for axis in ordered_axis_left if axis not in rght.identifiers]
+    order_after_transposition = [axis for axis in ordered_axis_rght if axis in left.identifiers] + reduced_axes
+    axes_permutation = [ordered_axis_left.index(axis) for axis in order_after_transposition]
     added_axes = {
         i: axis_name2position[axis_name]
-        for i, axis_name in enumerate(ordered_axis_right)
+        for i, axis_name in enumerate(ordered_axis_rght)
         if axis_name not in left.identifiers
     }
 
-    ellipsis_left = 10_000  # _position_of_non_existent_ellipsis
-    if _ellipsis in left.composition:
-        ellipsis_left = left.composition.index(_ellipsis)
+    first_reduced_axis = len(order_after_transposition) - len(reduced_axes)
 
     return TransformRecipe(
         elementary_axes_lengths=list(axis_name2known_length.values()),
-        input_composite_axes=input_axes_known_unknown,
-        reduced_elementary_axes=reduced_axes,
+        axis_name2elementary_axis={axis: axis_name2position[axis] for axis in axes_names},
+        input_composition_known_unknown=input_axes_known_unknown,
         axes_permutation=axes_permutation,
+        first_reduced_axis=first_reduced_axis,
         added_axes=added_axes,
         output_composite_axes=result_axes_grouping,
-        ellipsis_position_in_lhs=ellipsis_left,
     )
+
+
+# TODO multi-recipe should be recomputed when a layer is unpickled.
+
+
+def _prepare_recipes_for_all_dims(
+    pattern: str, operation: Reduction, axes_names: Tuple[str, ...]
+) -> Dict[int, TransformRecipe]:
+    """
+    Function to be used in layers.
+    Layer makes all recipe creation when it is initialized, thus to keep recipes simple we pre-compute for all dimensions.
+    """
+    left_str, rght_str = pattern.split("->")
+    left = ParsedExpression(left_str)
+    dims = [len(left.composition)]
+    if left.has_ellipsis:
+        dims = [len(left.composition) - 1 + ellipsis_dims for ellipsis_dims in range(8)]
+    return {ndim: _prepare_transformation_recipe(pattern, operation, axes_names, ndim=ndim) for ndim in dims}
 
 
 def reduce(tensor: Tensor, pattern: str, reduction: Reduction, **axes_lengths: int) -> Tensor:
@@ -419,12 +472,14 @@ def reduce(tensor: Tensor, pattern: str, reduction: Reduction, **axes_lengths: i
     """
     try:
         hashable_axes_lengths = tuple(sorted(axes_lengths.items()))
-        recipe = _prepare_transformation_recipe(pattern, reduction, axes_lengths=hashable_axes_lengths)
-        return _apply_recipe(recipe, tensor, reduction_type=reduction)
+        backend = get_backend(tensor)
+        shape = backend.shape(tensor)
+        recipe = _prepare_transformation_recipe(pattern, reduction, axes_names=tuple(axes_lengths), ndim=len(shape))
+        return _apply_recipe(backend, recipe, tensor, reduction_type=reduction, axes_lengths=hashable_axes_lengths)
     except EinopsError as e:
         message = ' Error while processing {}-reduction pattern "{}".'.format(reduction, pattern)
         if not isinstance(tensor, list):
-            message += "\n Input tensor shape: {}. ".format(get_backend(tensor).shape(tensor))
+            message += "\n Input tensor shape: {}. ".format(shape)
         else:
             message += "\n Input is list. "
         message += "Additional info: {}.".format(axes_lengths)

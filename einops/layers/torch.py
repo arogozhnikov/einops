@@ -11,7 +11,10 @@ __author__ = 'Alex Rogozhnikov'
 
 class Rearrange(RearrangeMixin, torch.nn.Module):
     def forward(self, input):
-        return apply_for_scriptable_torch(self._recipe, input, reduction_type='rearrange')
+        recipe = self._multirecipe[input.ndim]
+        return apply_for_scriptable_torch(
+            recipe, input, reduction_type='rearrange', axes_dims=self._axes_lengths
+        )
 
     def _apply_recipe(self, x):
         # overriding parent method to prevent it's scripting
@@ -20,7 +23,10 @@ class Rearrange(RearrangeMixin, torch.nn.Module):
 
 class Reduce(ReduceMixin, torch.nn.Module):
     def forward(self, input):
-        return apply_for_scriptable_torch(self._recipe, input, reduction_type=self.reduction)
+        recipe = self._multirecipe[input.ndim]
+        return apply_for_scriptable_torch(
+            recipe, input, reduction_type=self.reduction, axes_dims=self._axes_lengths
+        )
 
     def _apply_recipe(self, x):
         # overriding parent method to prevent it's scripting
