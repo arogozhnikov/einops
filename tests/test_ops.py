@@ -205,7 +205,7 @@ def test_reduction_imperatives():
             for pattern, axes_lengths, expected_result in test_cases:
                 result = reduce(backend.from_numpy(input.copy()), pattern, reduction=reduction, **axes_lengths)
                 result = backend.to_numpy(result)
-                assert numpy.allclose(result, expected_result)
+                assert numpy.allclose(result, expected_result), f'Failed at {pattern}'
 
 
 def test_reduction_symbolic():
