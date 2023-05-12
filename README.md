@@ -33,10 +33,18 @@ Supports numpy, pytorch, tensorflow, jax, and [others](#supported-frameworks).
 - einops 0.6.1: paddle backend added
 - einops 0.6 introduces [packing and unpacking](https://github.com/arogozhnikov/einops/blob/master/docs/4-pack-and-unpack.ipynb)
 - einops 0.5: einsum is now a part of einops
-- [Einops paper](https://openreview.net/pdf?id=oapKSVM2bcj) is accepted for oral presentation at ICLR 2022 (yes, it worth reading)
-- flax and oneflow backend added
-- torch.jit.script is supported for pytorch layers
-- powerful EinMix added to einops. [Einmix tutorial notebook](https://github.com/arogozhnikov/einops/blob/master/docs/3-einmix-layer.ipynb) 
+- [Einops paper](https://openreview.net/pdf?id=oapKSVM2bcj) is accepted for oral presentation at ICLR 2022 (yes, it worth reading).
+  Talk recordings are [available](https://iclr.cc/virtual/2022/oral/6603)
+
+
+<details>
+  <summary>Previous updates</summary>
+  
+  
+  - flax and oneflow backend added
+  - torch.jit.script is supported for pytorch layers
+  - powerful EinMix added to einops. [Einmix tutorial notebook](https://github.com/arogozhnikov/einops/blob/master/docs/3-einmix-layer.ipynb) 
+</details>
 
 <!--<div align="center">
   <img src="http://arogozhnikov.github.io/images/einops/einops_logo_350x350.png" 
@@ -57,6 +65,7 @@ Supports numpy, pytorch, tensorflow, jax, and [others](#supported-frameworks).
 
 [More testimonials](https://einops.rocks/pages/testimonials/)
 
+<!--
 ## Recordings of talk at ICLR 2022
 
 <a href='https://iclr.cc/virtual/2022/oral/6603'>
@@ -64,7 +73,7 @@ Supports numpy, pytorch, tensorflow, jax, and [others](#supported-frameworks).
 </a>
 
 Watch [a 15-minute talk](https://iclr.cc/virtual/2022/oral/6603) focused on main problems of standard tensor manipulation methods, and how einops improves this process.
-
+-->
 
 ## Contents
 
@@ -74,6 +83,7 @@ Watch [a 15-minute talk](https://iclr.cc/virtual/2022/oral/6603) focused on main
 - [API micro-reference](#API)
 - [Why using einops](#Why-using-einops-notation)
 - [Supported frameworks](#Supported-frameworks)
+- [Citing](#Citing)
 - [Repository](https://github.com/arogozhnikov/einops) and [discussions](https://github.com/arogozhnikov/einops/discussions)
 
 ## Installation  <a name="Installation"></a>
@@ -119,7 +129,33 @@ output_tensor = reduce(input_tensor, 'b c (h h2) (w w2) -> b h w c', 'mean', h2=
 # copy along a new axis
 output_tensor = repeat(input_tensor, 'h w -> h w c', c=3)
 ```
-And two corresponding layers (`einops` keeps a separate version for each framework) with the same API.
+
+Later additions to the family are `pack` and `unpack` functions (better than stack/split/concatenate):
+
+```python
+from einops import pack, unpack
+# pack and unpack allow reversibly 'packing' multiple tensors into one.
+# Packed tensors may be of different dimensionality:
+packed,  ps = pack([class_token_bc, image_tokens_bhwc, text_tokens_btc], 'b * c')
+class_emb_bc, image_emb_bhwc, text_emb_btc = unpack(transformer(packed), ps, 'b * c')
+```
+
+Finally, einops provides einsum with a support of multi-lettered names: 
+
+```python
+from einops import einsum, pack, unpack
+# einsum is like ... einsum, generic and flexible dot-product 
+# but 1) axes can be multi-lettered  2) pattern goes last 3) works with multiple frameworks
+C = einsum(A, B, 'b t1 head c, b t2 head c -> b head t1 t2')
+```
+
+### EinMix
+
+`EinMix` is a generic linear layer, perfect for MLP Mixers and similar architectures.
+
+### Layers
+
+Einops provides layers (`einops` keeps a separate version for each framework) that reflect corresponding functions
 
 ```python
 from einops.layers.torch      import Rearrange, Reduce
@@ -130,44 +166,34 @@ from einops.layers.keras      import Rearrange, Reduce
 from einops.layers.chainer    import Rearrange, Reduce
 ```
 
-Layers behave similarly to operations and have the same parameters 
-(with the exception of the first argument, which is passed during call).
+<details>
+  <summary>Example of using layers within a pytorch model</summary>
+  
+  
+  ```python
+  # example given for pytorch, but code in other frameworks is almost identical  
+  from torch.nn import Sequential, Conv2d, MaxPool2d, Linear, ReLU
+  from einops.layers.torch import Rearrange
 
-Example of using layers within a model:
-```python
-# example given for pytorch, but code in other frameworks is almost identical  
-from torch.nn import Sequential, Conv2d, MaxPool2d, Linear, ReLU
-from einops.layers.torch import Rearrange
+  model = Sequential(
+      ...,
+      Conv2d(6, 16, kernel_size=5),
+      MaxPool2d(kernel_size=2),
+      # flattening without need to write forward
+      Rearrange('b c h w -> b (c h w)'),  
+      Linear(16*5*5, 120), 
+      ReLU(),
+      Linear(120, 10), 
+  )
+  ```
+  
+  No more flatten needed! 
+  
+  Additionally, torch users will benefit from layers as those are script-able and compile-able.
+</details>
 
-model = Sequential(
-    ...,
-    Conv2d(6, 16, kernel_size=5),
-    MaxPool2d(kernel_size=2),
-    # flattening without need to write forward
-    Rearrange('b c h w -> b (c h w)'),  
-    Linear(16*5*5, 120), 
-    ReLU(),
-    Linear(120, 10), 
-)
-```
 
-Later additions to the family are `einsum`, `pack` and `unpack` functions:
 
-```python
-from einops import einsum, pack, unpack
-# einsum is like ... einsum, generic and flexible dot-product 
-# but 1) axes can be multi-lettered  2) pattern goes last 3) works with multiple frameworks
-C = einsum(A, B, 'b t1 head c, b t2 head c -> b head t1 t2')
-
-# pack and unpack allow reversibly 'packing' multiple tensors into one.
-# Packed tensors may be of different dimensionality:
-packed,  ps = pack([class_token_bc, image_tokens_bhwc, text_tokens_btc], 'b * c')
-class_emb_bc, image_emb_bhwc, text_emb_btc = unpack(transformer(packed), ps, 'b * c')
-# Pack/Unpack are more convenient than concat and split, see tutorial
-```
-
-Last, but not the least `EinMix` layer is available! <br />
-`EinMix` is a generic linear layer, perfect for MLP Mixers and similar architectures.
 
 ## Naming <a name="Naming"></a>
 
@@ -280,7 +306,7 @@ repeat(image, 'h w -> h (tile w)', tile=2)  # in cupy
 ... (etc.)
 ```
 
-Testimonials provide user's perspective on the same question. 
+[Testimonials](https://einops.rocks/pages/testimonials/) provide users' perspective on the same question. 
 
 ## Supported frameworks <a name="Supported-frameworks"></a>
 
@@ -298,7 +324,7 @@ Einops works with ...
 - [paddle](https://github.com/PaddlePaddle/Paddle) (experimental)
 - [gluon](https://gluon.mxnet.io/) (deprecated)
 
-## Citing einops <a name="Contributing"></a>
+## Citing einops <a name="Citing"></a>
 
 Please use the following bibtex record
 
