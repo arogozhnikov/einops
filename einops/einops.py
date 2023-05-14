@@ -760,27 +760,23 @@ def _compactify_pattern_for_einsum(pattern: str) -> str:
     return compact_pattern
 
 
-# dunders in overloads turn arguments into positional-only.
-# After python 3.7 EOL this should be replaced with '/' as the last argument.
-
-
 @typing.overload
-def einsum(__tensor: Tensor, __pattern: str) -> Tensor:
+def einsum(tensor: Tensor, pattern: str, /) -> Tensor:
     ...
 
 
 @typing.overload
-def einsum(__tensor1: Tensor, __tensor2: Tensor, __pattern: str) -> Tensor:
+def einsum(tensor1: Tensor, tesnor2: Tensor, pattern: str, /) -> Tensor:
     ...
 
 
 @typing.overload
-def einsum(__tensor1: Tensor, __tensor2: Tensor, __tensor3: Tensor, __pattern: str) -> Tensor:
+def einsum(tensor1: Tensor, tesnor2: Tensor, tesnor3: Tensor, pattern: str, /) -> Tensor:
     ...
 
 
 @typing.overload
-def einsum(__tensor1: Tensor, __tensor2: Tensor, __tensor3: Tensor, __tensor4: Tensor, __pattern: str) -> Tensor:
+def einsum(tesnor1: Tensor, tesnor2: Tensor, tesnor3: Tensor, tesnor4: Tensor, pattern: str, /) -> Tensor:
     ...
 
 

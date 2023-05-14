@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "einops"
 description = "A new flavour of deep learning operations"
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 
 keywords = [
     'deep learning',
