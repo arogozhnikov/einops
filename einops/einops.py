@@ -766,17 +766,17 @@ def einsum(tensor: Tensor, pattern: str, /) -> Tensor:
 
 
 @typing.overload
-def einsum(tensor1: Tensor, tesnor2: Tensor, pattern: str, /) -> Tensor:
+def einsum(tensor1: Tensor, tensor2: Tensor, pattern: str, /) -> Tensor:
     ...
 
 
 @typing.overload
-def einsum(tensor1: Tensor, tesnor2: Tensor, tesnor3: Tensor, pattern: str, /) -> Tensor:
+def einsum(tensor1: Tensor, tensor2: Tensor, tensor3: Tensor, pattern: str, /) -> Tensor:
     ...
 
 
 @typing.overload
-def einsum(tesnor1: Tensor, tesnor2: Tensor, tesnor3: Tensor, tesnor4: Tensor, pattern: str, /) -> Tensor:
+def einsum(tensor1: Tensor, tensor2: Tensor, tensor3: Tensor, tensor4: Tensor, pattern: str, /) -> Tensor:
     ...
 
 
