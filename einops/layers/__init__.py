@@ -49,6 +49,12 @@ class RearrangeMixin:
             axes_lengths=self._axes_lengths,
         )
 
+    def __getstate__(self):
+        return {'pattern': self.pattern, 'axes_lengths': self.axes_lengths}
+
+    def __setstate__(self, state):
+        self.__init__(pattern=state['pattern'], **state['axes_lengths'])
+
 
 class ReduceMixin:
     """
@@ -92,3 +98,9 @@ class ReduceMixin:
             reduction_type=self.reduction,
             axes_lengths=self._axes_lengths,
         )
+
+    def __getstate__(self):
+        return {'pattern': self.pattern, 'reduction': self.reduction, 'axes_lengths': self.axes_lengths}
+
+    def __setstate__(self, state):
+        self.__init__(pattern=state['pattern'], reduction=state['reduction'], **state['axes_lengths'])
