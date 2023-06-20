@@ -231,8 +231,16 @@ _reconstruct_from_shape = functools.lru_cache(1024)(_reconstruct_from_shape_unca
 def _apply_recipe(recipe: TransformRecipe, tensor: Tensor, reduction_type: Reduction) -> Tensor:
     # this method works for all backends but not compilable with
     backend = get_backend(tensor)
+
+    # Ideally we'd check if any of the sizes are of type `torch.SymInt`,
+    # but we don't want einops to have a dependency on torch
+    tracing_dynamic_shapes = any(type(x) != int for x in tensor.shape)
+    # torch.SymInt is not hashable, and will only show up here if we are in the middle of tracing
+    # during torch.compile, so it is ok to be a bit slower and not cache.
+    reconstruct_fn = _reconstruct_from_shape_uncached if tracing_dynamic_shapes else _reconstruct_from_shape
+
     init_shapes, reduced_axes, axes_reordering, added_axes, final_shapes = \
-        _reconstruct_from_shape(recipe, backend.shape(tensor))
+        reconstruct_fn(recipe, backend.shape(tensor))
     tensor = backend.reshape(tensor, init_shapes)
     tensor = _reduce_axes(tensor, reduction_type=reduction_type, reduced_axes=reduced_axes, backend=backend)
     tensor = backend.transpose(tensor, axes_reordering)
