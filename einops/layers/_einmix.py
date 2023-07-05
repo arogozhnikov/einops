@@ -29,11 +29,11 @@ class _EinmixMixin:
 
         Simple linear layer with bias term (you have one like that in your framework)
         >>> EinMix('t b cin -> t b cout', weight_shape='cin cout', bias_shape='cout', cin=10, cout=20)
-        There is restriction to mix the last axis. Let's mix along height
+        There is no restriction to mix the last axis. Let's mix along height
         >>> EinMix('h w c-> hout w c', weight_shape='h hout', bias_shape='hout', h=32, hout=32)
         Channel-wise multiplication (like one used in normalizations)
         >>> EinMix('t b c -> t b c', weight_shape='c', c=128)
-        Separate dense layer within each head, no connection between different heads
+        Multi-head linear layer (each head is own linear layer):
         >>> EinMix('t b (head cin) -> t b (head cout)', weight_shape='head cin cout', ...)
 
         ... ah yes, you need to specify all dimensions of weight shape/bias shape in parameters.

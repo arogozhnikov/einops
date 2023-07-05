@@ -3,12 +3,13 @@ Specialization of einops for torch.
 
 Unfortunately, torch's jit scripting mechanism isn't strong enough,
 and to have scripting supported at least for layers,
-a number of changes is required, and this layer helps.
+a number of additional moves is needed.
 
-Importantly, whole lib is designed so that you can't use it
+Design of main operations (dynamic resolution by lookup) is unlikely
+to be implemented by torch.jit.script, but torch.compile seems to work completely fine.
 """
 import warnings
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 import torch
 from einops.einops import TransformRecipe, _reconstruct_from_shape_uncached
@@ -17,25 +18,25 @@ from einops.einops import TransformRecipe, _reconstruct_from_shape_uncached
 class TorchJitBackend:
     """
     Completely static backend that mimics part of normal backend functionality
-    but restricted to torch stuff only
+    but restricted to be within torchscript.
     """
 
     @staticmethod
     def reduce(x: torch.Tensor, operation: str, reduced_axes: List[int]):
-        if operation == 'min':
+        if operation == "min":
             return x.amin(dim=reduced_axes)
-        elif operation == 'max':
+        elif operation == "max":
             return x.amax(dim=reduced_axes)
-        elif operation == 'sum':
+        elif operation == "sum":
             return x.sum(dim=reduced_axes)
-        elif operation == 'mean':
+        elif operation == "mean":
             return x.mean(dim=reduced_axes)
-        elif operation == 'prod':
+        elif operation == "prod":
             for i in list(sorted(reduced_axes))[::-1]:
                 x = x.prod(dim=i)
             return x
         else:
-            raise NotImplementedError('Unknown reduction ', operation)
+            raise NotImplementedError("Unknown reduction ", operation)
 
     @staticmethod
     def transpose(x, axes: List[int]):
@@ -71,24 +72,35 @@ class TorchJitBackend:
 
 
 # mirrors einops.einops._apply_recipe
-def apply_for_scriptable_torch(recipe: TransformRecipe, tensor: torch.Tensor, reduction_type: str) -> torch.Tensor:
+def apply_for_scriptable_torch(
+    recipe: TransformRecipe, tensor: torch.Tensor, reduction_type: str, axes_dims: List[Tuple[str, int]]
+) -> torch.Tensor:
     backend = TorchJitBackend
-    init_shapes, reduced_axes, axes_reordering, added_axes, final_shapes = \
-        _reconstruct_from_shape_uncached(recipe, backend.shape(tensor))
-    tensor = backend.reshape(tensor, init_shapes)
+    (
+        init_shapes,
+        axes_reordering,
+        reduced_axes,
+        added_axes,
+        final_shapes,
+        n_axes_w_added,
+    ) = _reconstruct_from_shape_uncached(recipe, backend.shape(tensor), axes_dims=axes_dims)
+    if init_shapes is not None:
+        tensor = backend.reshape(tensor, init_shapes)
+    if axes_reordering is not None:
+        tensor = backend.transpose(tensor, axes_reordering)
     if len(reduced_axes) > 0:
         tensor = backend.reduce(tensor, operation=reduction_type, reduced_axes=reduced_axes)
-    tensor = backend.transpose(tensor, axes_reordering)
     if len(added_axes) > 0:
-        tensor = backend.add_axes(tensor, n_axes=len(axes_reordering) + len(added_axes), pos2len=added_axes)
-    return backend.reshape(tensor, final_shapes)
+        tensor = backend.add_axes(tensor, n_axes=n_axes_w_added, pos2len=added_axes)
+    if final_shapes is not None:
+        tensor = backend.reshape(tensor, final_shapes)
+    return tensor
 
 
 def allow_ops_in_compiled_graph():
     try:
         from torch._dynamo import allow_in_graph
     except ImportError:
-        from warnings import warn
         warnings.warn("allow_ops_in_compiled_graph failed to import torch: ensure pytorch >=2.0", ImportWarning)
 
     from .einops import rearrange, reduce, repeat, einsum
