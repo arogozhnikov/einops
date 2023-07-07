@@ -6,6 +6,7 @@ from collections import OrderedDict
 from typing import Set, Tuple, List, Dict, Union, Callable, Optional, TypeVar, cast, Any
 
 if typing.TYPE_CHECKING:
+    # for docstrings in pycharm
     import numpy as np
 
 from . import EinopsError
@@ -107,6 +108,7 @@ CookedRecipe = Tuple[Optional[List[int]], Optional[List[int]], List[int], Dict[i
 # and torch_specific will use list version.
 HashableAxesLengths = Tuple[Tuple[str, int], ...]
 FakeHashableAxesLengths = List[Tuple[str, int]]
+
 
 class TransformRecipe:
     """
@@ -434,15 +436,12 @@ def _prepare_transformation_recipe(
     )
 
 
-# TODO multi-recipe should be recomputed when a layer is unpickled.
-
-
 def _prepare_recipes_for_all_dims(
     pattern: str, operation: Reduction, axes_names: Tuple[str, ...]
 ) -> Dict[int, TransformRecipe]:
     """
-    Function to be used in layers.
-    Layer makes all recipe creation when it is initialized, thus to keep recipes simple we pre-compute for all dimensions.
+    Internal function, used in layers.
+    Layer makes all recipe creation when it is initialized, thus to keep recipes simple we pre-compute for all dims
     """
     left_str, rght_str = pattern.split("->")
     left = ParsedExpression(left_str)
@@ -452,7 +451,7 @@ def _prepare_recipes_for_all_dims(
     return {ndim: _prepare_transformation_recipe(pattern, operation, axes_names, ndim=ndim) for ndim in dims}
 
 
-def reduce(tensor: Tensor, pattern: str, reduction: Reduction, **axes_lengths: int) -> Tensor:
+def reduce(tensor: Union[Tensor, List[Tensor]], pattern: str, reduction: Reduction, **axes_lengths: int) -> Tensor:
     """
     einops.reduce provides combination of reordering and reduction using reader-friendly notation.
 
@@ -505,11 +504,20 @@ def reduce(tensor: Tensor, pattern: str, reduction: Reduction, **axes_lengths: i
         tensor of the same type as input
     """
     try:
+        if isinstance(tensor, list):
+            if len(tensor) == 0:
+                raise TypeError("Rearrange/Reduce/Repeat can't be applied to an empty list")
+            backend = get_backend(tensor[0])
+            tensor = backend.stack_on_zeroth_dimension(tensor)
+        else:
+            backend = get_backend(tensor)
+
         hashable_axes_lengths = tuple(axes_lengths.items())
-        backend = get_backend(tensor)
         shape = backend.shape(tensor)
         recipe = _prepare_transformation_recipe(pattern, reduction, axes_names=tuple(axes_lengths), ndim=len(shape))
-        return _apply_recipe(backend, recipe, tensor, reduction_type=reduction, axes_lengths=hashable_axes_lengths)
+        return _apply_recipe(
+            backend, recipe, cast(Tensor, tensor), reduction_type=reduction, axes_lengths=hashable_axes_lengths
+        )
     except EinopsError as e:
         message = ' Error while processing {}-reduction pattern "{}".'.format(reduction, pattern)
         if not isinstance(tensor, list):
@@ -575,14 +583,10 @@ def rearrange(tensor: Union[Tensor, List[Tensor]], pattern: str, **axes_lengths)
         tensor of the same type as input. If possible, a view to the original tensor is returned.
 
     """
-    if isinstance(tensor, list):
-        if len(tensor) == 0:
-            raise TypeError("Rearrange can't be applied to an empty list")
-        tensor = get_backend(tensor[0]).stack_on_zeroth_dimension(tensor)
-    return reduce(cast(Tensor, tensor), pattern, reduction="rearrange", **axes_lengths)
+    return reduce(tensor, pattern, reduction="rearrange", **axes_lengths)
 
 
-def repeat(tensor: Tensor, pattern: str, **axes_lengths) -> Tensor:
+def repeat(tensor: Union[Tensor, List[Tensor]], pattern: str, **axes_lengths) -> Tensor:
     """
     einops.repeat allows reordering elements and repeating them in arbitrary combinations.
     This operation includes functionality of repeat, tile, broadcast functions.
@@ -652,7 +656,7 @@ def parse_shape(x, pattern: str) -> dict:
     For symbolic frameworks may return symbols, not integers.
 
     Parameters:
-        x: tensor of any of supported frameworks
+        x: tensor of any supported framework
         pattern: str, space separated names for axes, underscore means skip axis
 
     Returns:
@@ -716,7 +720,7 @@ def asnumpy(tensor) -> np_ndarray:
     Convert a tensor of an imperative framework (i.e. numpy/cupy/torch/jax/etc.) to `numpy.ndarray`
 
     Parameters:
-        tensor: tensor of any of known imperative framework
+        tensor: tensor of any known imperative framework
 
     Returns:
         `numpy.ndarray`, converted to numpy
