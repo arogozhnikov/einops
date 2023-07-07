@@ -102,10 +102,11 @@ def _optimize_transformation(init_shapes, reduced_axes, axes_reordering, final_s
 
 CookedRecipe = Tuple[Optional[List[int]], Optional[List[int]], List[int], Dict[int, int], Optional[List[int]], int]
 
-# This is incorrect, actual type is tuple[tuple[str, int], ...]
-# However torch.jit.script does not "understand" the correct type
-HashableAxesLengths = List[Tuple[str, int]]
-
+# Actual type is tuple[tuple[str, int], ...]
+# However torch.jit.script does not "understand" the correct type,
+# and torch_specific will use list version.
+HashableAxesLengths = Tuple[Tuple[str, int], ...]
+FakeHashableAxesLengths = List[Tuple[str, int]]
 
 class TransformRecipe:
     """
@@ -149,7 +150,7 @@ class TransformRecipe:
 
 
 def _reconstruct_from_shape_uncached(
-    self: TransformRecipe, shape: List[int], axes_dims: HashableAxesLengths
+    self: TransformRecipe, shape: List[int], axes_dims: FakeHashableAxesLengths
 ) -> CookedRecipe:
     """
     Reconstruct all actual parameters using shape.
