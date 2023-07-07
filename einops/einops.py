@@ -100,10 +100,11 @@ def _optimize_transformation(init_shapes, reduced_axes, axes_reordering, final_s
     return init_shapes, reduced_axes, axes_reordering, final_shapes
 
 
-# This
 CookedRecipe = Tuple[Optional[List[int]], Optional[List[int]], List[int], Dict[int, int], Optional[List[int]], int]
 
-HashableAxesLengths = Tuple[Tuple[str, int], ...]
+# This is incorrect, actual type is tuple[tuple[str, int], ...]
+# However torch.jit.script does not "understand" the correct type
+HashableAxesLengths = List[Tuple[str, int]]
 
 
 class TransformRecipe:
@@ -225,7 +226,7 @@ _reconstruct_from_shape = functools.lru_cache(1024)(_reconstruct_from_shape_unca
 def _apply_recipe(
     backend, recipe: TransformRecipe, tensor: Tensor, reduction_type: Reduction, axes_lengths: HashableAxesLengths
 ) -> Tensor:
-    # this method works for all backends
+    # this method implements actual work for all backends for 3 operations
     init_shapes, axes_reordering, reduced_axes, added_axes, final_shapes, n_axes_w_added = _reconstruct_from_shape(
         recipe, backend.shape(tensor), axes_lengths
     )
@@ -503,7 +504,7 @@ def reduce(tensor: Tensor, pattern: str, reduction: Reduction, **axes_lengths: i
         tensor of the same type as input
     """
     try:
-        hashable_axes_lengths = tuple(sorted(axes_lengths.items()))
+        hashable_axes_lengths = tuple(axes_lengths.items())
         backend = get_backend(tensor)
         shape = backend.shape(tensor)
         recipe = _prepare_transformation_recipe(pattern, reduction, axes_names=tuple(axes_lengths), ndim=len(shape))
