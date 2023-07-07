@@ -38,8 +38,6 @@ def _reduce_axes(tensor, reduction_type: Reduction, reduced_axes: List[int], bac
         return reduction_type(tensor, tuple(reduced_axes))
     else:
         # one of built-in operations
-        if len(reduced_axes) == 0:
-            return tensor
         assert reduction_type in _reductions
         if reduction_type == "mean":
             if not backend.is_float_type(tensor):
@@ -102,11 +100,13 @@ def _optimize_transformation(init_shapes, reduced_axes, axes_reordering, final_s
     return init_shapes, reduced_axes, axes_reordering, final_shapes
 
 
-# This
 CookedRecipe = Tuple[Optional[List[int]], Optional[List[int]], List[int], Dict[int, int], Optional[List[int]], int]
 
-HashableAxesLengths = List[Tuple[str, int]]
-
+# Actual type is tuple[tuple[str, int], ...]
+# However torch.jit.script does not "understand" the correct type,
+# and torch_specific will use list version.
+HashableAxesLengths = Tuple[Tuple[str, int], ...]
+FakeHashableAxesLengths = List[Tuple[str, int]]
 
 class TransformRecipe:
     """
@@ -150,7 +150,7 @@ class TransformRecipe:
 
 
 def _reconstruct_from_shape_uncached(
-    self: TransformRecipe, shape: List[int], axes_dims: HashableAxesLengths
+    self: TransformRecipe, shape: List[int], axes_dims: FakeHashableAxesLengths
 ) -> CookedRecipe:
     """
     Reconstruct all actual parameters using shape.
@@ -227,7 +227,7 @@ _reconstruct_from_shape = functools.lru_cache(1024)(_reconstruct_from_shape_unca
 def _apply_recipe(
     backend, recipe: TransformRecipe, tensor: Tensor, reduction_type: Reduction, axes_lengths: HashableAxesLengths
 ) -> Tensor:
-    # this method works for all backends but not compilable with
+    # this method implements actual work for all backends for 3 operations
     init_shapes, axes_reordering, reduced_axes, added_axes, final_shapes, n_axes_w_added = _reconstruct_from_shape(
         recipe, backend.shape(tensor), axes_lengths
     )
@@ -241,6 +241,40 @@ def _apply_recipe(
         tensor = backend.add_axes(tensor, n_axes=n_axes_w_added, pos2len=added_axes)
     if final_shapes is not None:
         tensor = backend.reshape(tensor, final_shapes)
+    return tensor
+
+
+def _apply_recipe_array_api(
+    xp, recipe: TransformRecipe, tensor: Tensor, reduction_type: Reduction, axes_lengths: HashableAxesLengths
+) -> Tensor:
+    # completely-inline implementation
+    init_shapes, axes_reordering, reduced_axes, added_axes, final_shapes, n_axes_w_added = _reconstruct_from_shape(
+        recipe, tensor.shape, axes_lengths
+    )
+    if init_shapes is not None:
+        tensor = xp.reshape(tensor, init_shapes)
+    if axes_reordering is not None:
+        tensor = xp.permute_dims(tensor, axes_reordering)
+    if len(reduced_axes) > 0:
+        if callable(reduction_type):
+            # custom callable
+            tensor = reduction_type(tensor, tuple(reduced_axes))
+        else:
+            # one of built-in operations
+            assert reduction_type in _reductions
+            tensor = getattr(xp, reduction_type)(tensor, axis=tuple(reduced_axes))
+    if len(added_axes) > 0:
+        # we use broadcasting
+        for axis_position, axis_length in added_axes.items():
+            tensor = xp.expand_dims(tensor, axis=axis_position)
+
+        final_shape = list(tensor.shape)
+        for axis_position, axis_length in added_axes.items():
+            final_shape[axis_position] = axis_length
+
+        tensor = xp.broadcast_to(tensor, final_shape)
+    if final_shapes is not None:
+        tensor = xp.reshape(tensor, final_shapes)
     return tensor
 
 
@@ -471,7 +505,7 @@ def reduce(tensor: Tensor, pattern: str, reduction: Reduction, **axes_lengths: i
         tensor of the same type as input
     """
     try:
-        hashable_axes_lengths = tuple(sorted(axes_lengths.items()))
+        hashable_axes_lengths = tuple(axes_lengths.items())
         backend = get_backend(tensor)
         shape = backend.shape(tensor)
         recipe = _prepare_transformation_recipe(pattern, reduction, axes_names=tuple(axes_lengths), ndim=len(shape))

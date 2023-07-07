@@ -267,3 +267,43 @@ def test_pack_unpack_against_numpy():
 
                 # -1 takes zero, -1
                 unpack_and_pack(x, [[2, -1], [1, 5]], pattern)
+
+
+
+def test_pack_unpack_array_api():
+    from einops import array_api as AA
+    import numpy.array_api as xp
+
+    for case in cases:
+        shape = case.shape
+        pattern = case.pattern
+        x_np = np.random.random(shape)
+        x_xp = xp.from_dlpack(x_np)
+
+        for ps in [
+            [[2], [1], [2]],
+            [[1], [1], [-1]],
+            [[1], [1], [-1, 3]],
+            [[2, 1], [1, 1, 1], [-1]],
+        ]:
+
+            x_np_split = unpack(x_np, ps, pattern)
+            x_xp_split = AA.unpack(x_xp, ps, pattern)
+            for a, b in zip(x_np_split, x_xp_split):
+                assert np.allclose(a, AA.asnumpy(b + 0))
+
+            x_agg_np, ps1 = pack(x_np_split, pattern)
+            x_agg_xp, ps2 = AA.pack(x_xp_split, pattern)
+            assert ps1 == ps2
+            assert np.allclose(x_agg_np, AA.asnumpy(x_agg_xp))
+
+        for ps in [
+            [[2, 3]],
+            [[1], [5]],
+            [[1], [5], [-1]],
+            [[1], [2, 3]],
+            [[1], [5], [-1, 2]],
+        ]:
+            with pytest.raises(BaseException):
+                unpack(x_np, ps, pattern)
+
