@@ -108,7 +108,7 @@ def unpack(tensor: Tensor, packed_shapes: List[Shape], pattern: str) -> List[Ten
         return [
             xp.reshape(
                 # shortest way slice arbitrary axis
-                tensor[(*slice_filler, slice(split_positions[i], split_positions[i + 1]))],
+                tensor[(*slice_filler, slice(split_positions[i], split_positions[i + 1]), ...)],
                 (*shape_start, *element_shape, *shape_end)
             )
             for i, element_shape in enumerate(packed_shapes)
