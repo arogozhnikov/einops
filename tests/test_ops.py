@@ -110,6 +110,29 @@ def test_ellipsis_ops_imperative():
                                            reduction=reduction, is_symbolic=is_symbolic)
 
 
+def test_rearrange_array_api():
+    import numpy.array_api as xp
+    from einops import array_api as AA
+    x = numpy.arange(2 * 3 * 4 * 5 * 6).reshape([2, 3, 4, 5, 6])
+    for pattern in identity_patterns + list(itertools.chain(*equivalent_rearrange_patterns)):
+        expected = rearrange(x, pattern)
+        result = AA.rearrange(xp.from_dlpack(x), pattern)
+        assert numpy.array_equal(AA.asnumpy(result + 0), expected)
+
+
+
+def test_reduce_array_api():
+    import numpy.array_api as xp
+    from einops import array_api as AA
+    x = numpy.arange(2 * 3 * 4 * 5 * 6).reshape([2, 3, 4, 5, 6])
+    for pattern in itertools.chain(*equivalent_reduction_patterns):
+        for reduction in ['min', 'max', 'sum']:
+            expected = reduce(x, pattern, reduction=reduction)
+            result = AA.reduce(xp.from_dlpack(x), pattern, reduction=reduction)
+            assert numpy.array_equal(AA.asnumpy(result + 0), expected)
+
+
+
 def test_rearrange_consistency_numpy():
     shape = [1, 2, 3, 5, 7, 11]
     x = numpy.arange(numpy.prod(shape)).reshape(shape)
@@ -498,6 +521,19 @@ def test_repeat_symbolic():
             assert numpy.array_equal(result, expected)
 
 
+def test_repeat_array_api():
+    import numpy.array_api as xp
+    from einops import array_api as AA
+    x = numpy.arange(2 * 3 * 5).reshape([2, 3, 5])
+
+    for pattern, axis_dimensions in repeat_test_cases:
+        expected = reduce(x, pattern, reduction='repeat', **axis_dimensions)
+
+        result = AA.reduce(xp.from_dlpack(x), pattern, reduction='repeat', **axis_dimensions)
+        assert numpy.array_equal(AA.asnumpy(result + 0), expected)
+
+
+
 test_cases_repeat_anonymous = [
     # all assume that input has shape [1, 2, 4, 6]
     ('a b c d -> c a d b', dict()),
@@ -506,7 +542,6 @@ test_cases_repeat_anonymous = [
     ('1 ...  -> 3 ... ', dict()),
     ('() ... d -> 1 (copy1 d copy2) ... ', dict(copy1=2, copy2=3)),
     ('1 b c d -> (1 1) (1 b) 2 c 3 d (1 1)', dict()),
-
 ]
 
 
