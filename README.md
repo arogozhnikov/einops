@@ -162,7 +162,7 @@ Einops provides layers (`einops` keeps a separate version for each framework) th
 from einops.layers.torch      import Rearrange, Reduce
 from einops.layers.tensorflow import Rearrange, Reduce
 from einops.layers.flax       import Rearrange, Reduce
-from einops.layers.gluon      import Rearrange, Reduce
+from einops.layers.paddle     import Rearrange, Reduce
 from einops.layers.keras      import Rearrange, Reduce
 from einops.layers.chainer    import Rearrange, Reduce
 ```
@@ -284,7 +284,7 @@ y = x.flatten() # or flatten(x)
 
 Suppose `x`'s shape was `(3, 4, 5)`, then `y` has shape ...
 
-- numpy, cupy, chainer, pytorch: `(60,)`
+- numpy, pytorch, cupy, chainer: `(60,)`
 - keras, tensorflow.layers, gluon: `(3, 20)`
 
 `einops` works the same way in all frameworks.
@@ -323,7 +323,7 @@ Einops works with ...
 - [oneflow](https://github.com/Oneflow-Inc/oneflow) (experimental)
 - [flax](https://github.com/google/flax) (experimental)
 - [paddle](https://github.com/PaddlePaddle/Paddle) (experimental)
-- [gluon](https://gluon.mxnet.io/) (deprecated)
+
 
 ## Citing einops <a name="Citing"></a>
 
