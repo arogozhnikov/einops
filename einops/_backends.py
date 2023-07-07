@@ -14,7 +14,8 @@ import sys
 
 __author__ = 'Alex Rogozhnikov'
 
-_backends: dict = {}
+_loaded_backends: dict = {}
+_type2backend: dict = {}
 _debug_importing = False
 
 
@@ -23,8 +24,14 @@ def get_backend(tensor) -> 'AbstractBackend':
     Takes a correct backend (e.g. numpy backend if tensor is numpy.ndarray) for a tensor.
     If needed, imports package and creates backend
     """
-    for framework_name, backend in _backends.items():
+    _type = type(tensor)
+    _result = _type2backend.get(_type, None)
+    if _result is not None:
+        return _result
+
+    for framework_name, backend in _loaded_backends.items():
         if backend.is_appropriate_type(tensor):
+            _type2backend[_type] = backend
             return backend
 
     # Find backend subclasses recursively
@@ -38,14 +45,15 @@ def get_backend(tensor) -> 'AbstractBackend':
     for BackendSubclass in backend_subclasses:
         if _debug_importing:
             print('Testing for subclass of ', BackendSubclass)
-        if BackendSubclass.framework_name not in _backends:
+        if BackendSubclass.framework_name not in _loaded_backends:
             # check that module was already imported. Otherwise it can't be imported
             if BackendSubclass.framework_name in sys.modules:
                 if _debug_importing:
                     print('Imported backend for ', BackendSubclass.framework_name)
                 backend = BackendSubclass()
-                _backends[backend.framework_name] = backend
+                _loaded_backends[backend.framework_name] = backend
                 if backend.is_appropriate_type(tensor):
+                    _type2backend[_type] = backend
                     return backend
 
     raise RuntimeError('Tensor type unknown to einops {}'.format(type(tensor)))
