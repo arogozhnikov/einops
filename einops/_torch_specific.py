@@ -6,7 +6,8 @@ and to have scripting supported at least for layers,
 a number of additional moves is needed.
 
 Design of main operations (dynamic resolution by lookup) is unlikely
-to be implemented by torch.jit.script, but torch.compile seems to work completely fine.
+to be implemented by torch.jit.script, 
+but torch.compile seems to work with operations just fine.
 """
 import warnings
 from typing import Dict, List, Tuple
@@ -98,10 +99,14 @@ def apply_for_scriptable_torch(
 
 
 def allow_ops_in_compiled_graph():
+    if hasattr(torch, "__version__") and torch.__version__[0] < "2":
+        # torch._dynamo and torch.compile appear in pytorch 2.0
+        return
     try:
         from torch._dynamo import allow_in_graph
     except ImportError:
         warnings.warn("allow_ops_in_compiled_graph failed to import torch: ensure pytorch >=2.0", ImportWarning)
+        return
 
     from .einops import rearrange, reduce, repeat, einsum
     from .packing import pack, unpack
@@ -112,3 +117,11 @@ def allow_ops_in_compiled_graph():
     allow_in_graph(einsum)
     allow_in_graph(pack)
     allow_in_graph(unpack)
+
+    # CF: https://github.com/pytorch/pytorch/blob/2df939aacac68e9621fbd5d876c78d86e72b41e2/torch/_dynamo/__init__.py#L222
+    global _ops_were_registered_in_torchdynamo
+    _ops_were_registered_in_torchdynamo = True
+
+
+# module import automatically registers ops in torchdynamo
+allow_ops_in_compiled_graph()
