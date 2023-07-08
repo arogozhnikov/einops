@@ -217,6 +217,8 @@ class TorchBackend(AbstractBackend):
         import torch
 
         self.torch = torch
+        # importing would register operations in torch._dynamo for torch.compile
+        from . import _torch_specific  # noqa
 
     def is_appropriate_type(self, tensor):
         return isinstance(tensor, self.torch.Tensor)
