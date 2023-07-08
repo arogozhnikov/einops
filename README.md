@@ -39,13 +39,11 @@ Supports numpy, pytorch, tensorflow, jax, and [others](#supported-frameworks).
   Talk recordings are [available](https://iclr.cc/virtual/2022/oral/6603)
 
 
-<details>
-  <summary>Previous updates</summary>
-  
-  
-  - flax and oneflow backend added
-  - torch.jit.script is supported for pytorch layers
-  - powerful EinMix added to einops. [Einmix tutorial notebook](https://github.com/arogozhnikov/einops/blob/master/docs/3-einmix-layer.ipynb) 
+<details markdown="1">
+<summary>Previous updates</summary>
+- flax and oneflow backend added
+- torch.jit.script is supported for pytorch layers
+- powerful EinMix added to einops. [Einmix tutorial notebook](https://github.com/arogozhnikov/einops/blob/master/docs/3-einmix-layer.ipynb) 
 </details>
 
 <!--<div align="center">
@@ -168,30 +166,29 @@ from einops.layers.keras      import Rearrange, Reduce
 from einops.layers.chainer    import Rearrange, Reduce
 ```
 
-<details>
-  <summary>Example of using layers within a pytorch model</summary>
-  
-  
-  ```python
-  # example given for pytorch, but code in other frameworks is almost identical  
-  from torch.nn import Sequential, Conv2d, MaxPool2d, Linear, ReLU
-  from einops.layers.torch import Rearrange
+<details markdown="1">
+<summary>Example of using layers within a pytorch model</summary>
+Example given for pytorch, but code in other frameworks is almost identical
 
-  model = Sequential(
-      ...,
-      Conv2d(6, 16, kernel_size=5),
-      MaxPool2d(kernel_size=2),
-      # flattening without need to write forward
-      Rearrange('b c h w -> b (c h w)'),  
-      Linear(16*5*5, 120), 
-      ReLU(),
-      Linear(120, 10), 
-  )
-  ```
-  
-  No more flatten needed! 
-  
-  Additionally, torch users will benefit from layers as those are script-able and compile-able.
+```python 
+from torch.nn import Sequential, Conv2d, MaxPool2d, Linear, ReLU
+from einops.layers.torch import Rearrange
+
+model = Sequential(
+    ...,
+    Conv2d(6, 16, kernel_size=5),
+    MaxPool2d(kernel_size=2),
+    # flattening without need to write forward
+    Rearrange('b c h w -> b (c h w)'),  
+    Linear(16*5*5, 120), 
+    ReLU(),
+    Linear(120, 10), 
+)
+```
+
+No more flatten needed! 
+
+Additionally, torch users will benefit from layers as those are script-able and compile-able.
 </details>
 
 
@@ -345,4 +342,4 @@ Please use the following bibtex record
 
 ## Supported python versions
 
-`einops` works with python 3.7 or later.
+`einops` works with python 3.8 or later.
