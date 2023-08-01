@@ -252,6 +252,15 @@ class TorchBackend(AbstractBackend):
         else:
             raise NotImplementedError("Unknown reduction ", operation)
 
+    def shape(self, x):
+        shape = x.shape
+        try:
+            hash(shape)
+            return shape
+        except:
+            # unhashable symbols in shape. Wrap tuple to be hashable.
+            return HashableTuple(shape)
+
     def transpose(self, x, axes):
         return x.permute(axes)
 

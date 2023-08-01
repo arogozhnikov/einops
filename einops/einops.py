@@ -229,19 +229,9 @@ _reconstruct_from_shape = functools.lru_cache(1024)(_reconstruct_from_shape_unca
 def _apply_recipe(
     backend, recipe: TransformRecipe, tensor: Tensor, reduction_type: Reduction, axes_lengths: HashableAxesLengths
 ) -> Tensor:
-    shape = backend.shape(tensor)
-    # disable cache during torch symbolic tracing because torch.SymInt is not hashable
-    if (
-        backend.framework_name == 'torch'
-        and hasattr(backend.torch.fx.experimental.symbolic_shapes, "free_symbols")
-        and len(backend.torch.fx.experimental.symbolic_shapes.free_symbols(shape)) > 0
-    ):
-        reconstruct_fn = _reconstruct_from_shape_uncached
-    else:
-        reconstruct_fn = _reconstruct_from_shape
     # this method implements actual work for all backends for 3 operations
-    init_shapes, axes_reordering, reduced_axes, added_axes, final_shapes, n_axes_w_added = reconstruct_fn(
-        recipe, shape, axes_lengths
+    init_shapes, axes_reordering, reduced_axes, added_axes, final_shapes, n_axes_w_added = _reconstruct_from_shape(
+        recipe, backend.shape(tensor), axes_lengths
     )
     if init_shapes is not None:
         tensor = backend.reshape(tensor, init_shapes)
