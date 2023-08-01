@@ -231,7 +231,11 @@ def _apply_recipe(
 ) -> Tensor:
     shape = backend.shape(tensor)
     # disable cache during torch symbolic tracing because torch.SymInt is not hashable
-    if backend.framework_name == 'torch' and len(backend.torch.fx.experimental.symbolic_shapes.free_symbols(shape)) > 0:
+    if (
+        backend.framework_name == 'torch'
+        and backend.torch.torch_version.TorchVersion(backend.torch.__version__) > '2.0.1'
+        and len(backend.torch.fx.experimental.symbolic_shapes.free_symbols(shape)) > 0
+    ):
         reconstruct_fn = _reconstruct_from_shape_uncached
     else:
         reconstruct_fn = _reconstruct_from_shape
