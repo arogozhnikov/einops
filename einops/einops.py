@@ -230,9 +230,14 @@ def _apply_recipe(
     backend, recipe: TransformRecipe, tensor: Tensor, reduction_type: Reduction, axes_lengths: HashableAxesLengths
 ) -> Tensor:
     # this method implements actual work for all backends for 3 operations
-    init_shapes, axes_reordering, reduced_axes, added_axes, final_shapes, n_axes_w_added = _reconstruct_from_shape(
-        recipe, backend.shape(tensor), axes_lengths
-    )
+    try:
+        init_shapes, axes_reordering, reduced_axes, added_axes, final_shapes, n_axes_w_added = _reconstruct_from_shape(
+            recipe, backend.shape(tensor), axes_lengths
+        )
+    except TypeError:
+        # shape or one of passed axes lengths is not hashable (i.e. they are symbols)
+        _result = _reconstruct_from_shape_uncached(recipe, backend.shape(tensor), axes_lengths)
+        (init_shapes, axes_reordering, reduced_axes, added_axes, final_shapes, n_axes_w_added) = _result
     if init_shapes is not None:
         tensor = backend.reshape(tensor, init_shapes)
     if axes_reordering is not None:

@@ -392,6 +392,8 @@ class HashableTuple:
     def __getitem__(self, item):
         return self.elements[item]
 
+    # default equality and hash is used (True only with itself, hash taken of id)
+
 
 class TensorflowBackend(AbstractBackend):
     framework_name = "tensorflow"
