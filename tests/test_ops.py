@@ -5,7 +5,7 @@ import pytest
 
 from einops import EinopsError
 from einops.einops import rearrange, reduce, repeat, _enumerate_directions, _reductions
-from . import collect_test_backends
+from . import collect_test_backends, is_backend_tested
 
 imp_op_backends = collect_test_backends(symbolic=False, layers=False)
 sym_op_backends = collect_test_backends(symbolic=True, layers=False)
@@ -579,3 +579,29 @@ def test_list_inputs():
         repeat(list(x), "...  -> b (...)", b=3),
         repeat(x, "...  -> b (...)", b=3),
     )
+
+
+def test_torch_compile_with_dynamic_shape():
+    if not is_backend_tested("torch"):
+        pytest.skip()
+    import torch
+    # somewhat reasonable debug messages
+    torch._dynamo.config.verbose = True
+    def func1(x):
+        # test contains ellipsis
+        a, b, c, *other = x.shape
+        x = rearrange(x, '(a a2) b c ... -> b (c a2) (a ...)', a2=2)
+        # test contains passing expression as axis length
+        x = reduce(x, 'b ca2 A -> b A', 'sum', ca2=c * 2)
+        return x
+
+    # seems can't test static and dynamic in the same test run.
+    # func1_compiled_static = torch.compile(func1, dynamic=False, fullgraph=True, backend='aot_eager')
+    func1_compiled_dynamic = torch.compile(func1, dynamic=True, fullgraph=True, backend='aot_eager')
+
+    x = torch.randn(size=[4, 5, 6, 3])
+    assert torch.equal(func1_compiled_dynamic(x), func1(x))
+    # check with input of different dimensionality, and with all shape elements changed
+    x = torch.randn(size=[6, 3, 4, 2, 3])
+    assert torch.equal(func1_compiled_dynamic(x), func1(x))
+
