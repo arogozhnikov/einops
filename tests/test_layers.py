@@ -6,8 +6,7 @@ import numpy
 import pytest
 
 from einops import rearrange, reduce
-from einops.einops import _reductions
-from . import collect_test_backends, is_backend_tested
+from . import collect_test_backends, is_backend_tested, FLOAT_REDUCTIONS as REDUCTIONS
 
 __author__ = "Alex Rogozhnikov"
 
@@ -110,7 +109,7 @@ reduction_patterns = rearrangement_patterns + [
 def test_reduce_imperative():
     for backend in collect_test_backends(symbolic=False, layers=True):
         print("Test layer for ", backend.framework_name)
-        for reduction in _reductions:
+        for reduction in REDUCTIONS:
             for pattern, axes_lengths, input_shape, wrong_shapes in reduction_patterns:
                 print(backend, reduction, pattern, axes_lengths, input_shape, wrong_shapes)
                 x = numpy.arange(1, 1 + numpy.prod(input_shape), dtype="float32").reshape(input_shape)
@@ -151,7 +150,7 @@ def test_reduce_imperative():
 def test_reduce_symbolic():
     for backend in collect_test_backends(symbolic=True, layers=True):
         print("Test layer for ", backend.framework_name)
-        for reduction in _reductions:
+        for reduction in REDUCTIONS:
             for pattern, axes_lengths, input_shape, wrong_shapes in reduction_patterns:
                 x = numpy.arange(1, 1 + numpy.prod(input_shape), dtype="float32").reshape(input_shape)
                 x /= x.mean()

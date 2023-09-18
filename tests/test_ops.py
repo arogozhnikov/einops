@@ -4,8 +4,8 @@ import numpy
 import pytest
 
 from einops import EinopsError
-from einops.einops import rearrange, reduce, repeat, _enumerate_directions, _reductions
-from . import collect_test_backends, is_backend_tested
+from einops.einops import rearrange, reduce, repeat, _enumerate_directions
+from . import collect_test_backends, is_backend_tested, FLOAT_REDUCTIONS as REDUCTIONS
 
 imp_op_backends = collect_test_backends(symbolic=False, layers=False)
 sym_op_backends = collect_test_backends(symbolic=True, layers=False)
@@ -203,7 +203,7 @@ def test_rearrange_permutations_numpy():
 def test_reduction_imperatives():
     for backend in imp_op_backends:
         print("Reduction tests for ", backend.framework_name)
-        for reduction in _reductions:
+        for reduction in REDUCTIONS:
             # slight redundancy for simpler order - numpy version is evaluated multiple times
             input = numpy.arange(2 * 3 * 4 * 5 * 6, dtype="int64").reshape([2, 3, 4, 5, 6])
             if reduction in ["mean", "prod"]:
@@ -239,7 +239,7 @@ def test_reduction_imperatives():
 def test_reduction_symbolic():
     for backend in sym_op_backends:
         print("Reduction tests for ", backend.framework_name)
-        for reduction in _reductions:
+        for reduction in REDUCTIONS:
             input = numpy.arange(2 * 3 * 4 * 5 * 6, dtype="int64").reshape([2, 3, 4, 5, 6])
             input = input / input.astype("float64").mean()
             # slight redundancy for simpler order - numpy version is evaluated multiple times
@@ -292,7 +292,7 @@ def test_reduction_symbolic():
 def test_reduction_stress_imperatives():
     for backend in imp_op_backends:
         print("Stress-testing reduction for ", backend.framework_name)
-        for reduction in _reductions + ("rearrange",):
+        for reduction in REDUCTIONS + ("rearrange",):
             dtype = "int64"
             coincide = numpy.array_equal
             if reduction in ["mean", "prod"]:
@@ -413,7 +413,7 @@ def test_concatenations_and_stacking():
 
 def test_gradients_imperatives():
     # lazy - just checking reductions
-    for reduction in _reductions:
+    for reduction in REDUCTIONS:
         if reduction in ("any", "all"):
             continue  # non-differentiable ops
         x = numpy.arange(1, 1 + 2 * 3 * 4).reshape([2, 3, 4]).astype("float32")
@@ -613,12 +613,13 @@ def test_torch_compile_with_dynamic_shape():
 def bit_count(x):
     return sum((x >> i) & 1 for i in range(20))
 
+
 def test_reduction_imperatives_booleans():
     """Checks that any/all reduction works in all frameworks"""
     x_np = numpy.asarray([(bit_count(x) % 2) == 0 for x in range(2**6)]).reshape([2] * 6)
     for backend in imp_op_backends:
         if backend.framework_name == "chainer":
-            continue # no support for bools
+            continue  # no support for bools
         print("Reduction any/all tests for ", backend.framework_name)
 
         for axis in range(6):
