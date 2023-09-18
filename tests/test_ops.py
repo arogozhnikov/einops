@@ -617,6 +617,8 @@ def test_reduction_imperatives_booleans():
     """Checks that any/all reduction works in all frameworks"""
     x_np = numpy.asarray([(bit_count(x) % 2) == 0 for x in range(2**6)]).reshape([2] * 6)
     for backend in imp_op_backends:
+        if backend.framework_name == "chainer":
+            continue # no support for bools
         print("Reduction any/all tests for ", backend.framework_name)
 
         for axis in range(6):
