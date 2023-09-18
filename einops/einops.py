@@ -17,7 +17,7 @@ Tensor = TypeVar("Tensor")
 ReductionCallable = Callable[[Tensor, Tuple[int, ...]], Tensor]
 Reduction = Union[str, ReductionCallable]
 
-_reductions = ("min", "max", "sum", "mean", "prod")
+_reductions = ("min", "max", "sum", "mean", "prod", "any", "all")
 
 # magic integers are required to stay within
 # traceable subset of language

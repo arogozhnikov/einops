@@ -245,9 +245,10 @@ class TorchBackend(AbstractBackend):
             return x.sum(dim=reduced_axes)
         elif operation == "mean":
             return x.mean(dim=reduced_axes)
-        elif operation == "prod":
+        elif operation in ("any", "all", "prod"):
+            # pytorch supports reducing only one operation at a time
             for i in list(sorted(reduced_axes))[::-1]:
-                x = x.prod(dim=i)
+                x = getattr(x, operation)(dim=i)
             return x
         else:
             raise NotImplementedError("Unknown reduction ", operation)
@@ -552,7 +553,7 @@ class OneFlowBackend(AbstractBackend):
                 x, _ = x.min(dim=axis)
             elif operation == "max":
                 x, _ = x.max(dim=axis)
-            elif operation in ["sum", "mean", "prod"]:
+            elif operation in ["sum", "mean", "prod", "any", "all"]:
                 x = getattr(x, operation)(dim=axis)
             else:
                 raise NotImplementedError("Unknown reduction ", operation)
@@ -615,8 +616,8 @@ class PaddleBackend(AbstractBackend):
         return self.paddle.arange(start, stop, dtype=self.paddle.int64)
 
     def reduce(self, x, operation, axes):
-        # TODO: Support the reduce operation to output a 0D Tensor
         if len(axes) == x.ndim:
+            # currently paddle returns 1d tensor instead of 0d
             return super().reduce(x, operation, axes).squeeze(0)
         else:
             return super().reduce(x, operation, axes)
