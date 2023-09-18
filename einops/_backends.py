@@ -3,11 +3,11 @@ Backends in `einops` are organized to meet the following requirements
 - backends are not imported unless those are actually needed, because
     - backends may not be installed
     - importing all available backends will drive to significant memory footprint
-    - backends may by present but installed with errors (but never used),
+    - backends may be present but installed with errors (but never used),
       importing may drive to crashes
-- backend should be either symbolic or imperative (tensorflow is for both, but that causes problems)
+- backend should be either symbolic or imperative
     - this determines which methods (from_numpy/to_numpy or create_symbol/eval_symbol) should be defined
-- if backend can't (temporarily) provide symbols for shape dimensions, UnknownSize objects are used
+- if backend can't provide symbols for shape dimensions, UnknownSize objects are used
 """
 
 import sys
@@ -29,7 +29,7 @@ def get_backend(tensor) -> "AbstractBackend":
     if _result is not None:
         return _result
 
-    for framework_name, backend in _loaded_backends.items():
+    for framework_name, backend in list(_loaded_backends.items()):
         if backend.is_appropriate_type(tensor):
             _type2backend[_type] = backend
             return backend
