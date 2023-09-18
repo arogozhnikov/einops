@@ -610,9 +610,12 @@ def test_torch_compile_with_dynamic_shape():
     assert torch.equal(func1_compiled_dynamic(x), func1(x))
 
 
+def bit_count(x):
+    return sum((x >> i) & 1 for i in range(20))
+
 def test_reduction_imperatives_booleans():
     """Checks that any/all reduction works in all frameworks"""
-    x_np = numpy.asarray([x.bit_count() for x in range(2**6)]).reshape([2] * 6)
+    x_np = numpy.asarray([(bit_count(x) % 2) == 0 for x in range(2**6)]).reshape([2] * 6)
     for backend in imp_op_backends:
         print("Reduction any/all tests for ", backend.framework_name)
 
