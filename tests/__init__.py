@@ -13,6 +13,8 @@ __author__ = "Alex Rogozhnikov"
 logging.getLogger("tensorflow").disabled = True
 logging.getLogger("matplotlib").disabled = True
 
+FLOAT_REDUCTIONS = ("min", "max", "sum", "mean", "prod") # not includes any/all
+
 
 def find_names_of_all_frameworks() -> List[str]:
     backend_subclasses = []
@@ -39,9 +41,10 @@ def parse_backends_to_test() -> List[str]:
 
     return parsed_backends
 
+
 def is_backend_tested(backend: str) -> bool:
     if backend not in find_names_of_all_frameworks():
-        raise RuntimeError(f'Unknown framework {backend}')
+        raise RuntimeError(f"Unknown framework {backend}")
     return backend in parse_backends_to_test()
 
 
