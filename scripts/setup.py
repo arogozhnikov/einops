@@ -8,7 +8,7 @@ from setuptools import setup
 
 setup(
     name="einops",
-    version="0.7.0rc2",
+    version="0.7.0",
     description="A new flavour of deep learning operations",
     long_description=open("README.md", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
