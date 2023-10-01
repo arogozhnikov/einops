@@ -31,7 +31,6 @@ Supports numpy, pytorch, tensorflow, jax, and [others](#supported-frameworks).
 
 - 0.7.0: no-hassle `torch.compile`, support of [array api standard](https://data-apis.org/array-api/latest/API_specification/index.html) and more
 - 10'000🎉: github reports that more than 10k project use einops
-- see how to use einops with [torch.compile](https://github.com/arogozhnikov/einops/wiki/Using-torch.compile-with-einops)
 - einops 0.6.1: paddle backend added
 - einops 0.6 introduces [packing and unpacking](https://github.com/arogozhnikov/einops/blob/master/docs/4-pack-and-unpack.ipynb)
 - einops 0.5: einsum is now a part of einops
