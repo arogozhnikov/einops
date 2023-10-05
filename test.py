@@ -36,7 +36,7 @@ def main():
     framework_name2installation = {
         "numpy": ["numpy"],
         "torch": ["torch --index-url https://download.pytorch.org/whl/cpu"],
-        "jax": ["jax", "jaxlib", "flax"],
+        "jax": ["jax[cpu]", "jaxlib", "flax"],
         "tensorflow": ["tensorflow"],
         "chainer": ["chainer"],
         "cupy": ["cupy"],
