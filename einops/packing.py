@@ -150,7 +150,7 @@ def unpack(tensor: Tensor, packed_shapes: List[Shape], pattern: str) -> List[Ten
         for p_shape in packed_shapes
     ]
 
-    n_unknown_composed_axes = sum(x == -1 for x in lengths_of_composed_axes)
+    n_unknown_composed_axes = sum(int(x == -1) for x in lengths_of_composed_axes)
     if n_unknown_composed_axes > 1:
         raise EinopsError(
             f"unpack(..., {pattern}) received more than one -1 in {packed_shapes} and can't infer dimensions"
