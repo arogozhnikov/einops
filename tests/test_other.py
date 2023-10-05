@@ -41,7 +41,7 @@ def test_backends_installed():
             # instantiate
             backend_type()
         except Exception as e:
-            errors.append(e)
+            errors.append((backend_type.framework_name, e))
     assert len(errors) == 0, errors
 
 
