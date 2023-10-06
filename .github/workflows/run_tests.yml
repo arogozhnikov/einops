@@ -11,7 +11,8 @@ jobs:
         python-version: ['3.8', '3.10']
         # currently there is conflict between tf, oneflow and paddle in protobuf versions.
         # cupy is not tested because it demands gpu
-        frameworks: ['numpy pytorch tensorflow jax oneflow', 'numpy paddle chainer']
+        # oneflow testing is dropped, see details at https://github.com/Oneflow-Inc/oneflow/issues/10340
+        frameworks: ['numpy pytorch tensorflow jax', 'numpy paddle chainer']
 
     steps:
       - uses: actions/checkout@v3
