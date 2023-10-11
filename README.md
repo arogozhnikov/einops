@@ -54,13 +54,13 @@ Supports numpy, pytorch, tensorflow, jax, and [others](#supported-frameworks).
 ## Tweets 
 
 > In case you need convincing arguments for setting aside time to learn about einsum and einops...
-[Tim Rocktäschel, FAIR](https://twitter.com/_rockt/status/1230818967205425152)
+[Tim Rocktäschel](https://twitter.com/_rockt/status/1230818967205425152)
 
 > Writing better code with PyTorch and einops 👌
-[Andrej Karpathy, AI at Tesla](https://twitter.com/karpathy/status/1290826075916779520)
+[Andrej Karpathy](https://twitter.com/karpathy/status/1290826075916779520)
 
 > Slowly but surely, einops is seeping in to every nook and cranny of my code. If you find yourself shuffling around bazillion dimensional tensors, this might change your life
-[Nasim Rahaman, MILA (Montreal)](https://twitter.com/nasim_rahaman/status/1216022614755463169)
+[Nasim Rahaman](https://twitter.com/nasim_rahaman/status/1216022614755463169)
 
 [More testimonials](https://einops.rocks/pages/testimonials/)
 
