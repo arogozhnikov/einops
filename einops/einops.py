@@ -824,7 +824,7 @@ def einsum(tensor1: Tensor, tensor2: Tensor, tensor3: Tensor, tensor4: Tensor, p
 
 
 def einsum(*tensors_and_pattern: Union[Tensor, str]) -> Tensor:
-    """
+    r"""
     einops.einsum calls einsum operations with einops-style named
     axes indexing, computing tensor products with an arbitrary
     number of tensors. Unlike typical einsum syntax, here you must
