@@ -709,3 +709,6 @@ class TinygradBackend(AbstractBackend):
 
     def is_float_type(self, x):
         return self.tinygrad.dtypes.is_float(x.dtype)
+    
+    def einsum(self, pattern, *x):
+        return self.tinygrad.Tensor.einsum(pattern, *x)
