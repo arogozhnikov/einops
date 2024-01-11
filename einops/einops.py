@@ -687,9 +687,19 @@ def parse_shape(x, pattern: str) -> dict:
     else:
         composition = exp.composition
     result = {}
-    for (axis_name,), axis_length in zip(composition, shape):  # type: ignore
-        if axis_name != "_":
-            result[axis_name] = axis_length
+    for axes, axis_length in zip(composition, shape):  # type: ignore
+        # axes either [], or [AnonymousAxis] or ['axis_name']
+        if len(axes) == 0:
+            if axis_length != 1:
+                raise RuntimeError(f"Length of axis is not 1: {pattern} {shape}")
+        else:
+            [axis] = axes
+            if isinstance(axis, str):
+                if axis != "_":
+                    result[axis] = axis_length
+            else:
+                if axis.value != axis_length:
+                    raise RuntimeError(f"Length of anonymous axis does not match: {pattern} {shape}")
     return result
 
 
