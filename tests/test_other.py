@@ -121,8 +121,9 @@ class TestParseShapeImperative(unittest.TestCase):
         with pytest.raises(einops.EinopsError):
             parse_shape(self.backend.from_numpy(self.x), "a a b b")
 
-    @parameterized.expand(
-        [
+
+    def test_ellipsis(self):
+        for shape, pattern, expected in [
             ([10, 20], "...", dict()),
             ([10], "... a", dict(a=10)),
             ([10, 20], "... a", dict(a=20)),
@@ -134,13 +135,37 @@ class TestParseShapeImperative(unittest.TestCase):
             ([10, 20, 30, 40], "a ...", dict(a=10)),
             ([10, 20, 30, 40], " a ... b", dict(a=10, b=40)),
             ([10, 40], " a ... b", dict(a=10, b=40)),
-        ]
-    )
-    def test_ellipsis(self, shape: List[int], pattern: str, expected: Dict[str, int]):
-        x = numpy.ones(shape)
-        parsed1 = parse_shape(x, pattern)
-        parsed2 = parse_shape(self.backend.from_numpy(x), pattern)
-        assert parsed1 == parsed2 == expected
+        ]:
+            x = numpy.ones(shape)
+            parsed1 = parse_shape(x, pattern)
+            parsed2 = parse_shape(self.backend.from_numpy(x), pattern)
+            assert parsed1 == parsed2 == expected
+
+    def test_parse_with_anonymous_axes(self):
+        for shape, pattern, expected in [
+            ([1, 2, 3, 4], "1 2 3 a", dict(a=4)),
+            ([10, 1, 2], "a 1 2", dict(a=10)),
+            ([10, 1, 2], "a () 2", dict(a=10)),
+        ]:
+            x = numpy.ones(shape)
+            parsed1 = parse_shape(x, pattern)
+            parsed2 = parse_shape(self.backend.from_numpy(x), pattern)
+            assert parsed1 == parsed2 == expected
+
+
+    def test_failures(self):
+        # every test should fail
+        for shape, pattern in [
+            ([1, 2, 3, 4], "a b c"),
+            ([1, 2, 3, 4], "2 a b c"),
+            ([1, 2, 3, 4], "a b c ()"),
+            ([1, 2, 3, 4], "a b c d e"),
+            ([1, 2, 3, 4], "a b c d e ..."),
+            ([1, 2, 3, 4], "a b c ()"),
+        ]:
+            with pytest.raises(RuntimeError):
+                x = numpy.ones(shape)
+                parse_shape(self.backend.from_numpy(x), pattern)
 
 
 _SYMBOLIC_BACKENDS = [
