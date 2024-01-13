@@ -37,6 +37,7 @@ def main():
         "numpy": ["numpy"],
         "torch": ["torch --index-url https://download.pytorch.org/whl/cpu"],
         "jax": ["jax[cpu]", "jaxlib", "flax"],
+        "mlx": ["mlx"],
         "tensorflow": ["tensorflow"],
         "chainer": ["chainer"],
         "cupy": ["cupy"],
