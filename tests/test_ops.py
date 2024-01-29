@@ -583,6 +583,23 @@ def test_list_inputs():
     )
 
 
+def test_tuple_inputs():
+    x = numpy.arange(2 * 3 * 4 * 5 * 6).reshape([2, 3, 4, 5, 6])
+
+    assert numpy.array_equal(
+        rearrange(tuple(x), "... -> (...)"),
+        rearrange(x, "... -> (...)"),
+    )
+    assert numpy.array_equal(
+        reduce(tuple(x), "a ... e -> (...)", "min"),
+        reduce(x, "a ... e -> (...)", "min"),
+    )
+    assert numpy.array_equal(
+        repeat(tuple(x), "...  -> b (...)", b=3),
+        repeat(x, "...  -> b (...)", b=3),
+    )
+
+
 def test_torch_compile_with_dynamic_shape():
     if not is_backend_tested("torch"):
         pytest.skip()

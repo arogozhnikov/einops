@@ -456,7 +456,7 @@ def _prepare_recipes_for_all_dims(
     return {ndim: _prepare_transformation_recipe(pattern, operation, axes_names, ndim=ndim) for ndim in dims}
 
 
-def reduce(tensor: Union[Tensor, List[Tensor]], pattern: str, reduction: Reduction, **axes_lengths: int) -> Tensor:
+def reduce(tensor: Union[Tensor, List[Tensor], Tuple[Tensor, ...]], pattern: str, reduction: Reduction, **axes_lengths: int) -> Tensor:
     """
     einops.reduce provides combination of reordering and reduction using reader-friendly notation.
 
@@ -509,7 +509,7 @@ def reduce(tensor: Union[Tensor, List[Tensor]], pattern: str, reduction: Reducti
         tensor of the same type as input
     """
     try:
-        if isinstance(tensor, list):
+        if isinstance(tensor, (list, tuple)):
             if len(tensor) == 0:
                 raise TypeError("Rearrange/Reduce/Repeat can't be applied to an empty list")
             backend = get_backend(tensor[0])
@@ -533,7 +533,7 @@ def reduce(tensor: Union[Tensor, List[Tensor]], pattern: str, reduction: Reducti
         raise EinopsError(message + "\n {}".format(e))
 
 
-def rearrange(tensor: Union[Tensor, List[Tensor]], pattern: str, **axes_lengths) -> Tensor:
+def rearrange(tensor: Union[Tensor, List[Tensor], Tuple[Tensor, ...]], pattern: str, **axes_lengths) -> Tensor:
     """
     einops.rearrange is a reader-friendly smart element reordering for multidimensional tensors.
     This operation includes functionality of transpose (axes permutation), reshape (view), squeeze, unsqueeze,
@@ -591,7 +591,7 @@ def rearrange(tensor: Union[Tensor, List[Tensor]], pattern: str, **axes_lengths)
     return reduce(tensor, pattern, reduction="rearrange", **axes_lengths)
 
 
-def repeat(tensor: Union[Tensor, List[Tensor]], pattern: str, **axes_lengths) -> Tensor:
+def repeat(tensor: Union[Tensor, List[Tensor], Tuple[Tensor, ...]], pattern: str, **axes_lengths) -> Tensor:
     """
     einops.repeat allows reordering elements and repeating them in arbitrary combinations.
     This operation includes functionality of repeat, tile, broadcast functions.

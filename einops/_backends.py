@@ -14,6 +14,8 @@ import sys
 
 __author__ = "Alex Rogozhnikov"
 
+from typing import Union
+
 _loaded_backends: dict = {}
 _type2backend: dict = {}
 _debug_importing = False
@@ -97,7 +99,7 @@ class AbstractBackend:
     def reduce(self, x, operation, axes):
         return getattr(x, operation)(axis=axes)
 
-    def stack_on_zeroth_dimension(self, tensors: list):
+    def stack_on_zeroth_dimension(self, tensors: Union[list, tuple]):
         raise NotImplementedError()
 
     def add_axis(self, x, new_position):
@@ -173,7 +175,7 @@ class NumpyBackend(AbstractBackend):
     def arange(self, start, stop):
         return self.np.arange(start, stop)
 
-    def stack_on_zeroth_dimension(self, tensors: list):
+    def stack_on_zeroth_dimension(self, tensors: Union[list, tuple]):
         return self.np.stack(tensors)
 
     def tile(self, x, repeats):
@@ -256,7 +258,7 @@ class TorchBackend(AbstractBackend):
     def transpose(self, x, axes):
         return x.permute(axes)
 
-    def stack_on_zeroth_dimension(self, tensors: list):
+    def stack_on_zeroth_dimension(self, tensors: Union[list, tuple]):
         return self.torch.stack(tensors)
 
     def add_axes(self, x, n_axes, pos2len):
@@ -307,7 +309,7 @@ class CupyBackend(AbstractBackend):
     def arange(self, start, stop):
         return self.cupy.arange(start, stop)
 
-    def stack_on_zeroth_dimension(self, tensors: list):
+    def stack_on_zeroth_dimension(self, tensors: Union[list, tuple]):
         return self.cupy.stack(tensors)
 
     def tile(self, x, repeats):
@@ -353,7 +355,7 @@ class ChainerBackend(AbstractBackend):
     def reduce(self, x, operation, axes):
         return getattr(self.chainer.functions, operation)(x, axis=axes)
 
-    def stack_on_zeroth_dimension(self, tensors: list):
+    def stack_on_zeroth_dimension(self, tensors: Union[list, tuple]):
         return self.chainer.functions.stack(tensors)
 
     def tile(self, x, repeats):
@@ -442,7 +444,7 @@ class TensorflowBackend(AbstractBackend):
     def transpose(self, x, axes):
         return self.tf.transpose(x, axes)
 
-    def stack_on_zeroth_dimension(self, tensors: list):
+    def stack_on_zeroth_dimension(self, tensors: Union[list, tuple]):
         return self.tf.stack(tensors)
 
     def tile(self, x, repeats):
@@ -502,7 +504,7 @@ class KerasBackend(AbstractBackend):
     def transpose(self, x, axes):
         return self.K.permute_dimensions(x, axes)
 
-    def stack_on_zeroth_dimension(self, tensors: list):
+    def stack_on_zeroth_dimension(self, tensors: Union[list, tuple]):
         return self.K.stack(tensors)
 
     def tile(self, x, repeats):
@@ -562,7 +564,7 @@ class OneFlowBackend(AbstractBackend):
     def transpose(self, x, axes):
         return x.permute(axes)
 
-    def stack_on_zeroth_dimension(self, tensors: list):
+    def stack_on_zeroth_dimension(self, tensors: Union[list, tuple]):
         return self.flow.stack(tensors)
 
     def add_axes(self, x, n_axes, pos2len):
@@ -632,7 +634,7 @@ class PaddleBackend(AbstractBackend):
             repeats[axis_position] = axis_length
         return x.expand(repeats)
 
-    def stack_on_zeroth_dimension(self, tensors: list):
+    def stack_on_zeroth_dimension(self, tensors: Union[list, tuple]):
         return self.paddle.stack(tensors)
 
     def reshape(self, x, shape):
@@ -695,7 +697,7 @@ class TinygradBackend(AbstractBackend):
             x = getattr(x, operation)(axis=axis)
         return x
 
-    def stack_on_zeroth_dimension(self, tensors: list):
+    def stack_on_zeroth_dimension(self, tensors: Union[list, tuple]):
         return self.tinygrad.Tensor.stack(tensors)
 
     def add_axis(self, x, new_position):
