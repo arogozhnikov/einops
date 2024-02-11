@@ -191,7 +191,34 @@ class NumpyBackend(AbstractBackend):
     def einsum(self, pattern, *x):
         return self.np.einsum(pattern, *x)
 
+class MlxBackend(NumpyBackend):
+    framework_name = "mlx"
 
+    def __init__(self) -> None:
+        super(MlxBackend, self).__init__()
+        self.onp = self.np
+        import mlx.core as mx
+        self.np = mx
+    
+    def is_appropriate_type(self, tensor):
+        return isinstance(tensor, self.np.array)
+    
+    def from_numpy(self, x):
+        if x.dtype == self.onp.int64:
+            x = x.astype(self.onp.int32)
+        if x.dtype == self.onp.uint64:
+            x = x.astype(self.onp.uint32)
+        # mlx does not support float64
+        if x.dtype == "float64": 
+            x = x.astype(self.onp.float32)
+        return self.np.array(x)
+    
+    def to_numpy(self, x):
+        return self.onp.array(x)
+    
+    def is_float_type(self, x):
+        return x.dtype in [self.np.float32, self.np.float16, self.np.bfloat16]
+    
 class JaxBackend(NumpyBackend):
     framework_name = "jax"
 

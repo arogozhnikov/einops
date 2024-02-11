@@ -68,6 +68,7 @@ def collect_test_backends(symbolic=False, layers=False) -> List[_backends.Abstra
                 _backends.NumpyBackend,
                 _backends.JaxBackend,
                 _backends.TorchBackend,
+                _backends.MlxBackend,
                 _backends.ChainerBackend,
                 _backends.TensorflowBackend,
                 _backends.OneFlowBackend,
