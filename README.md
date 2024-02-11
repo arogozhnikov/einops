@@ -29,7 +29,6 @@ Supports numpy, pytorch, tensorflow, jax, and [others](#supported-frameworks).
 
 ## Recent updates:
 
-- ❗Einops' author is open to new positions, see [github account](https://github.com/arogozhnikov) for details. Also, einops is used in 20k github projects. 
 - 0.7.0: no-hassle `torch.compile`, support of [array api standard](https://data-apis.org/array-api/latest/API_specification/index.html) and more
 - 10'000🎉: github reports that more than 10k project use einops
 - einops 0.6.1: paddle backend added
