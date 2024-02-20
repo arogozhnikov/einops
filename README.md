@@ -128,6 +128,8 @@ output_tensor = rearrange(input_tensor, 't b c -> b c t')
 output_tensor = reduce(input_tensor, 'b c (h h2) (w w2) -> b h w c', 'mean', h2=2, w2=2)
 # copy along a new axis
 output_tensor = repeat(input_tensor, 'h w -> h w c', c=3)
+# infer dimensions automatically
+output_tensor = rearrange(input_tensor, '... h w -> ... w h')
 ```
 
 Later additions to the family are `pack` and `unpack` functions (better than stack/split/concatenate):
