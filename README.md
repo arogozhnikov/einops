@@ -81,7 +81,7 @@ Watch [a 15-minute talk](https://iclr.cc/virtual/2022/oral/6603) focused on main
 - [Documentation](https://einops.rocks/)
 - [Tutorial](#Tutorials) 
 - [API micro-reference](#API)
-- [Why using einops](#Why-using-einops-notation)
+- [Why use einops](#Why-use-einops-notation)
 - [Supported frameworks](#Supported-frameworks)
 - [Citing](#Citing)
 - [Repository](https://github.com/arogozhnikov/einops) and [discussions](https://github.com/arogozhnikov/einops/discussions)
@@ -201,7 +201,7 @@ Additionally, torch users will benefit from layers as those are script-able and 
 
 Notation was loosely inspired by Einstein summation (in particular by `numpy.einsum` operation).
 
-## Why use `einops` notation?! <a name="Why-using-einops-notation"></a>
+## Why use `einops` notation?! <a name="Why-use-einops-notation"></a>
 
 
 ### Semantic information (being verbose in expectations)
