@@ -188,7 +188,7 @@ def test_functional():
     for backend in backends:
         for einops_pattern, true_pattern, in_shapes, out_shape in test_functional_cases:
             print(f"Running '{einops_pattern}' for {backend.framework_name}")
-            
+
             # Create pattern:
             predicted_pattern = _compactify_pattern_for_einsum(einops_pattern)
             assert predicted_pattern == true_pattern
@@ -202,7 +202,7 @@ def test_functional():
             in_arrays_framework = [
                 backend.from_numpy(array) for array in in_arrays
             ]
-            
+
             # Loop over whether we call it manually with the backend,
             # or whether we use `einops.einsum`.
             for do_manual_call in [True, False]:

@@ -42,7 +42,7 @@ def main():
         "cupy": ["cupy"],
         # switch to stable paddlepaddle, because of https://github.com/PaddlePaddle/Paddle/issues/63927
         # "paddle": ["paddlepaddle==0.0.0 -f https://www.paddlepaddle.org.cn/whl/linux/cpu-mkl/develop.html"],
-        "paddle": ["paddlepaddle"], 
+        "paddle": ["paddlepaddle"],
         "oneflow": ["oneflow==0.9.0"],
     }
 

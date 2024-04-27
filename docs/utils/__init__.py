@@ -32,7 +32,7 @@ _style_inline = """<style>
     padding: 5px 15px;
     background-color: #def;
 }
-.einops-answer:hover { color: blue; } 
+.einops-answer:hover { color: blue; }
 </style>
 """
 

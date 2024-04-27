@@ -6,7 +6,7 @@ and to have scripting supported at least for layers,
 a number of additional moves is needed.
 
 Design of main operations (dynamic resolution by lookup) is unlikely
-to be implemented by torch.jit.script, 
+to be implemented by torch.jit.script,
 but torch.compile seems to work with operations just fine.
 """
 import warnings

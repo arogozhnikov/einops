@@ -21,7 +21,7 @@ class Reduce(ReduceMixin, paddle.nn.Layer):
 class EinMix(_EinmixMixin, paddle.nn.Layer):
     def _create_parameters(self, weight_shape, weight_bound, bias_shape, bias_bound):
         self.weight = self.create_parameter(
-            weight_shape, 
+            weight_shape,
             default_initializer=paddle.nn.initializer.Uniform(-weight_bound, weight_bound)
         )
 
@@ -50,7 +50,7 @@ class EinMix(_EinmixMixin, paddle.nn.Layer):
     def forward(self, input):
         if self.pre_rearrange is not None:
             input = self.pre_rearrange(input)
-        
+
         result = paddle.einsum(self.einsum_pattern, input, self.weight)
         if self.bias is not None:
             result += self.bias
