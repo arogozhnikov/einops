@@ -21,6 +21,9 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
+      - name: Check for ruff compliance
+        run: |
+          pip install ruff && ruff check . && ruff format . --check
       - name: Run tests
         run: |
           python test.py ${{ matrix.frameworks }}
