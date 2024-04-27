@@ -7,7 +7,7 @@ from typing import Set, Tuple, List, Dict, Union, Callable, Optional, TypeVar, c
 
 if typing.TYPE_CHECKING:
     # for docstrings in pycharm
-    import numpy as np
+    import numpy as np # noqa E401
 
 from . import EinopsError
 from ._backends import get_backend

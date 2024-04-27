@@ -37,7 +37,7 @@ def unpack_and_pack_against_numpy(x, ps, pattern: str):
         unpacked_np = unpack(x_np, ps, pattern)
         packed_np, ps3 = pack(unpacked_np, pattern=pattern)
 
-    assert type(capturer_numpy.exception) == type(capturer_backend.exception)
+    assert type(capturer_numpy.exception) == type(capturer_backend.exception) # noqa E721
     if capturer_numpy.exception is not None:
         # both failed
         return

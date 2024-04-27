@@ -2,7 +2,7 @@ from typing import Dict
 
 from io import StringIO
 
-from tests import parse_backends_to_test, is_backend_tested
+from tests import is_backend_tested
 
 __author__ = "Alex Rogozhnikov"
 

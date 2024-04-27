@@ -1,5 +1,4 @@
 from typing import Any, Callable
-from venv import create
 from . import collect_test_backends
 from einops.einops import _compactify_pattern_for_einsum, einsum, EinopsError
 import numpy as np
@@ -267,7 +266,8 @@ def test_functional_errors():
     # during the pattern creation.
 
     rstate = np.random.RandomState(0)
-    create_tensor = lambda *shape: rstate.uniform(size=shape).astype('float32')
+    def create_tensor(*shape):
+        return rstate.uniform(size=shape).astype('float32')
 
     # raise NotImplementedError("Singleton () axes are not yet supported in einsum.")
     with pytest.raises(NotImplementedError, match="^Singleton"):

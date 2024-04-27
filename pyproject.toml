@@ -94,10 +94,7 @@ filterwarnings = [
     "ignore:Call to deprecated create function OneofDescriptor",
 ]
 
-[tool.black]
-line-length = 120
-target-version = ['py311']
-
 
 [tool.ruff]
 line-length = 120
+target-version = 'py311'

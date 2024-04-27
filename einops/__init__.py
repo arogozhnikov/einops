@@ -1,3 +1,6 @@
+# imports can use EinopsError class
+# ruff: noqa: E402
+
 __author__ = 'Alex Rogozhnikov'
 __version__ = '0.7.0'
 
@@ -11,5 +14,5 @@ __all__ = ['rearrange', 'reduce', 'repeat', 'einsum',
            'pack', 'unpack',
            'parse_shape', 'asnumpy', 'EinopsError']
 
-from .einops import rearrange, reduce, repeat, einsum, parse_shape, asnumpy
+from .einops import rearrange, reduce, repeat, einsum, parse_shape, asnumpy 
 from .packing import pack, unpack

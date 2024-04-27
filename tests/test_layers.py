@@ -45,7 +45,7 @@ def test_rearrange_imperative():
             for shape in wrong_shapes:
                 try:
                     layer(backend.from_numpy(numpy.zeros(shape, dtype="float32")))
-                except:
+                except BaseException:
                     pass
                 else:
                     raise AssertionError("Failure expected")
@@ -119,7 +119,7 @@ def test_reduce_imperative():
                 for shape in wrong_shapes:
                     try:
                         layer(backend.from_numpy(numpy.zeros(shape, dtype="float32")))
-                    except:
+                    except BaseException:
                         pass
                     else:
                         raise AssertionError("Failure expected")
@@ -359,7 +359,7 @@ def test_flax_layers():
         model = NN()
         fixed_input = jnp.ones([10, 2 * 2, 3 * 3, 4])
         params = model.init(jax.random.PRNGKey(0), fixed_input)
-        eval_at_point = lambda params: jnp.linalg.norm(model.apply(params, fixed_input))
+        def eval_at_point(params): return jnp.linalg.norm(model.apply(params, fixed_input))
 
         vandg = jax.value_and_grad(eval_at_point)
         value0 = eval_at_point(params)

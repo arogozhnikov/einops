@@ -429,7 +429,7 @@ class TensorflowBackend(AbstractBackend):
             try:
                 hash(shape)
                 return shape
-            except:
+            except BaseException:
                 # unhashable symbols in shape. Wrap tuple to be hashable.
                 return HashableTuple(shape)
 

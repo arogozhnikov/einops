@@ -2,6 +2,7 @@ import numpy as np
 
 from PIL.Image import fromarray
 from IPython import get_ipython
+from IPython.display import display_html
 
 
 def display_np_arrays_as_images():
@@ -23,7 +24,7 @@ def display_np_arrays_as_images():
     get_ipython().display_formatter.formatters['text/plain'].for_type(np.ndarray, np_to_text)
 
 
-from IPython.display import display_html
+
 
 _style_inline = """<style>
 .einops-answer {

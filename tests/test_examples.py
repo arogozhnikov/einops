@@ -111,7 +111,7 @@ def test_rearrange_examples():
         return x
 
     # mock for convolution (works for all backends)
-    convolve_mock = lambda x: x
+    def convolve_mock(x): return x
 
     tests = [test1, test2, test3, test4, test5, test6, test7, test8, test9, test10, test11,
              lambda x: shufflenet(x, convolve=convolve_mock, c1=4, c2=5),
