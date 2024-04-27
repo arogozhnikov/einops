@@ -1,4 +1,4 @@
-__author__ = 'Alex Rogozhnikov'
+__author__ = "Alex Rogozhnikov"
 
 from typing import Any, Dict
 
@@ -28,16 +28,16 @@ class RearrangeMixin:
     def __repr__(self) -> str:
         params = repr(self.pattern)
         for axis, length in self.axes_lengths.items():
-            params += ', {}={}'.format(axis, length)
-        return '{}({})'.format(self.__class__.__name__, params)
+            params += ", {}={}".format(axis, length)
+        return "{}({})".format(self.__class__.__name__, params)
 
     def multirecipe(self) -> Dict[int, TransformRecipe]:
         try:
             return _prepare_recipes_for_all_dims(
-                self.pattern, operation='rearrange', axes_names=tuple(self.axes_lengths)
+                self.pattern, operation="rearrange", axes_names=tuple(self.axes_lengths)
             )
         except EinopsError as e:
-            raise EinopsError(' Error while preparing {!r}\n {}'.format(self, e))
+            raise EinopsError(" Error while preparing {!r}\n {}".format(self, e))
 
     def _apply_recipe(self, x):
         backend = get_backend(x)
@@ -45,15 +45,15 @@ class RearrangeMixin:
             backend=backend,
             recipe=self._multirecipe[len(x.shape)],
             tensor=x,
-            reduction_type='rearrange',
+            reduction_type="rearrange",
             axes_lengths=self._axes_lengths,
         )
 
     def __getstate__(self):
-        return {'pattern': self.pattern, 'axes_lengths': self.axes_lengths}
+        return {"pattern": self.pattern, "axes_lengths": self.axes_lengths}
 
     def __setstate__(self, state):
-        self.__init__(pattern=state['pattern'], **state['axes_lengths'])
+        self.__init__(pattern=state["pattern"], **state["axes_lengths"])
 
 
 class ReduceMixin:
@@ -76,10 +76,10 @@ class ReduceMixin:
         self._axes_lengths = tuple(self.axes_lengths.items())
 
     def __repr__(self):
-        params = '{!r}, {!r}'.format(self.pattern, self.reduction)
+        params = "{!r}, {!r}".format(self.pattern, self.reduction)
         for axis, length in self.axes_lengths.items():
-            params += ', {}={}'.format(axis, length)
-        return '{}({})'.format(self.__class__.__name__, params)
+            params += ", {}={}".format(axis, length)
+        return "{}({})".format(self.__class__.__name__, params)
 
     def multirecipe(self) -> Dict[int, TransformRecipe]:
         try:
@@ -87,7 +87,7 @@ class ReduceMixin:
                 self.pattern, operation=self.reduction, axes_names=tuple(self.axes_lengths)
             )
         except EinopsError as e:
-            raise EinopsError(' Error while preparing {!r}\n {}'.format(self, e))
+            raise EinopsError(" Error while preparing {!r}\n {}".format(self, e))
 
     def _apply_recipe(self, x):
         backend = get_backend(x)
@@ -100,7 +100,7 @@ class ReduceMixin:
         )
 
     def __getstate__(self):
-        return {'pattern': self.pattern, 'reduction': self.reduction, 'axes_lengths': self.axes_lengths}
+        return {"pattern": self.pattern, "reduction": self.reduction, "axes_lengths": self.axes_lengths}
 
     def __setstate__(self, state):
-        self.__init__(pattern=state['pattern'], reduction=state['reduction'], **state['axes_lengths'])
+        self.__init__(pattern=state["pattern"], reduction=state["reduction"], **state["axes_lengths"])

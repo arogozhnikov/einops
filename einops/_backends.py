@@ -661,6 +661,7 @@ class PaddleBackend(AbstractBackend):
     def shape(self, x):
         return tuple(x.shape)
 
+
 class TinygradBackend(AbstractBackend):
     framework_name = "tinygrad"
 

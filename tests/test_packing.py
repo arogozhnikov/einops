@@ -37,7 +37,7 @@ def unpack_and_pack_against_numpy(x, ps, pattern: str):
         unpacked_np = unpack(x_np, ps, pattern)
         packed_np, ps3 = pack(unpacked_np, pattern=pattern)
 
-    assert type(capturer_numpy.exception) == type(capturer_backend.exception) # noqa E721
+    assert type(capturer_numpy.exception) == type(capturer_backend.exception)  # noqa E721
     if capturer_numpy.exception is not None:
         # both failed
         return
@@ -269,7 +269,6 @@ def test_pack_unpack_against_numpy():
                 unpack_and_pack(x, [[2, -1], [1, 5]], pattern)
 
 
-
 def test_pack_unpack_array_api():
     from einops import array_api as AA
     import numpy.array_api as xp
@@ -286,7 +285,6 @@ def test_pack_unpack_array_api():
             [[1], [1], [-1, 3]],
             [[2, 1], [1, 1, 1], [-1]],
         ]:
-
             x_np_split = unpack(x_np, ps, pattern)
             x_xp_split = AA.unpack(x_xp, ps, pattern)
             for a, b in zip(x_np_split, x_xp_split):
@@ -306,4 +304,3 @@ def test_pack_unpack_array_api():
         ]:
             with pytest.raises(BaseException):
                 unpack(x_np, ps, pattern)
-

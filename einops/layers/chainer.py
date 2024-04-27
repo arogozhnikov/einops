@@ -5,7 +5,7 @@ import chainer
 from . import RearrangeMixin, ReduceMixin
 from ._einmix import _EinmixMixin
 
-__author__ = 'Alex Rogozhnikov'
+__author__ = "Alex Rogozhnikov"
 
 
 class Rearrange(RearrangeMixin, chainer.Link):
@@ -28,12 +28,13 @@ class EinMix(_EinmixMixin, chainer.Link):
             else:
                 self.bias = None
 
-    def _create_rearrange_layers(self,
-                                 pre_reshape_pattern: Optional[str],
-                                 pre_reshape_lengths: Optional[Dict],
-                                 post_reshape_pattern: Optional[str],
-                                 post_reshape_lengths: Optional[Dict],
-                                 ):
+    def _create_rearrange_layers(
+        self,
+        pre_reshape_pattern: Optional[str],
+        pre_reshape_lengths: Optional[Dict],
+        post_reshape_pattern: Optional[str],
+        post_reshape_lengths: Optional[Dict],
+    ):
         self.pre_rearrange = None
         if pre_reshape_pattern is not None:
             self.pre_rearrange = Rearrange(pre_reshape_pattern, **cast(dict, pre_reshape_lengths))

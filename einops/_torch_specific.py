@@ -9,6 +9,7 @@ Design of main operations (dynamic resolution by lookup) is unlikely
 to be implemented by torch.jit.script,
 but torch.compile seems to work with operations just fine.
 """
+
 import warnings
 from typing import Dict, List, Tuple
 

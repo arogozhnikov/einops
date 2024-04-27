@@ -1,4 +1,4 @@
-__author__ = 'Alex Rogozhnikov'
+__author__ = "Alex Rogozhnikov"
 
 from ..layers.tensorflow import Rearrange, Reduce, EinMix
 

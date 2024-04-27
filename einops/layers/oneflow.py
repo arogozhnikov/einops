@@ -5,7 +5,7 @@ import oneflow as flow
 from . import RearrangeMixin, ReduceMixin
 from ._einmix import _EinmixMixin
 
-__author__ = 'Tianhe Ren & Depeng Liang'
+__author__ = "Tianhe Ren & Depeng Liang"
 
 
 class Rearrange(RearrangeMixin, flow.nn.Module):
@@ -20,20 +20,21 @@ class Reduce(ReduceMixin, flow.nn.Module):
 
 class EinMix(_EinmixMixin, flow.nn.Module):
     def _create_parameters(self, weight_shape, weight_bound, bias_shape, bias_bound):
-        self.weight = flow.nn.Parameter(flow.zeros(weight_shape).uniform_(-weight_bound, weight_bound),
-                                         requires_grad=True)
+        self.weight = flow.nn.Parameter(
+            flow.zeros(weight_shape).uniform_(-weight_bound, weight_bound), requires_grad=True
+        )
         if bias_shape is not None:
-            self.bias = flow.nn.Parameter(flow.zeros(bias_shape).uniform_(-bias_bound, bias_bound),
-                                           requires_grad=True)
+            self.bias = flow.nn.Parameter(flow.zeros(bias_shape).uniform_(-bias_bound, bias_bound), requires_grad=True)
         else:
             self.bias = None
 
-    def _create_rearrange_layers(self,
-                                 pre_reshape_pattern: Optional[str],
-                                 pre_reshape_lengths: Optional[Dict],
-                                 post_reshape_pattern: Optional[str],
-                                 post_reshape_lengths: Optional[Dict],
-                                 ):
+    def _create_rearrange_layers(
+        self,
+        pre_reshape_pattern: Optional[str],
+        pre_reshape_lengths: Optional[Dict],
+        post_reshape_pattern: Optional[str],
+        post_reshape_lengths: Optional[Dict],
+    ):
         self.pre_rearrange = None
         if pre_reshape_pattern is not None:
             self.pre_rearrange = Rearrange(pre_reshape_pattern, **cast(dict, pre_reshape_lengths))
