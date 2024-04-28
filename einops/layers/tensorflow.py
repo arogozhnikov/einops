@@ -6,7 +6,7 @@ and changed way too many times at this point to remember what-compatible-where.
 Layers in einops==0.7.0 (and several prior versions)
  are compatible with TF 2.13
 
-Layers in einops==0.7.1 were re-implemented
+Layers in einops==0.8.0 were re-implemented
  according to official instructions for TF 2.16
 
 """
