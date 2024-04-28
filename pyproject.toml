@@ -96,7 +96,13 @@ filterwarnings = [
 
 
 [tool.ruff]
+
 line-length = 120
 target-version = 'py311'
 
+cache-dir = "/tmp/ruff_cache" # move cache out of workdir
+
 lint.select = ["E4", "E7", "E9", "F", "W"]
+
+[tool.ruff.format]
+docstring-code-format = false
