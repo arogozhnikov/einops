@@ -162,7 +162,6 @@ from einops.layers.torch      import Rearrange, Reduce
 from einops.layers.tensorflow import Rearrange, Reduce
 from einops.layers.flax       import Rearrange, Reduce
 from einops.layers.paddle     import Rearrange, Reduce
-from einops.layers.keras      import Rearrange, Reduce
 from einops.layers.chainer    import Rearrange, Reduce
 ```
 
@@ -318,9 +317,10 @@ Einops works with ...
 - [cupy](https://cupy.chainer.org/)
 - [chainer](https://chainer.org/)
 - [tf.keras](https://www.tensorflow.org/guide/keras)
-- [oneflow](https://github.com/Oneflow-Inc/oneflow) (experimental)
 - [flax](https://github.com/google/flax) (experimental)
 - [paddle](https://github.com/PaddlePaddle/Paddle) (experimental)
+- [oneflow](https://github.com/Oneflow-Inc/oneflow) (community)
+- [tinygrad](https://github.com/tinygrad/tinygrad) (community)
 
 Additionally, starting from einops 0.7.0 einops can be used with any framework that supports [Python array API standard](https://data-apis.org/array-api/latest/API_specification/index.html)
 
