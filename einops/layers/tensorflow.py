@@ -3,8 +3,11 @@ Comment about tensorflow layers:
 unfortunately instructions on creation of TF layers change constantly,
 and changed way too many times at this point to remember what-compatible-where.
 
-So just stating layers in einops==0.7.2 were implemented
- according to official instructions for TF 2.16.
+Layers in einops==0.7.0 (and several prior versions)
+ are compatible with TF 2.13
+
+Layers in einops==0.7.1 were re-implemented
+ according to official instructions for TF 2.16
 
 """
 

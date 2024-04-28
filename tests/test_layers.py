@@ -244,6 +244,10 @@ def test_keras_layer():
         pytest.skip()
     else:
         import tensorflow as tf
+
+        if tf.__version__ < "2.16.":
+            # current implementation of layers follows new TF interface
+            pytest.skip()
         from tensorflow.keras.models import Sequential
         from tensorflow.keras.layers import Conv2D as Conv2d, Dense as Linear, ReLU
         from einops.layers.keras import Rearrange, Reduce, EinMix, keras_custom_objects
