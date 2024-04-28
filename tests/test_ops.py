@@ -351,13 +351,13 @@ def test_reduction_with_callable_imperatives():
         y = numpy.sum(y, axis=tuple_of_axes)
         return numpy.log(y) + minused
 
-    from einops._backends import TorchBackend, ChainerBackend, TensorflowBackend, KerasBackend, NumpyBackend
+    from einops._backends import TorchBackend, ChainerBackend, TensorflowBackend, TFKerasBackend, NumpyBackend
 
     backend2callback = {
         TorchBackend.framework_name: logsumexp_torch,
         ChainerBackend.framework_name: logsumexp_chainer,
         TensorflowBackend.framework_name: logsumexp_tf,
-        KerasBackend.framework_name: logsumexp_keras,
+        TFKerasBackend.framework_name: logsumexp_keras,
         NumpyBackend.framework_name: logsumexp_numpy,
     }
 

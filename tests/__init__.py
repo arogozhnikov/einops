@@ -86,7 +86,7 @@ def collect_test_backends(symbolic=False, layers=False) -> List[_backends.Abstra
             backend_types = []
         else:
             backend_types = [
-                _backends.KerasBackend,
+                _backends.TFKerasBackend,
             ]
 
     backend_names_to_test = parse_backends_to_test()

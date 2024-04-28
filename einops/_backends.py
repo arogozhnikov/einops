@@ -466,7 +466,7 @@ class TensorflowBackend(AbstractBackend):
         return self.tf.einsum(pattern, *x)
 
 
-class KerasBackend(AbstractBackend):
+class TFKerasBackend(AbstractBackend):
     framework_name = "tensorflow.keras"
 
     def __init__(self):
