@@ -36,16 +36,16 @@ class _EinmixMixin:
         Multi-head linear layer (each head is own linear layer):
         >>> EinMix('t b (head cin) -> t b (head cout)', weight_shape='head cin cout', ...)
 
-        ... ah yes, you need to specify all dimensions of weight shape/bias shape in parameters.
+        ... and yes, you need to specify all dimensions of weight shape/bias shape in parameters.
 
         Use cases:
         - when channel dimension is not last, use EinMix, not transposition
         - patch/segment embeddings
         - when need only within-group connections to reduce number of weights and computations
         - perfect as a part of sequential models
-        - next-gen MLPs (follow tutorial to learn more)
+        - next-gen MLPs (follow tutorial to learn more!)
 
-        Uniform He initialization is applied to weight tensor and encounters for number of elements mixed.
+        Uniform He initialization is applied to weight tensor. This accounts for number of elements mixed.
 
         Parameters
         :param pattern: transformation pattern, left side - dimensions of input, right side - dimensions of output
