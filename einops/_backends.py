@@ -429,7 +429,7 @@ class TensorflowBackend(AbstractBackend):
             try:
                 hash(shape)
                 return shape
-            except:
+            except BaseException:
                 # unhashable symbols in shape. Wrap tuple to be hashable.
                 return HashableTuple(shape)
 
@@ -661,12 +661,13 @@ class PaddleBackend(AbstractBackend):
     def shape(self, x):
         return tuple(x.shape)
 
+
 class TinygradBackend(AbstractBackend):
     framework_name = "tinygrad"
 
     def __init__(self):
         import tinygrad
-        
+
         self.tinygrad = tinygrad
 
     def is_appropriate_type(self, tensor):
@@ -709,6 +710,6 @@ class TinygradBackend(AbstractBackend):
 
     def is_float_type(self, x):
         return self.tinygrad.dtypes.is_float(x.dtype)
-    
+
     def einsum(self, pattern, *x):
         return self.tinygrad.Tensor.einsum(pattern, *x)

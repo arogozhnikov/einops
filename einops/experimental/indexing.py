@@ -59,14 +59,14 @@ from typing import List, Union, TypeVar, Tuple
 
 from einops import EinopsError
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class CompositionDecomposition:
     def __init__(
-            self,
-            decomposed_shape: List[str],
-            composed_shape: List[List[str]],
+        self,
+        decomposed_shape: List[str],
+        composed_shape: List[List[str]],
     ):
         flat_shape = []
         for x in composed_shape:
@@ -135,39 +135,38 @@ def arange_at_position(xp, n_axes, axis, axis_len, device=None):
 
 
 class IndexingFormula:
-
     def __init__(self, pattern: str):
         """
         :param pattern: example 'b t c <- b hsel wsel c, [hsel, wsel] b t'
         """
         self.pattern = pattern
-        left, right = pattern.split('<-')
-        arg_split = right.index(',')
-        arr_pattern, ind_pattern = right[:arg_split], right[arg_split + 1:]
+        left, right = pattern.split("<-")
+        arg_split = right.index(",")
+        arr_pattern, ind_pattern = right[:arg_split], right[arg_split + 1 :]
         ind_pattern = ind_pattern.strip()
         # print(
         #     arr_pattern, '\n',
         #     ind_pattern,
         # )
-        assert ind_pattern.startswith('['), 'composition axis should go first in indexer (second argument) [h w] i j k'
-        composition_start = ind_pattern.index('[')
-        composition_end = ind_pattern.index(']')
-        composition = ind_pattern[composition_start + 1: composition_end]
-        ind_other_axes = ind_pattern[composition_end + 1:]
+        assert ind_pattern.startswith("["), "composition axis should go first in indexer (second argument) [h w] i j k"
+        composition_start = ind_pattern.index("[")
+        composition_end = ind_pattern.index("]")
+        composition = ind_pattern[composition_start + 1 : composition_end]
+        ind_other_axes = ind_pattern[composition_end + 1 :]
 
         self.result_axes_names = left.split()
         self.array_axes_names = arr_pattern.split()
-        self.indexing_axes_names = [x.strip() for x in composition.split(',')]
+        self.indexing_axes_names = [x.strip() for x in composition.split(",")]
         self.indexer_other_axes_names = ind_other_axes.split()
 
         for group_name, group in [
-            ('result', self.result_axes_names),
-            ('array', self.array_axes_names),
-            ('indexer', self.indexing_axes_names + self.indexer_other_axes_names),
+            ("result", self.result_axes_names),
+            ("array", self.array_axes_names),
+            ("indexer", self.indexing_axes_names + self.indexer_other_axes_names),
         ]:
             if len(set(group)) != len(group):
                 # need more verbosity, which axis, raise
-                raise EinopsError(f'{group_name} pattern ({group}) contains a duplicated axis')
+                raise EinopsError(f"{group_name} pattern ({group}) contains a duplicated axis")
 
         axis_groups = [
             self.result_axes_names,
@@ -191,7 +190,7 @@ class IndexingFormula:
             if presence == (False, True, True, False):
                 self.indexer_axes.append(axis)
             elif presence[2]:
-                raise EinopsError(f'Wrong usage of indexer variable {axis}')
+                raise EinopsError(f"Wrong usage of indexer variable {axis}")
             elif presence == (True, True, False, True):
                 self.batch_axes.append(axis)
             elif presence == (True, False, False, True):
@@ -200,7 +199,7 @@ class IndexingFormula:
                 self.result_and_array_axes.append(axis)
             else:
                 # TODO better categorization of wrong usage patterns
-                raise EinopsError(f'{axis} is used incorrectly in {pattern}')
+                raise EinopsError(f"{axis} is used incorrectly in {pattern}")
 
         assert set(self.indexer_axes) == set(self.indexing_axes_names)
         # order of these variables matters, since we can't lose mapping here
@@ -248,10 +247,17 @@ class IndexingFormula:
 
         for axis_name in self.batch_axes[::-1]:
             axis_id = self.indexer_other_axes_names.index(axis_name)
-            full_index = full_index + arange_at_position(
-                xp, len(self.indexer_other_axes_names), axis=axis_id, axis_len=known_axes_sizes[axis_name],
-                device=arr.device,
-            ) * shift
+            full_index = (
+                full_index
+                + arange_at_position(
+                    xp,
+                    len(self.indexer_other_axes_names),
+                    axis=axis_id,
+                    axis_len=known_axes_sizes[axis_name],
+                    device=arr.device,
+                )
+                * shift
+            )
             shift *= known_axes_sizes[axis_name]
 
         assert shift == arr_2d.shape[0]
@@ -281,24 +287,25 @@ def einindex(pattern: str, arr: T, /, ind: Union[T, List[T]]):
 
 def test_composition_and_decomposition():
     import numpy.array_api as np
+
     x = np.arange(2 * 3 * 5 * 7)
     x = np.reshape(x, (2, 3, 5, 7))
     comp = CompositionDecomposition(
-        decomposed_shape=['a', 'b', 'c', 'd'],
-        composed_shape=[['a', 'b'], ['c', 'd']],
+        decomposed_shape=["a", "b", "c", "d"],
+        composed_shape=[["a", "b"], ["c", "d"]],
     )
     assert comp.compose(x, known_axes_lengths={}).shape == (2 * 3, 5 * 7)
 
     y = CompositionDecomposition(
-        decomposed_shape=['a', 'b', 'c', 'd'],
-        composed_shape=[['a', 'b'], [], ['c', 'd']],
+        decomposed_shape=["a", "b", "c", "d"],
+        composed_shape=[["a", "b"], [], ["c", "d"]],
     ).compose(x, {})
     assert y.shape == (2 * 3, 1, 5 * 7)
     assert np.all(np.reshape(x, (-1,)) == np.reshape(y, (-1,)))
 
     comp = CompositionDecomposition(
-        decomposed_shape=['a', 'b', 'e', 'c', 'd'],
-        composed_shape=[['e', 'c'], ['b'], ['a', 'd']],
+        decomposed_shape=["a", "b", "e", "c", "d"],
+        composed_shape=[["e", "c"], ["b"], ["a", "d"]],
     )
     x = np.arange(2 * 3 * 5 * 7 * 3)
     x = np.reshape(x, (2, 3, 5, 7, 3))
@@ -315,11 +322,11 @@ def test_simple_indexing():
     # simple 2d test
     arr = np.reshape(np.arange(5 * 7), (5, 7))
     ind = np.arange(7) % 5
-    x = einindex('j <- i j, [i] j', arr, [ind])
+    x = einindex("j <- i j, [i] j", arr, [ind])
     for j, i in enumerate(ind):
         assert arr[i, j] == x[j]
 
-    y = einindex('j <- j i, [i] j', np.permute_dims(arr, (1, 0)), [ind])
+    y = einindex("j <- j i, [i] j", np.permute_dims(arr, (1, 0)), [ind])
     for j, i in enumerate(ind):
         assert arr[i, j] == y[j]
 
@@ -328,10 +335,10 @@ def test_multidimensional_indexing():
     import numpy.array_api as np
 
     embedding_bhwc = (
-            + arange_at_position(np, 4, 0, 2) * 1000
-            + arange_at_position(np, 4, 1, 3) * 100
-            + arange_at_position(np, 4, 2, 5) * 10
-            + arange_at_position(np, 4, 3, 7) * 1
+        +arange_at_position(np, 4, 0, 2) * 1000
+        + arange_at_position(np, 4, 1, 3) * 100
+        + arange_at_position(np, 4, 2, 5) * 10
+        + arange_at_position(np, 4, 3, 7) * 1
     )
 
     hindices_bt = np.reshape(np.arange(6), (2, 3)) % 3
@@ -341,10 +348,10 @@ def test_multidimensional_indexing():
     # your goal is to get most suitable token from image for every token in sentence
     # thus for every token in sentence you compute best k and v
 
-    result = einindex('c t b <- b h w c, [h, w] b t', embedding_bhwc, [hindices_bt, windices_bt])
+    result = einindex("c t b <- b h w c, [h, w] b t", embedding_bhwc, [hindices_bt, windices_bt])
     # example of using a single array for indexing multiple axes
     hw_indices_bt = np.stack([hindices_bt, windices_bt])
-    result2 = einindex('c t b <- b h w c, [h, w] b t', embedding_bhwc, hw_indices_bt)
+    result2 = einindex("c t b <- b h w c, [h, w] b t", embedding_bhwc, hw_indices_bt)
     assert np.all(result == result2)
 
     # check vs manual element computation
@@ -369,15 +376,15 @@ def test_reverse_indexing():
     W = 9
 
     arr_gtbc = (
-            + arange_at_position(np, 4, 0, G) * 1000
-            + arange_at_position(np, 4, 1, T) * 100
-            + arange_at_position(np, 4, 2, B) * 10
-            + arange_at_position(np, 4, 3, C) * 1
+        +arange_at_position(np, 4, 0, G) * 1000
+        + arange_at_position(np, 4, 1, T) * 100
+        + arange_at_position(np, 4, 2, B) * 10
+        + arange_at_position(np, 4, 3, C) * 1
     )
 
     t_indices_gbhw = np.reshape(np.arange(G * B * H * W), (G, B, H, W)) % T
 
-    result = einindex('g b c h w <- g t b c, [t] g b h w', arr_gtbc, [t_indices_gbhw])
+    result = einindex("g b c h w <- g t b c, [t] g b h w", arr_gtbc, [t_indices_gbhw])
 
     result_manual = result * 0
     for g in range(G):
@@ -389,5 +396,3 @@ def test_reverse_indexing():
                         result_manual[g, b, c, h, w] = arr_gtbc[g, t, b, c]
 
     assert np.all(result == result_manual)
-
-

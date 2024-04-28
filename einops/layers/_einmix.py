@@ -13,7 +13,7 @@ def _report_axes(axes: set, report_message: str):
 
 
 class _EinmixMixin:
-    def __init__(self, pattern: str, weight_shape: str, bias_shape: Optional[str]=None, **axes_lengths: Any):
+    def __init__(self, pattern: str, weight_shape: str, bias_shape: Optional[str] = None, **axes_lengths: Any):
         """
         EinMix - Einstein summation with automated tensor management and axis packing/unpacking.
 
@@ -36,16 +36,16 @@ class _EinmixMixin:
         Multi-head linear layer (each head is own linear layer):
         >>> EinMix('t b (head cin) -> t b (head cout)', weight_shape='head cin cout', ...)
 
-        ... ah yes, you need to specify all dimensions of weight shape/bias shape in parameters.
+        ... and yes, you need to specify all dimensions of weight shape/bias shape in parameters.
 
         Use cases:
         - when channel dimension is not last, use EinMix, not transposition
         - patch/segment embeddings
         - when need only within-group connections to reduce number of weights and computations
         - perfect as a part of sequential models
-        - next-gen MLPs (follow tutorial to learn more)
+        - next-gen MLPs (follow tutorial to learn more!)
 
-        Uniform He initialization is applied to weight tensor and encounters for number of elements mixed.
+        Uniform He initialization is applied to weight tensor. This accounts for number of elements mixed.
 
         Parameters
         :param pattern: transformation pattern, left side - dimensions of input, right side - dimensions of output
@@ -58,24 +58,26 @@ class _EinmixMixin:
         self.weight_shape = weight_shape
         self.bias_shape = bias_shape
         self.axes_lengths = axes_lengths
-        self.initialize_einmix(pattern=pattern, weight_shape=weight_shape, bias_shape=bias_shape, axes_lengths=axes_lengths)
+        self.initialize_einmix(
+            pattern=pattern, weight_shape=weight_shape, bias_shape=bias_shape, axes_lengths=axes_lengths
+        )
 
     def initialize_einmix(self, pattern: str, weight_shape: str, bias_shape: Optional[str], axes_lengths: dict):
-        left_pattern, right_pattern = pattern.split('->')
+        left_pattern, right_pattern = pattern.split("->")
         left = ParsedExpression(left_pattern)
         right = ParsedExpression(right_pattern)
         weight = ParsedExpression(weight_shape)
         _report_axes(
             set.difference(right.identifiers, {*left.identifiers, *weight.identifiers}),
-            'Unrecognized identifiers on the right side of EinMix {}'
+            "Unrecognized identifiers on the right side of EinMix {}",
         )
 
         if left.has_ellipsis or right.has_ellipsis or weight.has_ellipsis:
-            raise EinopsError('Ellipsis is not supported in EinMix (right now)')
+            raise EinopsError("Ellipsis is not supported in EinMix (right now)")
         if any(x.has_non_unitary_anonymous_axes for x in [left, right, weight]):
-            raise EinopsError('Anonymous axes (numbers) are not allowed in EinMix')
-        if '(' in weight_shape or ')' in weight_shape:
-            raise EinopsError(f'Parenthesis is not allowed in weight shape: {weight_shape}')
+            raise EinopsError("Anonymous axes (numbers) are not allowed in EinMix")
+        if "(" in weight_shape or ")" in weight_shape:
+            raise EinopsError(f"Parenthesis is not allowed in weight shape: {weight_shape}")
 
         pre_reshape_pattern = None
         pre_reshape_lengths = None
@@ -84,47 +86,43 @@ class _EinmixMixin:
             names: List[str] = []
             for group in left.composition:
                 names += group
-            composition = ' '.join(names)
-            pre_reshape_pattern = f'{left_pattern}->{composition}'
+            composition = " ".join(names)
+            pre_reshape_pattern = f"{left_pattern}->{composition}"
             pre_reshape_lengths = {name: length for name, length in axes_lengths.items() if name in names}
 
         if any(len(group) != 1 for group in right.composition):
             names = []
             for group in right.composition:
                 names += group
-            composition = ' '.join(names)
-            post_reshape_pattern = f'{composition}->{right_pattern}'
+            composition = " ".join(names)
+            post_reshape_pattern = f"{composition}->{right_pattern}"
 
         self._create_rearrange_layers(pre_reshape_pattern, pre_reshape_lengths, post_reshape_pattern, {})
 
         for axis in weight.identifiers:
             if axis not in axes_lengths:
-                raise EinopsError('Dimension {} of weight should be specified'.format(axis))
+                raise EinopsError("Dimension {} of weight should be specified".format(axis))
         _report_axes(
             set.difference(set(axes_lengths), {*left.identifiers, *weight.identifiers}),
-            'Axes {} are not used in pattern',
+            "Axes {} are not used in pattern",
         )
         _report_axes(
-            set.difference(weight.identifiers, {*left.identifiers, *right.identifiers}),
-            'Weight axes {} are redundant'
+            set.difference(weight.identifiers, {*left.identifiers, *right.identifiers}), "Weight axes {} are redundant"
         )
         if len(weight.identifiers) == 0:
-            warnings.warn('EinMix: weight has no dimensions (means multiplication by a number)')
+            warnings.warn("EinMix: weight has no dimensions (means multiplication by a number)")
 
-        _weight_shape = [axes_lengths[axis] for axis, in weight.composition]
+        _weight_shape = [axes_lengths[axis] for (axis,) in weight.composition]
         # single output element is a combination of fan_in input elements
-        _fan_in = _product([axes_lengths[axis] for axis, in weight.composition if axis not in right.identifiers])
+        _fan_in = _product([axes_lengths[axis] for (axis,) in weight.composition if axis not in right.identifiers])
         if bias_shape is not None:
             if not isinstance(bias_shape, str):
-                raise EinopsError('bias shape should be string specifying which axes bias depends on')
+                raise EinopsError("bias shape should be string specifying which axes bias depends on")
             bias = ParsedExpression(bias_shape)
-            _report_axes(
-                set.difference(bias.identifiers, right.identifiers),
-                'Bias axes {} not present in output'
-            )
+            _report_axes(set.difference(bias.identifiers, right.identifiers), "Bias axes {} not present in output")
             _report_axes(
                 set.difference(bias.identifiers, set(axes_lengths)),
-                'Sizes not provided for bias axes {}',
+                "Sizes not provided for bias axes {}",
             )
 
             _bias_shape = []
@@ -147,24 +145,26 @@ class _EinmixMixin:
         mapping2letters = {k: letter for letter, k in zip(string.ascii_lowercase, mapped_identifiers)}
 
         def write_flat(axes: list):
-            return ''.join(mapping2letters[axis] for axis in axes)
+            return "".join(mapping2letters[axis] for axis in axes)
 
-        self.einsum_pattern: str = '{},{}->{}'.format(
+        self.einsum_pattern: str = "{},{}->{}".format(
             write_flat(left.flat_axes_order()),
             write_flat(weight.flat_axes_order()),
             write_flat(right.flat_axes_order()),
         )
 
-    def _create_rearrange_layers(self,
-                                 pre_reshape_pattern: Optional[str],
-                                 pre_reshape_lengths: Optional[Dict],
-                                 post_reshape_pattern: Optional[str],
-                                 post_reshape_lengths: Optional[Dict]):
-        raise NotImplementedError('Should be defined in framework implementations')
+    def _create_rearrange_layers(
+        self,
+        pre_reshape_pattern: Optional[str],
+        pre_reshape_lengths: Optional[Dict],
+        post_reshape_pattern: Optional[str],
+        post_reshape_lengths: Optional[Dict],
+    ):
+        raise NotImplementedError("Should be defined in framework implementations")
 
     def _create_parameters(self, weight_shape, weight_bound, bias_shape, bias_bound):
-        """ Shape and implementations """
-        raise NotImplementedError('Should be defined in framework implementations')
+        """Shape and implementations"""
+        raise NotImplementedError("Should be defined in framework implementations")
 
     def __repr__(self):
         params = repr(self.pattern)
@@ -172,5 +172,5 @@ class _EinmixMixin:
         if self.bias_shape is not None:
             params += f", '{self.bias_shape}'"
         for axis, length in self.axes_lengths.items():
-            params += ', {}={}'.format(axis, length)
-        return '{}({})'.format(self.__class__.__name__, params)
+            params += ", {}={}".format(axis, length)
+        return "{}({})".format(self.__class__.__name__, params)

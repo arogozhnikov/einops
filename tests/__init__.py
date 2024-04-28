@@ -13,7 +13,7 @@ __author__ = "Alex Rogozhnikov"
 logging.getLogger("tensorflow").disabled = True
 logging.getLogger("matplotlib").disabled = True
 
-FLOAT_REDUCTIONS = ("min", "max", "sum", "mean", "prod") # not includes any/all
+FLOAT_REDUCTIONS = ("min", "max", "sum", "mean", "prod")  # not includes any/all
 
 
 def find_names_of_all_frameworks() -> List[str]:

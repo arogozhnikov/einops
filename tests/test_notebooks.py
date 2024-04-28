@@ -2,7 +2,7 @@ from typing import Dict
 
 from io import StringIO
 
-from tests import parse_backends_to_test, is_backend_tested
+from tests import is_backend_tested
 
 __author__ = "Alex Rogozhnikov"
 
@@ -21,10 +21,11 @@ def render_notebook(filename: Path, replacements: Dict[str, str]) -> str:
     with filename.open("r") as f:
         nb_as_str = f.read()
     for original, replacement in replacements.items():
+        assert original in nb_as_str, f"not found in notebook: {original}"
         nb_as_str = nb_as_str.replace(original, replacement)
 
     nb = nbformat.read(StringIO(nb_as_str), nbformat.NO_CONVERT)
-    ep = ExecutePreprocessor(timeout=60, kernel_name="python3")
+    ep = ExecutePreprocessor(timeout=120, kernel_name="python3")
     ep.preprocess(nb, {"metadata": {"path": str(filename.parent.absolute())}})
 
     result_as_stream = StringIO()

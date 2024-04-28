@@ -2,6 +2,7 @@
 This is a fake script, it is not used.
 Seems github does not count contributions unless you have a setup.py
 """
+
 __author__ = "Alex Rogozhnikov"
 
 from setuptools import setup

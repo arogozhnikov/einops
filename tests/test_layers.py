@@ -45,7 +45,7 @@ def test_rearrange_imperative():
             for shape in wrong_shapes:
                 try:
                     layer(backend.from_numpy(numpy.zeros(shape, dtype="float32")))
-                except:
+                except BaseException:
                     pass
                 else:
                     raise AssertionError("Failure expected")
@@ -119,7 +119,7 @@ def test_reduce_imperative():
                 for shape in wrong_shapes:
                     try:
                         layer(backend.from_numpy(numpy.zeros(shape, dtype="float32")))
-                    except:
+                    except BaseException:
                         pass
                     else:
                         raise AssertionError("Failure expected")
@@ -244,6 +244,10 @@ def test_keras_layer():
         pytest.skip()
     else:
         import tensorflow as tf
+
+        if tf.__version__ < "2.16.":
+            # current implementation of layers follows new TF interface
+            pytest.skip()
         from tensorflow.keras.models import Sequential
         from tensorflow.keras.layers import Conv2D as Conv2d, Dense as Linear, ReLU
         from einops.layers.keras import Rearrange, Reduce, EinMix, keras_custom_objects
@@ -268,25 +272,31 @@ def test_keras_layer():
 
         model1 = create_keras_model()
         model2 = create_keras_model()
+
         input = numpy.random.normal(size=[10, 32, 32, 3]).astype("float32")
+        # two randomly init models should provide different outputs
         assert not numpy.allclose(model1.predict_on_batch(input), model2.predict_on_batch(input))
 
         # get some temp filename
-        with tempfile.NamedTemporaryFile(mode="r+b") as f:
-            tmp_filename = f.name
+        tmp_model_filename = "/tmp/einops_tf_model.h5"
         # save arch + weights
-        print("temp_path_keras1", tmp_filename)
-        tf.keras.models.save_model(model1, tmp_filename)
-        model3 = tf.keras.models.load_model(tmp_filename, custom_objects=keras_custom_objects)
-        assert numpy.allclose(model1.predict_on_batch(input), model3.predict_on_batch(input))
+        print("temp_path_keras1", tmp_model_filename)
+        tf.keras.models.save_model(model1, tmp_model_filename)
+        model3 = tf.keras.models.load_model(tmp_model_filename, custom_objects=keras_custom_objects)
 
+        numpy.testing.assert_allclose(model1.predict_on_batch(input), model3.predict_on_batch(input))
+
+        weight_filename = "/tmp/einops_tf_model.weights.h5"
         # save arch as json
         model4 = tf.keras.models.model_from_json(model1.to_json(), custom_objects=keras_custom_objects)
-        model1.save_weights(tmp_filename)
-        model4.load_weights(tmp_filename)
-        model2.load_weights(tmp_filename)
-        assert numpy.allclose(model1.predict_on_batch(input), model4.predict_on_batch(input))
-        assert numpy.allclose(model1.predict_on_batch(input), model2.predict_on_batch(input))
+        model1.save_weights(weight_filename)
+        model4.load_weights(weight_filename)
+        model2.load_weights(weight_filename)
+        # check that differently-inialized model receives same weights
+        numpy.testing.assert_allclose(model1.predict_on_batch(input), model2.predict_on_batch(input))
+        # ulimate test
+        # save-load architecture, and then load weights - should return same result
+        numpy.testing.assert_allclose(model1.predict_on_batch(input), model4.predict_on_batch(input))
 
 
 def test_chainer_layer():
@@ -359,7 +369,9 @@ def test_flax_layers():
         model = NN()
         fixed_input = jnp.ones([10, 2 * 2, 3 * 3, 4])
         params = model.init(jax.random.PRNGKey(0), fixed_input)
-        eval_at_point = lambda params: jnp.linalg.norm(model.apply(params, fixed_input))
+
+        def eval_at_point(params):
+            return jnp.linalg.norm(model.apply(params, fixed_input))
 
         vandg = jax.value_and_grad(eval_at_point)
         value0 = eval_at_point(params)

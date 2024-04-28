@@ -7,7 +7,7 @@ from typing import Set, Tuple, List, Dict, Union, Callable, Optional, TypeVar, c
 
 if typing.TYPE_CHECKING:
     # for docstrings in pycharm
-    import numpy as np
+    import numpy as np  # noqa E401
 
 from . import EinopsError
 from ._backends import get_backend
@@ -814,23 +814,19 @@ def _compactify_pattern_for_einsum(pattern: str) -> str:
 
 
 @typing.overload
-def einsum(tensor: Tensor, pattern: str, /) -> Tensor:
-    ...
+def einsum(tensor: Tensor, pattern: str, /) -> Tensor: ...
 
 
 @typing.overload
-def einsum(tensor1: Tensor, tensor2: Tensor, pattern: str, /) -> Tensor:
-    ...
+def einsum(tensor1: Tensor, tensor2: Tensor, pattern: str, /) -> Tensor: ...
 
 
 @typing.overload
-def einsum(tensor1: Tensor, tensor2: Tensor, tensor3: Tensor, pattern: str, /) -> Tensor:
-    ...
+def einsum(tensor1: Tensor, tensor2: Tensor, tensor3: Tensor, pattern: str, /) -> Tensor: ...
 
 
 @typing.overload
-def einsum(tensor1: Tensor, tensor2: Tensor, tensor3: Tensor, tensor4: Tensor, pattern: str, /) -> Tensor:
-    ...
+def einsum(tensor1: Tensor, tensor2: Tensor, tensor3: Tensor, tensor4: Tensor, pattern: str, /) -> Tensor: ...
 
 
 def einsum(*tensors_and_pattern: Union[Tensor, str]) -> Tensor:

@@ -6,7 +6,7 @@ from einops import EinopsError
 from einops._backends import get_backend
 from einops.parsing import ParsedExpression
 
-Tensor = TypeVar('Tensor')
+Tensor = TypeVar("Tensor")
 
 Shape = Union[Tuple[int, ...], List[int]]
 
@@ -18,14 +18,14 @@ def analyze_pattern(pattern: str, opname: str) -> Tuple[int, int, int]:
     axes_set = set(axes)
     if len(axes) != len(axes_set):
         raise EinopsError(f'Duplicates in axes names in {opname}(..., "{pattern}")')
-    if '*' not in axes_set:
+    if "*" not in axes_set:
         raise EinopsError(f'No *-axis in {opname}(..., "{pattern}")')
     for axis in axes:
-        if axis != '*':
+        if axis != "*":
             is_valid, reason = ParsedExpression.check_axis_name_return_reason(axis)
             if not is_valid:
                 raise EinopsError(f'Invalid axis name {axis} in {opname}(..., "{pattern}")')
-    n_axes_before = axes.index('*')
+    n_axes_before = axes.index("*")
     n_axes_after = len(axes) - n_axes_before - 1
     min_axes = n_axes_before + n_axes_after
     return n_axes_before, n_axes_after, min_axes
@@ -67,7 +67,7 @@ def pack(tensors: Sequence[Tensor], pattern: str) -> Tuple[Tensor, List[Shape]]:
 
     Read the tutorial for introduction and application scenarios.
     """
-    n_axes_before, n_axes_after, min_axes = analyze_pattern(pattern, 'pack')
+    n_axes_before, n_axes_after, min_axes = analyze_pattern(pattern, "pack")
 
     # packing zero tensors is illegal
     backend = get_backend(tensors[0])
@@ -77,13 +77,13 @@ def pack(tensors: Sequence[Tensor], pattern: str) -> Tuple[Tensor, List[Shape]]:
     for i, tensor in enumerate(tensors):
         shape = backend.shape(tensor)
         if len(shape) < min_axes:
-            raise EinopsError(f'packed tensor #{i} (enumeration starts with 0) has shape {shape}, '
-                              f'while pattern {pattern} assumes at least {min_axes} axes')
+            raise EinopsError(
+                f"packed tensor #{i} (enumeration starts with 0) has shape {shape}, "
+                f"while pattern {pattern} assumes at least {min_axes} axes"
+            )
         axis_after_packed_axes = len(shape) - n_axes_after
         packed_shapes.append(shape[n_axes_before:axis_after_packed_axes])
-        reshaped_tensors.append(
-            backend.reshape(tensor, (*shape[:n_axes_before], -1, *shape[axis_after_packed_axes:]))
-        )
+        reshaped_tensors.append(backend.reshape(tensor, (*shape[:n_axes_before], -1, *shape[axis_after_packed_axes:])))
 
     return backend.concat(reshaped_tensors, axis=n_axes_before), packed_shapes
 
@@ -136,19 +136,16 @@ def unpack(tensor: Tensor, packed_shapes: List[Shape], pattern: str) -> List[Ten
 
     Read the tutorial for introduction and application scenarios.
     """
-    n_axes_before, n_axes_after, min_axes = analyze_pattern(pattern, opname='unpack')
+    n_axes_before, n_axes_after, min_axes = analyze_pattern(pattern, opname="unpack")
 
     backend = get_backend(tensor)
     input_shape = backend.shape(tensor)
     if len(input_shape) != n_axes_before + 1 + n_axes_after:
-        raise EinopsError(f'unpack(..., {pattern}) received input of wrong dim with shape {input_shape}')
+        raise EinopsError(f"unpack(..., {pattern}) received input of wrong dim with shape {input_shape}")
 
     unpacked_axis: int = n_axes_before
 
-    lengths_of_composed_axes: List[int] = [
-        -1 if -1 in p_shape else prod(p_shape)
-        for p_shape in packed_shapes
-    ]
+    lengths_of_composed_axes: List[int] = [-1 if -1 in p_shape else prod(p_shape) for p_shape in packed_shapes]
 
     n_unknown_composed_axes = sum(int(x == -1) for x in lengths_of_composed_axes)
     if n_unknown_composed_axes > 1:
@@ -174,18 +171,20 @@ def unpack(tensor: Tensor, packed_shapes: List[Shape], pattern: str) -> List[Ten
             split_positions[j] = split_positions[j + 1] - lengths_of_composed_axes[j]
 
     shape_start = input_shape[:unpacked_axis]
-    shape_end = input_shape[unpacked_axis + 1:]
+    shape_end = input_shape[unpacked_axis + 1 :]
     slice_filler = (slice(None, None),) * unpacked_axis
     try:
         return [
             backend.reshape(
                 # shortest way slice arbitrary axis
                 tensor[(*slice_filler, slice(split_positions[i], split_positions[i + 1]))],
-                (*shape_start, *element_shape, *shape_end)
+                (*shape_start, *element_shape, *shape_end),
             )
             for i, element_shape in enumerate(packed_shapes)
         ]
     except BaseException:
         # this hits if there is an error during reshapes, which means passed shapes were incorrect
-        raise RuntimeError(f'Error during unpack(..., "{pattern}"): could not split axis of size {split_positions[-1]}'
-                           f' into requested {packed_shapes}')
+        raise RuntimeError(
+            f'Error during unpack(..., "{pattern}"): could not split axis of size {split_positions[-1]}'
+            f" into requested {packed_shapes}"
+        )
