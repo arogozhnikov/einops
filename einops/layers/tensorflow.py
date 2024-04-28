@@ -1,28 +1,29 @@
-from typing import List, Optional, Dict, cast
+"""
+Comment about tensorflow layers:
+unfortunately instructions on creation of TF layers change constantly,
+and changed way too many times at this point to remember what-compatible-where.
+
+So just stating layers in einops==0.7.2 were implemented
+ according to official instructions for TF 2.16.
+
+"""
+
+from typing import Optional, Dict, cast
 
 import tensorflow as tf
 from tensorflow.keras.layers import Layer
 
-from .._backends import UnknownSize
+
 from . import RearrangeMixin, ReduceMixin
 from ._einmix import _EinmixMixin
-from ..einops import TransformRecipe, _reconstruct_from_shape_uncached
+
 
 __author__ = "Alex Rogozhnikov"
 
 
-def _compute_output_shape(recipe: TransformRecipe, input_shape) -> List[Optional[int]]:
-    input_shape = [UnknownSize() if d is None else int(d) for d in input_shape]
-    init_shapes, reduced_axes, axes_reordering, added_axes, final_shape = _reconstruct_from_shape_uncached(
-        recipe, input_shape
-    )
-    output_shape: List[Optional[int]] = [None if isinstance(d, UnknownSize) else int(d) for d in final_shape]
-    return output_shape
-
-
 class Rearrange(RearrangeMixin, Layer):
-    def compute_output_shape(self, input_shape):
-        return _compute_output_shape(self.recipe(), input_shape)
+    def build(self, input_shape):
+        pass  # layer does not have any parameters to be initialized
 
     def call(self, inputs):
         return self._apply_recipe(inputs)
@@ -32,8 +33,8 @@ class Rearrange(RearrangeMixin, Layer):
 
 
 class Reduce(ReduceMixin, Layer):
-    def compute_output_shape(self, input_shape):
-        return _compute_output_shape(self.recipe(), input_shape)
+    def build(self, input_shape):
+        pass  # layer does not have any parameters to be initialized
 
     def call(self, inputs):
         return self._apply_recipe(inputs)
@@ -44,15 +45,9 @@ class Reduce(ReduceMixin, Layer):
 
 class EinMix(_EinmixMixin, Layer):
     def _create_parameters(self, weight_shape, weight_bound, bias_shape, bias_bound):
-        self.weight = tf.Variable(
-            tf.random_uniform_initializer(-weight_bound, weight_bound)(shape=weight_shape), trainable=True
-        )
-        if bias_shape is not None:
-            self.bias = tf.Variable(
-                tf.random_uniform_initializer(-bias_bound, bias_bound)(shape=bias_shape), trainable=True
-            )
-        else:
-            self.bias = None
+        # this method is called in __init__,
+        #  but we postpone actual creation to build(), as TF instruction suggests
+        self._params = [weight_shape, weight_bound, bias_shape, bias_bound]
 
     def _create_rearrange_layers(
         self,
@@ -70,7 +65,21 @@ class EinMix(_EinmixMixin, Layer):
             self.post_rearrange = Rearrange(post_reshape_pattern, **cast(dict, post_reshape_lengths))
 
     def build(self, input_shape):
-        pass
+        [weight_shape, weight_bound, bias_shape, bias_bound] = self._params
+        self.weight = self.add_weight(
+            shape=weight_shape,
+            initializer=tf.random_uniform_initializer(-weight_bound, weight_bound),
+            trainable=True,
+        )
+
+        if bias_shape is not None:
+            self.bias = self.add_weight(
+                shape=bias_shape,
+                initializer=tf.random_uniform_initializer(-bias_bound, bias_bound),
+                trainable=True,
+            )
+        else:
+            self.bias = None
 
     def call(self, inputs):
         if self.pre_rearrange is not None:
