@@ -1,9 +1,13 @@
+import sys
+
 import pytest
 
 from . import is_backend_tested
 
 
 def test_torch_einsplit():
+    if sys.version_info < (3, 9):
+        pytest.skip()
     if not is_backend_tested("torch"):
         pytest.skip()
 
