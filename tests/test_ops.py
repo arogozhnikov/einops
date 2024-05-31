@@ -299,6 +299,8 @@ def test_reduction_stress_imperatives():
                 dtype = "float64"
                 coincide = numpy.allclose
             max_dim = 11
+            if "mindspore" in backend.framework_name:
+                max_dim = 7
             if "oneflow" in backend.framework_name:
                 max_dim = 7
             if "paddle" in backend.framework_name:

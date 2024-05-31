@@ -386,3 +386,48 @@ def test_flax_layers():
         # check serialization
         fbytes = flax.serialization.to_bytes(params)
         _loaded = flax.serialization.from_bytes(params, fbytes)
+
+
+def create_mindspore_model(use_reduce=False):
+    if not is_backend_tested("mindspore"):
+        pytest.skip()
+    else:
+        from mindspore.nn import SequentialCell, Conv2d, MaxPool2d, Dense, ReLU
+        from einops.layers.mindspore import Rearrange, Reduce, EinMix
+
+        return SequentialCell(
+            Conv2d(3, 6, kernel_size=(5, 5)),
+            Reduce("b c (h h2) (w w2) -> b c h w", "max", h2=2, w2=2) if use_reduce else MaxPool2d(kernel_size=2),
+            Conv2d(6, 16, kernel_size=(5, 5)),
+            Reduce("b c (h h2) (w w2) -> b c h w", "max", h2=2, w2=2),
+            Rearrange("b c h w -> b (c h w)"),
+            Dense(16 * 5 * 5, 120),
+            ReLU(),
+            Dense(120, 84),
+            ReLU(),
+            EinMix("b c1 -> (b c2)", weight_shape="c1 c2", bias_shape="c2", c1=84, c2=84),
+            EinMix("(b c2) -> b c3", weight_shape="c2 c3", bias_shape="c3", c2=84, c3=84),
+            Dense(84, 10),
+        )
+
+
+def test_mindspore_layer():
+    if not is_backend_tested("mindspore"):
+        pytest.skip()
+    else:
+        # checked that torch present
+        import numpy as np
+        import mindspore
+        from mindspore import ops
+
+        model1 = create_torch_model(use_reduce=True)
+        model2 = create_torch_model(use_reduce=False)
+        input = ops.randn([10, 3, 32, 32])
+        # random models have different predictions
+        assert not np.allclose(model1(input).asnumpy(), model2(input).asnumpy())
+
+        with tempfile.TemporaryDirectory() as dir:
+            filename = f"{dir}/model.ckpt"
+            mindspore.save_checkpoint(model1, filename)
+            mindspore.load_checkpoint(filename, model2)
+        assert np.allclose(model1(input).asnumpy(), model2(input).asnumpy())

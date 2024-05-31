@@ -73,6 +73,7 @@ def collect_test_backends(symbolic=False, layers=False) -> List[_backends.Abstra
                 _backends.OneFlowBackend,
                 _backends.PaddleBackend,
                 _backends.CupyBackend,
+                _backends.MindSporeBackend,
             ]
         else:
             backend_types = [
