@@ -323,7 +323,11 @@ Einops works with ...
 - [oneflow](https://github.com/Oneflow-Inc/oneflow) (community)
 - [tinygrad](https://github.com/tinygrad/tinygrad) (community)
 
-Additionally, starting from einops 0.7.0 einops can be used with any framework that supports [Python array API standard](https://data-apis.org/array-api/latest/API_specification/index.html)
+Additionally, starting from einops 0.7.0 einops can be used with any framework that supports [Python array API standard](https://data-apis.org/array-api/latest/API_specification/index.html), which includes
+
+- numpy>=2.0
+- [MLX](https://github.com/ml-explore/mlx), after https://github.com/ml-explore/mlx/pull/1289
+
 
 ## Citing einops <a name="Citing"></a>
 
