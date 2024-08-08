@@ -273,6 +273,9 @@ def test_pack_unpack_array_api():
     from einops import array_api as AA
     import numpy as xp
 
+    if xp.__version__ < "2.0.0":
+        pytest.skip()
+
     for case in cases:
         shape = case.shape
         pattern = case.pattern

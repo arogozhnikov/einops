@@ -116,6 +116,9 @@ def test_rearrange_array_api():
     import numpy as xp
     from einops import array_api as AA
 
+    if xp.__version__ < "2.0.0":
+        pytest.skip()
+
     x = numpy.arange(2 * 3 * 4 * 5 * 6).reshape([2, 3, 4, 5, 6])
     for pattern in identity_patterns + list(itertools.chain(*equivalent_rearrange_patterns)):
         expected = rearrange(x, pattern)
@@ -126,6 +129,9 @@ def test_rearrange_array_api():
 def test_reduce_array_api():
     import numpy as xp
     from einops import array_api as AA
+
+    if xp.__version__ < "2.0.0":
+        pytest.skip()
 
     x = numpy.arange(2 * 3 * 4 * 5 * 6).reshape([2, 3, 4, 5, 6])
     for pattern in itertools.chain(*equivalent_reduction_patterns):
@@ -540,6 +546,9 @@ def test_repeat_symbolic():
 def test_repeat_array_api():
     import numpy as xp
     from einops import array_api as AA
+
+    if xp.__version__ < "2.0.0":
+        pytest.skip()
 
     x = numpy.arange(2 * 3 * 5).reshape([2, 3, 5])
 
