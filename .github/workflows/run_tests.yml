@@ -13,7 +13,8 @@ jobs:
         # cupy is not tested because it demands gpu
         # oneflow testing is dropped, see details at https://github.com/Oneflow-Inc/oneflow/issues/10340
         # chainer testing is dropped because of conflict with numpy 2.0, see https://github.com/chainer/chainer/issues/8632
-        frameworks: ['numpy pytorch tensorflow jax', 'numpy paddle']
+        # paddle was switched off because of divergence with numpy in py3.10, paddle==2.6.1
+        frameworks: ['numpy pytorch tensorflow jax']
 
     steps:
       - uses: actions/checkout@v4
