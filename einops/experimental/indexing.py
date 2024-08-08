@@ -317,7 +317,7 @@ def test_composition_and_decomposition():
 
 
 def test_simple_indexing():
-    import numpy.array_api as np
+    import numpy as np
 
     # simple 2d test
     arr = np.reshape(np.arange(5 * 7), (5, 7))
@@ -332,7 +332,7 @@ def test_simple_indexing():
 
 
 def test_multidimensional_indexing():
-    import numpy.array_api as np
+    import numpy as np
 
     embedding_bhwc = (
         +arange_at_position(np, 4, 0, 2) * 1000
@@ -367,7 +367,7 @@ def test_multidimensional_indexing():
 
 
 def test_reverse_indexing():
-    import numpy.array_api as np
+    import numpy as np
 
     C, T, B = 2, 3, 5
     # G = GPU, batch-like varaible

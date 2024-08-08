@@ -1,6 +1,7 @@
 import itertools
 
 import numpy
+import numpy as np
 import pytest
 
 from einops import EinopsError
@@ -112,7 +113,7 @@ def test_ellipsis_ops_imperative():
 
 
 def test_rearrange_array_api():
-    import numpy.array_api as xp
+    import numpy as xp
     from einops import array_api as AA
 
     x = numpy.arange(2 * 3 * 4 * 5 * 6).reshape([2, 3, 4, 5, 6])
@@ -123,7 +124,7 @@ def test_rearrange_array_api():
 
 
 def test_reduce_array_api():
-    import numpy.array_api as xp
+    import numpy as xp
     from einops import array_api as AA
 
     x = numpy.arange(2 * 3 * 4 * 5 * 6).reshape([2, 3, 4, 5, 6])
@@ -131,7 +132,7 @@ def test_reduce_array_api():
         for reduction in ["min", "max", "sum"]:
             expected = reduce(x, pattern, reduction=reduction)
             result = AA.reduce(xp.from_dlpack(x), pattern, reduction=reduction)
-            assert numpy.array_equal(AA.asnumpy(result + 0), expected)
+            assert numpy.array_equal(AA.asnumpy(np.asarray(result + 0)), expected)
 
 
 def test_rearrange_consistency_numpy():
@@ -537,7 +538,7 @@ def test_repeat_symbolic():
 
 
 def test_repeat_array_api():
-    import numpy.array_api as xp
+    import numpy as xp
     from einops import array_api as AA
 
     x = numpy.arange(2 * 3 * 5).reshape([2, 3, 5])

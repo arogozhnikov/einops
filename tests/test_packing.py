@@ -271,7 +271,7 @@ def test_pack_unpack_against_numpy():
 
 def test_pack_unpack_array_api():
     from einops import array_api as AA
-    import numpy.array_api as xp
+    import numpy as xp
 
     for case in cases:
         shape = case.shape
