@@ -188,6 +188,7 @@ valid_backends_functional = [
     "cupy",
     "tensorflow.keras",
     "paddle",
+    "mindspore",
 ]
 
 

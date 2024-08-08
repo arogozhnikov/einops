@@ -713,3 +713,78 @@ class TinygradBackend(AbstractBackend):
 
     def einsum(self, pattern, *x):
         return self.tinygrad.Tensor.einsum(pattern, *x)
+
+
+class MindSporeBackend(AbstractBackend):
+    framework_name = "mindspore"
+
+    def __init__(self):
+        import mindspore
+        from mindspore import ops
+
+        self.ms = mindspore
+        self.ms_ops = ops
+
+    def is_appropriate_type(self, tensor):
+        return isinstance(tensor, self.ms.Tensor)
+
+    def from_numpy(self, x):
+        variable = self.ms.Tensor.from_numpy(x)
+        return variable
+
+    def to_numpy(self, x):
+        return x.asnumpy()
+
+    def arange(self, start, stop):
+        return self.ms_ops.arange(start, stop, dtype=self.ms.int64)
+
+    def reduce(self, x, operation, reduced_axes):
+        for axis in sorted(reduced_axes, reverse=True):
+            if operation == "min":
+                x = x.min(axis=axis)
+            elif operation == "max":
+                x = x.max(axis=axis)
+            elif operation in ["sum", "mean", "prod", "any", "all"]:
+                x = getattr(x, operation)(axis=axis)
+            else:
+                raise NotImplementedError("Unknown reduction ", operation)
+        return x
+
+    def transpose(self, x, axes):
+        return x.transpose(axes)
+
+    def stack_on_zeroth_dimension(self, tensors: list):
+        return self.ms_ops.stack(tensors)
+
+    def add_axes(self, x, n_axes, pos2len):
+        repeats = [-1] * n_axes
+        for axis_position, axis_length in pos2len.items():
+            x = self.add_axis(x, axis_position)
+            repeats[axis_position] = axis_length
+        return x.broadcast_to(tuple(repeats))
+
+    def reshape(self, x, shape):
+        return x.reshape(shape).stub_sync()
+
+    def tile(self, x, repeats):
+        return x.tile(repeats)
+
+    def concat(self, tensors, axis: int):
+        return self.ms_ops.concat(tensors, axis=axis)
+
+    def add_axis(self, x, new_position):
+        return self.ms_ops.unsqueeze(x, new_position)
+
+    def is_float_type(self, x):
+        return x.dtype in [self.ms.float16, self.ms.float32, self.ms.float64]
+
+    def layers(self):
+        from .layers import mindspore
+
+        return mindspore
+
+    def einsum(self, pattern, *x):
+        out = self.ms_ops.einsum(pattern, *x)
+        if out.shape == (1,):
+            out = out.reshape(())
+        return out

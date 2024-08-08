@@ -44,6 +44,7 @@ def main():
         # "paddle": ["paddlepaddle==0.0.0 -f https://www.paddlepaddle.org.cn/whl/linux/cpu-mkl/develop.html"],
         "paddle": ["paddlepaddle"],
         "oneflow": ["oneflow==0.9.0"],
+        "mindspore": ["mindspore"],
     }
 
     usage = f"""
