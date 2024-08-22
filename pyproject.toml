@@ -104,5 +104,7 @@ cache-dir = "/tmp/ruff_cache" # move cache out of workdir
 
 lint.select = ["E4", "E7", "E9", "F", "W"]
 
+extend-exclude = ["*.ipynb"]
+
 [tool.ruff.format]
 docstring-code-format = false
