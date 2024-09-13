@@ -25,7 +25,7 @@ jobs:
           cache: pip
       - name: Check for ruff compliance
         run: |
-          pip install ruff && ruff check . && ruff format . --check
+          pip install ruff==0.5.7 && ruff check . && ruff format . --check
       - name: Run tests
         run: |
           python test.py ${{ matrix.frameworks }}
