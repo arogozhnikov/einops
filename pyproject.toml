@@ -106,4 +106,5 @@ lint.select = ["E4", "E7", "E9", "F", "W"]
 
 [tool.ruff.format]
 docstring-code-format = false
-exclude = ["*.ipynb"]  # do not reformat notebooks
+# do not reformat notebooks
+exclude = ["*.ipynb"]
