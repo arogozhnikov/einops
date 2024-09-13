@@ -706,7 +706,7 @@ class TinygradBackend(AbstractBackend):
         return x.repeat(repeats)
 
     def concat(self, tensors, axis: int):
-        return tensors[0].cat(tensors[1:], axis) if len(tensors) > 1 else tensors[0]
+        return tensors[0].cat(*tensors[1:], dim=axis) if len(tensors) > 1 else tensors[0]
 
     def is_float_type(self, x):
         return self.tinygrad.dtypes.is_float(x.dtype)
