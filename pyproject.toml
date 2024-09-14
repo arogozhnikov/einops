@@ -77,10 +77,6 @@ deploy_test = "hatch build --clean && hatch publish -r test"
 deploy = "hatch build --clean && hatch publish"
 
 
-[tool.hatch.envs.testing.scripts]
-# hatch run testing:test
-test = "python test.py"
-
 
 [tool.pytest.ini_options]
 # suppressing irrelevant warnings from google's tensorflow and pb2 on m1 mac
