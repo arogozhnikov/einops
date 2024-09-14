@@ -11,7 +11,7 @@
         "--name=einops-devbox",
     ],
     "shutdownAction": "none",
-    "postCreateCommand": "pip install uv && uv pip install --system pre-commit -e . && pre-commit install -f",
+    "postCreateCommand": "uv pip install --system -e . && pre-commit install -f",
     "customizations": {
         "vscode": {
             "settings": {
