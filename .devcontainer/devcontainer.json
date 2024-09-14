@@ -1,0 +1,33 @@
+{
+    "name": "EinopsDev",
+    "build": {
+        "context": "..",
+        "dockerfile": "./einops.Dockerfile",
+        "target": "einops-devimage",
+    },
+    "runArgs": [
+        // to use GPUs in container uncomment next line
+        // "--gpus=all",
+        "--name=einops-devbox",
+    ],
+    "shutdownAction": "none",
+    "postCreateCommand": "pip install uv && uv pip install --system pre-commit -e . && pre-commit install -f",
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "python.defaultInterpreterPath": "/opt/venv/bin/python"
+            },
+            "extensions": [
+                "ms-azuretools.vscode-docker",
+                "ms-python.python",
+                "ms-python.vscode-pylance",
+                "ms-python.mypy-type-checker",
+                "charliermarsh.ruff",
+                "ms-toolsai.jupyter",
+                // very optional git-specific stuff
+                "arturock.gitstash",
+                "mhutchie.git-graph",
+            ]
+        }
+    }
+}
