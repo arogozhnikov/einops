@@ -61,6 +61,7 @@ dependencies = [
     "mkdocs-jupyter~=0.22.0",
     # required by codehilite (highlithing in mkdocs)
     "pygments~=2.13.0",
+    "lxml[html_clean]",
 ]
 [tool.hatch.envs.docs.scripts]
 # For examples to build one has to run:
