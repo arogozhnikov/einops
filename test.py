@@ -7,9 +7,8 @@ Usage: python test.py <frameworks>
 """
 
 import os
-import shutil
 import sys
-from subprocess import Popen, PIPE
+from subprocess import Popen
 from pathlib import Path
 
 __author__ = "Alex Rogozhnikov"
@@ -21,14 +20,6 @@ def run(cmd, **env):
     p = Popen(cmd, cwd=str(Path(__file__).parent), env={**os.environ, **env})
     p.communicate()
     return p.returncode
-
-
-# check we have nvidia-smi
-have_cuda = False
-if shutil.which("nvidia-smi") is not None:
-    output, _ = Popen("nvidia-smi".split(" "), stdout=PIPE).communicate()
-    if b"failed because" not in output:
-        have_cuda = True
 
 
 def main():
