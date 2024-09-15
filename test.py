@@ -38,7 +38,6 @@ def main():
         "torch": ["torch --index-url https://download.pytorch.org/whl/cpu"],
         "jax": ["jax[cpu]", "jaxlib", "flax"],
         "tensorflow": ["tensorflow"],
-        "chainer": ["chainer"],
         "cupy": ["cupy"],
         # switch to stable paddlepaddle, because of https://github.com/PaddlePaddle/Paddle/issues/63927
         # "paddle": ["paddlepaddle==0.0.0 -f https://www.paddlepaddle.org.cn/whl/linux/cpu-mkl/develop.html"],

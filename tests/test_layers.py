@@ -1,5 +1,4 @@
 import pickle
-import tempfile
 from collections import namedtuple
 
 import numpy
@@ -297,48 +296,6 @@ def test_keras_layer():
         # ulimate test
         # save-load architecture, and then load weights - should return same result
         numpy.testing.assert_allclose(model1.predict_on_batch(input), model4.predict_on_batch(input))
-
-
-def test_chainer_layer():
-    chainer_is_present = any(
-        "chainer" in backend.framework_name for backend in collect_test_backends(symbolic=False, layers=True)
-    )
-    if chainer_is_present:
-        # checked that chainer is present
-        import chainer
-        import chainer.links as L
-        import chainer.functions as F
-        from einops.layers.chainer import Rearrange, Reduce, EinMix
-        from einops import asnumpy
-        import numpy as np
-
-        def create_model():
-            return chainer.Sequential(
-                L.Convolution2D(3, 6, ksize=(5, 5)),
-                Reduce("b c (h h2) (w w2) -> b c h w", "max", h2=2, w2=2),
-                L.Convolution2D(6, 16, ksize=(5, 5)),
-                Reduce("b c (h h2) (w w2) -> b c h w", "max", h2=2, w2=2),
-                Rearrange("b c h w -> b (c h w)"),
-                L.Linear(16 * 5 * 5, 120),
-                L.Linear(120, 84),
-                F.relu,
-                EinMix("b c1 -> (b c2)", weight_shape="c1 c2", bias_shape="c2", c1=84, c2=84),
-                EinMix("(b c2) -> b c3", weight_shape="c2 c3", bias_shape="c3", c2=84, c3=84),
-                L.Linear(84, 10),
-            )
-
-        model1 = create_model()
-        model2 = create_model()
-        x = np.random.normal(size=[10, 3, 32, 32]).astype("float32")
-        x = chainer.Variable(x)
-        assert not numpy.allclose(asnumpy(model1(x)), asnumpy(model2(x)))
-
-        with tempfile.TemporaryDirectory() as dir:
-            filename = f"{dir}/file.npz"
-            chainer.serializers.save_npz(filename, model1)
-            chainer.serializers.load_npz(filename, model2)
-
-        assert numpy.allclose(asnumpy(model1(x)), asnumpy(model2(x)))
 
 
 def test_flax_layers():

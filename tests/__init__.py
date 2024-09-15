@@ -68,7 +68,6 @@ def collect_test_backends(symbolic=False, layers=False) -> List[_backends.Abstra
                 _backends.NumpyBackend,
                 _backends.JaxBackend,
                 _backends.TorchBackend,
-                _backends.ChainerBackend,
                 _backends.TensorflowBackend,
                 _backends.OneFlowBackend,
                 _backends.PaddleBackend,
@@ -77,7 +76,6 @@ def collect_test_backends(symbolic=False, layers=False) -> List[_backends.Abstra
         else:
             backend_types = [
                 _backends.TorchBackend,
-                _backends.ChainerBackend,
                 _backends.OneFlowBackend,
                 _backends.PaddleBackend,
             ]

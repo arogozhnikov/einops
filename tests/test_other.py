@@ -246,8 +246,6 @@ def test_is_float_type():
             is_float = "float" in dtype
             input = numpy.zeros([3, 4, 5], dtype=dtype)
             input = backend.from_numpy(input)
-            if "chainer" in backend.framework_name and not is_float:
-                continue  # chainer doesn't allow non-floating tensors
             assert backend.is_float_type(input) == is_float, (dtype, backend, input.dtype)
 
 

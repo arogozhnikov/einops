@@ -163,7 +163,6 @@ from einops.layers.torch      import Rearrange, Reduce
 from einops.layers.tensorflow import Rearrange, Reduce
 from einops.layers.flax       import Rearrange, Reduce
 from einops.layers.paddle     import Rearrange, Reduce
-from einops.layers.chainer    import Rearrange, Reduce
 ```
 
 <details markdown="1">
@@ -282,7 +281,7 @@ y = x.flatten() # or flatten(x)
 
 Suppose `x`'s shape was `(3, 4, 5)`, then `y` has shape ...
 
-- numpy, pytorch, cupy, chainer: `(60,)`
+- numpy, pytorch, cupy, chainer, jax: `(60,)`
 - keras, tensorflow.layers, gluon: `(3, 20)`
 
 `einops` works the same way in all frameworks.
@@ -315,8 +314,6 @@ Einops works with ...
 - [pytorch](https://pytorch.org/)
 - [tensorflow](https://www.tensorflow.org/)
 - [jax](https://github.com/google/jax)
-- [cupy](https://cupy.chainer.org/)
-- [chainer](https://chainer.org/)
 - [tf.keras](https://www.tensorflow.org/guide/keras)
 - [flax](https://github.com/google/flax) (experimental)
 - [paddle](https://github.com/PaddlePaddle/Paddle) (experimental)
@@ -328,6 +325,7 @@ Additionally, starting from einops 0.7.0 einops can be used with any framework t
 - numpy>=2.0
 - [MLX](https://github.com/ml-explore/mlx), after https://github.com/ml-explore/mlx/pull/1289
 
+Previous releases of einops supported `mxnet`, `gluon` and `chainer`.
 
 ## Citing einops <a name="Citing"></a>
 
