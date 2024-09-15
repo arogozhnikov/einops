@@ -46,8 +46,6 @@ def test_notebook_2_with_all_backends():
         backends.append("pytorch")
     if is_backend_tested("tensorflow"):
         backends.append("tensorflow")
-    if is_backend_tested("chainer"):
-        backends.append("chainer")
 
     if len(backends) == 0:
         pytest.skip()

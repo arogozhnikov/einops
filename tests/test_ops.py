@@ -340,11 +340,6 @@ def test_reduction_with_callable_imperatives():
 
         return tf.reduce_logsumexp(x, tuple_of_axes)
 
-    def logsumexp_chainer(x, tuple_of_axes):
-        import chainer
-
-        return chainer.functions.logsumexp(x, tuple_of_axes)
-
     def logsumexp_keras(x, tuple_of_axes):
         import tensorflow.keras.backend as k
 
@@ -358,11 +353,10 @@ def test_reduction_with_callable_imperatives():
         y = numpy.sum(y, axis=tuple_of_axes)
         return numpy.log(y) + minused
 
-    from einops._backends import TorchBackend, ChainerBackend, TensorflowBackend, TFKerasBackend, NumpyBackend
+    from einops._backends import TorchBackend, TensorflowBackend, TFKerasBackend, NumpyBackend
 
     backend2callback = {
         TorchBackend.framework_name: logsumexp_torch,
-        ChainerBackend.framework_name: logsumexp_chainer,
         TensorflowBackend.framework_name: logsumexp_tf,
         TFKerasBackend.framework_name: logsumexp_keras,
         NumpyBackend.framework_name: logsumexp_numpy,
@@ -628,8 +622,6 @@ def test_reduction_imperatives_booleans():
     """Checks that any/all reduction works in all frameworks"""
     x_np = numpy.asarray([(bit_count(x) % 2) == 0 for x in range(2**6)]).reshape([2] * 6)
     for backend in imp_op_backends:
-        if backend.framework_name == "chainer":
-            continue  # no support for bools
         print("Reduction any/all tests for ", backend.framework_name)
 
         for axis in range(6):

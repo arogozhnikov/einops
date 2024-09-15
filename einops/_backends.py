@@ -326,57 +326,6 @@ class CupyBackend(AbstractBackend):
         return self.cupy.einsum(pattern, *x)
 
 
-class ChainerBackend(AbstractBackend):
-    framework_name = "chainer"
-
-    def __init__(self):
-        import chainer
-        import numpy
-
-        self.numpy = numpy
-        self.chainer = chainer
-
-    def is_appropriate_type(self, tensor):
-        return isinstance(tensor, self.chainer.Variable)
-
-    def from_numpy(self, x):
-        return self.chainer.Variable(x.astype("float32"))
-
-    def to_numpy(self, x):
-        if isinstance(x, self.chainer.Variable):
-            x = x.data
-        return x
-
-    def arange(self, start, stop):
-        return self.numpy.arange(start, stop)
-
-    def reduce(self, x, operation, axes):
-        return getattr(self.chainer.functions, operation)(x, axis=axes)
-
-    def stack_on_zeroth_dimension(self, tensors: list):
-        return self.chainer.functions.stack(tensors)
-
-    def tile(self, x, repeats):
-        return self.chainer.functions.tile(x, repeats)
-
-    def concat(self, tensors, axis: int):
-        return self.chainer.functions.concat(tensors, axis=axis)
-
-    def add_axis(self, x, new_position):
-        return self.chainer.functions.expand_dims(x, new_position)
-
-    def is_float_type(self, x):
-        return x.dtype in ("float16", "float32", "float64", "float128", "bfloat16")
-
-    def layers(self):
-        from .layers import chainer
-
-        return chainer
-
-    def einsum(self, pattern, *x):
-        return self.chainer.functions.einsum(pattern, *x)
-
-
 class HashableTuple:
     """Overcomes non-hashability of symbolic elements"""
 
