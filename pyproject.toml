@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "einops"
 description = "A new flavour of deep learning operations"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.8" # in sync with target_version
 
 keywords = [
     'deep learning',
@@ -96,7 +96,7 @@ filterwarnings = [
 
 [tool.ruff]
 line-length = 120
-target-version = 'py311'
+target-version = 'py38'
 
 cache-dir = "/tmp/ruff_cache" # move cache out of workdir
 
