@@ -12,7 +12,6 @@ jobs:
         # currently there is conflict between tf, oneflow and paddle in protobuf versions.
         # cupy is not tested because it demands gpu
         # oneflow testing is dropped, see details at https://github.com/Oneflow-Inc/oneflow/issues/10340
-        # chainer testing is dropped because of conflict with numpy 2.0, see https://github.com/chainer/chainer/issues/8632
         # paddle was switched off because of divergence with numpy in py3.10, paddle==2.6.1
         frameworks: ['numpy pytorch tensorflow jax']
 
@@ -25,7 +24,7 @@ jobs:
           cache: pip
       - name: Check for ruff compliance
         run: |
-          pip install ruff==0.5.7 && ruff check . && ruff format . --check
+          pip install ruff==0.6.5 && ruff check . && ruff format . --check
       - name: Run tests
         run: |
           python test.py ${{ matrix.frameworks }}
