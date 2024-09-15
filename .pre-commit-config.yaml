@@ -1,8 +1,8 @@
 ---
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    # Ruff version.
-    rev: v0.4.2
+    # Ruff version, synced with CI
+    rev: v0.6.5
     hooks:
       # Run the linter.
       - id: ruff
