@@ -6,7 +6,7 @@ import pytest
 
 from einops import EinopsError
 from einops.einops import rearrange, reduce, repeat, _enumerate_directions
-from . import collect_test_backends, is_backend_tested, FLOAT_REDUCTIONS as REDUCTIONS
+from einops.tests import collect_test_backends, is_backend_tested, FLOAT_REDUCTIONS as REDUCTIONS
 
 imp_op_backends = collect_test_backends(symbolic=False, layers=False)
 sym_op_backends = collect_test_backends(symbolic=True, layers=False)

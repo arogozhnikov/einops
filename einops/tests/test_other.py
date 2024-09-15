@@ -13,7 +13,7 @@ import einops.layers
 import einops.parsing
 from einops._backends import AbstractBackend
 from einops.einops import rearrange, parse_shape, _optimize_transformation
-from . import collect_test_backends, is_backend_tested
+from einops.tests import collect_test_backends, is_backend_tested
 
 __author__ = "Alex Rogozhnikov"
 

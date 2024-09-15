@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 
 from einops import EinopsError, asnumpy, pack, unpack
-from tests import collect_test_backends
+from einops.tests import collect_test_backends
 
 
 def pack_unpack(xs, pattern):
