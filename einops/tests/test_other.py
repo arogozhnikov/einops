@@ -75,51 +75,53 @@ def test_optimize_transformations_numpy():
                 assert numpy.array_equal(a, b)
 
 
-_IMPERATIVE_BACKENDS = [
-    {"backend": backend}
-    for backend in (
-        collect_test_backends(symbolic=False, layers=False) + collect_test_backends(symbolic=False, layers=True)
-    )
-]
+_IMPERATIVE_BACKENDS = collect_test_backends(symbolic=False, layers=False)
 
 
-@parameterized_class(_IMPERATIVE_BACKENDS)
-class TestParseShapeImperative(unittest.TestCase):
-    backend: AbstractBackend
+x_np = numpy.zeros([10, 20, 30, 40])
 
-    def setUp(self):
-        self.x = numpy.zeros([10, 20, 30, 40])
 
-    def test_parse_shape_imperative(self):
-        print("Shape parsing for ", self.backend.framework_name)
-        parsed1 = parse_shape(self.x, "a b c d")
-        parsed2 = parse_shape(self.backend.from_numpy(self.x), "a b c d")
+def test_parse_shape_imperative():
+    for backend in _IMPERATIVE_BACKENDS:
+        print("Shape parsing for ", backend.framework_name)
+        parsed1 = parse_shape(x_np, "a b c d")
+        parsed2 = parse_shape(backend.from_numpy(x_np), "a b c d")
         assert parsed1 == parsed2 == dict(a=10, b=20, c=30, d=40)
         assert parsed1 != dict(a=1, b=20, c=30, d=40) != parsed2
 
-    def test_underscore(self):
-        parsed1 = parse_shape(self.x, "_ _ _ _")
-        parsed2 = parse_shape(self.backend.from_numpy(self.x), "_ _ _ _")
+
+def test_underscore():
+    for backend in _IMPERATIVE_BACKENDS:
+        parsed1 = parse_shape(x_np, "_ _ _ _")
+        parsed2 = parse_shape(backend.from_numpy(x_np), "_ _ _ _")
         assert parsed1 == parsed2 == dict()
 
-    def test_underscore_one(self):
-        parsed1 = parse_shape(self.x, "_ _ _ hello")
-        parsed2 = parse_shape(self.backend.from_numpy(self.x), "_ _ _ hello")
+
+def test_underscore_one():
+    for backend in _IMPERATIVE_BACKENDS:
+        parsed1 = parse_shape(x_np, "_ _ _ hello")
+        parsed2 = parse_shape(backend.from_numpy(x_np), "_ _ _ hello")
         assert parsed1 == parsed2 == dict(hello=40)
 
-    def test_underscore_several(self):
-        parsed1 = parse_shape(self.x, "_ _ a1 a1a111a")
-        parsed2 = parse_shape(self.backend.from_numpy(self.x), "_ _ a1 a1a111a")
+
+def test_underscore_several():
+    for backend in _IMPERATIVE_BACKENDS:
+        parsed1 = parse_shape(x_np, "_ _ a1 a1a111a")
+        parsed2 = parse_shape(backend.from_numpy(x_np), "_ _ a1 a1a111a")
         assert parsed1 == parsed2 == dict(a1=30, a1a111a=40)
 
-    def test_repeating(self):
-        with pytest.raises(einops.EinopsError):
-            parse_shape(self.x, "a a b b")
 
-        with pytest.raises(einops.EinopsError):
-            parse_shape(self.backend.from_numpy(self.x), "a a b b")
+def test_repeating():
+    with pytest.raises(einops.EinopsError):
+        parse_shape(x_np, "a a b b")
 
-    def test_ellipsis(self):
+    for backend in _IMPERATIVE_BACKENDS:
+        with pytest.raises(einops.EinopsError):
+            parse_shape(backend.from_numpy(x_np), "a a b b")
+
+
+def test_ellipsis():
+    for backend in _IMPERATIVE_BACKENDS:
         for shape, pattern, expected in [
             ([10, 20], "...", dict()),
             ([10], "... a", dict(a=10)),
@@ -135,10 +137,12 @@ class TestParseShapeImperative(unittest.TestCase):
         ]:
             x = numpy.ones(shape)
             parsed1 = parse_shape(x, pattern)
-            parsed2 = parse_shape(self.backend.from_numpy(x), pattern)
+            parsed2 = parse_shape(backend.from_numpy(x), pattern)
             assert parsed1 == parsed2 == expected
 
-    def test_parse_with_anonymous_axes(self):
+
+def test_parse_with_anonymous_axes():
+    for backend in _IMPERATIVE_BACKENDS:
         for shape, pattern, expected in [
             ([1, 2, 3, 4], "1 2 3 a", dict(a=4)),
             ([10, 1, 2], "a 1 2", dict(a=10)),
@@ -146,10 +150,12 @@ class TestParseShapeImperative(unittest.TestCase):
         ]:
             x = numpy.ones(shape)
             parsed1 = parse_shape(x, pattern)
-            parsed2 = parse_shape(self.backend.from_numpy(x), pattern)
+            parsed2 = parse_shape(backend.from_numpy(x), pattern)
             assert parsed1 == parsed2 == expected
 
-    def test_failures(self):
+
+def test_failures():
+    for backend in _IMPERATIVE_BACKENDS:
         # every test should fail
         for shape, pattern in [
             ([1, 2, 3, 4], "a b c"),
@@ -161,7 +167,7 @@ class TestParseShapeImperative(unittest.TestCase):
         ]:
             with pytest.raises(RuntimeError):
                 x = numpy.ones(shape)
-                parse_shape(self.backend.from_numpy(x), pattern)
+                parse_shape(backend.from_numpy(x), pattern)
 
 
 _SYMBOLIC_BACKENDS = [
