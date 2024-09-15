@@ -93,15 +93,26 @@ filterwarnings = [
 
 
 [tool.ruff]
-
 line-length = 120
 target-version = 'py311'
 
 cache-dir = "/tmp/ruff_cache" # move cache out of workdir
 
-lint.select = ["E4", "E7", "E9", "F", "W"]
-
 [tool.ruff.format]
 docstring-code-format = false
 # do not reformat notebooks
 exclude = ["*.ipynb"]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "W"]
+# this notebook is not really a notebook,
+# but a set of examples to be compared
+exclude = ["*Pytorch.ipynb"]
+
+
+[tool.ruff.lint.per-file-ignores]
+"*.ipynb" = [
+    "E402", # Module level import not at top of cell
+    "F811", # redefinition of unused
+    "E702", # Multiple statements on one line (semicolon)
+]
