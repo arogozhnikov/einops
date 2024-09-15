@@ -54,7 +54,7 @@ def test_notebook_2_with_all_backends():
 
     for backend in backends:
         print("Testing {} with backend {}".format(notebook, backend))
-        replacements = {"flavour = 'pytorch'": "flavour = '{}'".format(backend)}
+        replacements = {r"flavour = \"pytorch\"": r"flavour = \"{}\"".format(backend)}
         expected_string = "selected {} backend".format(backend)
         result = render_notebook(notebook, replacements=replacements)
         assert expected_string in result
