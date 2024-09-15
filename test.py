@@ -80,10 +80,10 @@ def main():
     # this is done by setting a flag EINOPS_TEST_BACKENDS
     from tests import unparse_backends
 
-    flag_name, flag_value = unparse_backends(backend_names=frameworks)
+    envvar_name, envvar_value = unparse_backends(backend_names=frameworks)
     return_code = run(
         "python -m pytest tests",
-        **{flag_name: flag_value},
+        **{envvar_name: envvar_value},
     )
     assert return_code == 0
 
