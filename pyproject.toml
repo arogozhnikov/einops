@@ -39,6 +39,7 @@ path = "einops/__init__.py"
 
 [tool.hatch.build.targets.sdist]
 exclude = [
+    "/.devcontainer",
     "/.github",
     "/.idea",
     "/.pytest_cache",
@@ -46,6 +47,7 @@ exclude = [
     "/dist",
     "/docs",
     "/docs_src",
+    "/scripts",
     "/log",
 ]
 
