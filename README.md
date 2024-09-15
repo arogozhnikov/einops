@@ -314,9 +314,9 @@ Einops works with ...
 - [pytorch](https://pytorch.org/)
 - [tensorflow](https://www.tensorflow.org/)
 - [jax](https://github.com/google/jax)
-- [tf.keras](https://www.tensorflow.org/guide/keras)
-- [flax](https://github.com/google/flax) (experimental)
-- [paddle](https://github.com/PaddlePaddle/Paddle) (experimental)
+- [cupy](https://github.com/cupy/cupy)
+- [flax](https://github.com/google/flax) (community)
+- [paddle](https://github.com/PaddlePaddle/Paddle) (community)
 - [oneflow](https://github.com/Oneflow-Inc/oneflow) (community)
 - [tinygrad](https://github.com/tinygrad/tinygrad) (community)
 
@@ -324,6 +324,9 @@ Additionally, starting from einops 0.7.0 einops can be used with any framework t
 
 - numpy>=2.0
 - [MLX](https://github.com/ml-explore/mlx), after https://github.com/ml-explore/mlx/pull/1289
+- [pydata/sparse](https://github.com/pydata/sparse) >= 0.15
+- [quantco/ndonnx](https://github.com/Quantco/ndonnx)
+- dask is supported via [array-api-compat](https://github.com/data-apis/array-api-compat)
 
 Previous releases of einops supported `mxnet`, `gluon` and `chainer`.
 

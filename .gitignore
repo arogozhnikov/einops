@@ -112,9 +112,7 @@ design-einops.txt
 # logo and video generation
 logo
 
-# code of internal checks
-_uncommited_explorations
-trash_notebooks
+# any local explorations
 *.personal*
 
 # oneflow's output trash
@@ -126,5 +124,5 @@ docs_src/index.md
 # vs code 
 *.code-workspace
 
-# macos files
+# macos system files
 .DS_Store
