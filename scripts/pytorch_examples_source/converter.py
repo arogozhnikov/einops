@@ -99,5 +99,5 @@ result = f"""
 </html>
 """
 
-with open("../pytorch-examples.html", "w") as f:
+with open("../../docs/pytorch-examples.html", "w") as f:
     f.write(result)
