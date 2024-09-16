@@ -165,9 +165,10 @@ def test_failures():
                 parse_shape(backend.from_numpy(x), pattern)
 
 
-_SYMBOLIC_BACKENDS = collect_test_backends(symbolic=True, layers=False) + collect_test_backends(
-    symbolic=True, layers=True
-)
+_SYMBOLIC_BACKENDS = [
+    *collect_test_backends(symbolic=True, layers=False),
+    *collect_test_backends(symbolic=True, layers=True),
+]
 
 # tensorflow.keras needs special way to compile,
 # shape vars can be used only inside layers but not as outputs
