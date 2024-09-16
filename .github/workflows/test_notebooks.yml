@@ -19,7 +19,7 @@ jobs:
           cache: pip
       - name: Install dependencies to run/test notebooks
         run: |
-          pip install nbformat nbconvert jupyter pillow numpy torch tensorflow
+          pip install nbformat nbconvert jupyter pillow pytest numpy torch tensorflow
       - name: Testing notebooks
         run: |
           pip install -e . && pytest scripts/test_notebooks.py
