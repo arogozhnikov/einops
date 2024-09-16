@@ -1,3 +1,8 @@
+"""
+Common utils for testing.
+These functions allow testing only some frameworks, not all.
+"""
+
 import logging
 import os
 from functools import lru_cache
@@ -26,14 +31,22 @@ def find_names_of_all_frameworks() -> List[str]:
     return [b.framework_name for b in backend_subclasses]
 
 
-FLAG_NAME = "EINOPS_TEST_BACKENDS"
+ENVVAR_NAME = "EINOPS_TEST_BACKENDS"
+
+
+def unparse_backends(backend_names: List[str]) -> Tuple[str, str]:
+    _known_backends = find_names_of_all_frameworks()
+    for backend_name in backend_names:
+        if backend_name not in _known_backends:
+            raise RuntimeError(f"Unknown framework: {backend_name}")
+    return ENVVAR_NAME, ",".join(backend_names)
 
 
 @lru_cache(maxsize=1)
 def parse_backends_to_test() -> List[str]:
-    if FLAG_NAME not in os.environ:
-        raise RuntimeError(f"Testing frameworks were not specified, flag {FLAG_NAME} not set")
-    parsed_backends = os.environ[FLAG_NAME].split(",")
+    if ENVVAR_NAME not in os.environ:
+        raise RuntimeError(f"Testing frameworks were not specified, env var {ENVVAR_NAME} not set")
+    parsed_backends = os.environ[ENVVAR_NAME].split(",")
     _known_backends = find_names_of_all_frameworks()
     for backend_name in parsed_backends:
         if backend_name not in _known_backends:
@@ -43,17 +56,10 @@ def parse_backends_to_test() -> List[str]:
 
 
 def is_backend_tested(backend: str) -> bool:
+    """Used to skip test if corresponding backend is not tested"""
     if backend not in find_names_of_all_frameworks():
         raise RuntimeError(f"Unknown framework {backend}")
     return backend in parse_backends_to_test()
-
-
-def unparse_backends(backend_names: List[str]) -> Tuple[str, str]:
-    _known_backends = find_names_of_all_frameworks()
-    for backend_name in backend_names:
-        if backend_name not in _known_backends:
-            raise RuntimeError(f"Unknown framework: {backend_name}")
-    return FLAG_NAME, ",".join(backend_names)
 
 
 def collect_test_backends(symbolic=False, layers=False) -> List[_backends.AbstractBackend]:

@@ -1,0 +1,25 @@
+name: Test notebooks
+
+on: [push, pull_request]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.8', '3.12']
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install dependencies to run/test notebooks
+        run: |
+          pip install nbformat nbconvert jupyter pillow pytest numpy torch tensorflow
+      - name: Testing notebooks
+        run: |
+          pip install -e . && pytest scripts/test_notebooks.py

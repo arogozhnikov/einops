@@ -1,5 +1,5 @@
 from typing import Any, Callable
-from . import collect_test_backends
+from einops.tests import collect_test_backends
 from einops.einops import _compactify_pattern_for_einsum, einsum, EinopsError
 import numpy as np
 import pytest

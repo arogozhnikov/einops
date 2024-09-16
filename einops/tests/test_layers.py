@@ -5,7 +5,7 @@ import numpy
 import pytest
 
 from einops import rearrange, reduce
-from . import collect_test_backends, is_backend_tested, FLOAT_REDUCTIONS as REDUCTIONS
+from einops.tests import collect_test_backends, is_backend_tested, FLOAT_REDUCTIONS as REDUCTIONS
 
 __author__ = "Alex Rogozhnikov"
 

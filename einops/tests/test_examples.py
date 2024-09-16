@@ -2,8 +2,8 @@ import numpy
 import pytest
 
 from einops import rearrange, parse_shape, reduce
-from tests import is_backend_tested
-from tests.test_ops import imp_op_backends
+from einops.tests import is_backend_tested
+from einops.tests.test_ops import imp_op_backends
 
 
 def test_rearrange_examples():

@@ -1,28 +1,22 @@
-import sys
-import unittest
 from doctest import testmod
-from typing import Dict, List, Optional
 
 import numpy
 import pytest
-
-from parameterized import parameterized, parameterized_class
 
 import einops
 import einops.layers
 import einops.parsing
 from einops._backends import AbstractBackend
 from einops.einops import rearrange, parse_shape, _optimize_transformation
-from . import collect_test_backends, is_backend_tested
+from einops.tests import collect_test_backends, is_backend_tested
 
 __author__ = "Alex Rogozhnikov"
 
 
 def test_doctests_examples():
-    if sys.version_info >= (3, 6):
-        # python 3.5 and lower do not keep ordered dictionaries
-        testmod(einops.layers, raise_on_error=True, extraglobs=dict(np=numpy))
-        testmod(einops.einops, raise_on_error=True, extraglobs=dict(np=numpy))
+    # tests docstrings, additionally
+    testmod(einops.layers, raise_on_error=True, extraglobs=dict(np=numpy))
+    testmod(einops.einops, raise_on_error=True, extraglobs=dict(np=numpy))
 
 
 def test_backends_installed():
@@ -77,51 +71,52 @@ def test_optimize_transformations_numpy():
                 assert numpy.array_equal(a, b)
 
 
-_IMPERATIVE_BACKENDS = [
-    {"backend": backend}
-    for backend in (
-        collect_test_backends(symbolic=False, layers=False) + collect_test_backends(symbolic=False, layers=True)
-    )
-]
+_IMPERATIVE_BACKENDS = collect_test_backends(symbolic=False, layers=False)
+
+x_np = numpy.zeros([10, 20, 30, 40])
 
 
-@parameterized_class(_IMPERATIVE_BACKENDS)
-class TestParseShapeImperative(unittest.TestCase):
-    backend: AbstractBackend
-
-    def setUp(self):
-        self.x = numpy.zeros([10, 20, 30, 40])
-
-    def test_parse_shape_imperative(self):
-        print("Shape parsing for ", self.backend.framework_name)
-        parsed1 = parse_shape(self.x, "a b c d")
-        parsed2 = parse_shape(self.backend.from_numpy(self.x), "a b c d")
+def test_parse_shape_imperative():
+    for backend in _IMPERATIVE_BACKENDS:
+        print("Shape parsing for ", backend.framework_name)
+        parsed1 = parse_shape(x_np, "a b c d")
+        parsed2 = parse_shape(backend.from_numpy(x_np), "a b c d")
         assert parsed1 == parsed2 == dict(a=10, b=20, c=30, d=40)
         assert parsed1 != dict(a=1, b=20, c=30, d=40) != parsed2
 
-    def test_underscore(self):
-        parsed1 = parse_shape(self.x, "_ _ _ _")
-        parsed2 = parse_shape(self.backend.from_numpy(self.x), "_ _ _ _")
+
+def test_underscore():
+    for backend in _IMPERATIVE_BACKENDS:
+        parsed1 = parse_shape(x_np, "_ _ _ _")
+        parsed2 = parse_shape(backend.from_numpy(x_np), "_ _ _ _")
         assert parsed1 == parsed2 == dict()
 
-    def test_underscore_one(self):
-        parsed1 = parse_shape(self.x, "_ _ _ hello")
-        parsed2 = parse_shape(self.backend.from_numpy(self.x), "_ _ _ hello")
+
+def test_underscore_one():
+    for backend in _IMPERATIVE_BACKENDS:
+        parsed1 = parse_shape(x_np, "_ _ _ hello")
+        parsed2 = parse_shape(backend.from_numpy(x_np), "_ _ _ hello")
         assert parsed1 == parsed2 == dict(hello=40)
 
-    def test_underscore_several(self):
-        parsed1 = parse_shape(self.x, "_ _ a1 a1a111a")
-        parsed2 = parse_shape(self.backend.from_numpy(self.x), "_ _ a1 a1a111a")
+
+def test_underscore_several():
+    for backend in _IMPERATIVE_BACKENDS:
+        parsed1 = parse_shape(x_np, "_ _ a1 a1a111a")
+        parsed2 = parse_shape(backend.from_numpy(x_np), "_ _ a1 a1a111a")
         assert parsed1 == parsed2 == dict(a1=30, a1a111a=40)
 
-    def test_repeating(self):
-        with pytest.raises(einops.EinopsError):
-            parse_shape(self.x, "a a b b")
 
-        with pytest.raises(einops.EinopsError):
-            parse_shape(self.backend.from_numpy(self.x), "a a b b")
+def test_repeating():
+    with pytest.raises(einops.EinopsError):
+        parse_shape(x_np, "a a b b")
 
-    def test_ellipsis(self):
+    for backend in _IMPERATIVE_BACKENDS:
+        with pytest.raises(einops.EinopsError):
+            parse_shape(backend.from_numpy(x_np), "a a b b")
+
+
+def test_ellipsis():
+    for backend in _IMPERATIVE_BACKENDS:
         for shape, pattern, expected in [
             ([10, 20], "...", dict()),
             ([10], "... a", dict(a=10)),
@@ -137,10 +132,12 @@ class TestParseShapeImperative(unittest.TestCase):
         ]:
             x = numpy.ones(shape)
             parsed1 = parse_shape(x, pattern)
-            parsed2 = parse_shape(self.backend.from_numpy(x), pattern)
+            parsed2 = parse_shape(backend.from_numpy(x), pattern)
             assert parsed1 == parsed2 == expected
 
-    def test_parse_with_anonymous_axes(self):
+
+def test_parse_with_anonymous_axes():
+    for backend in _IMPERATIVE_BACKENDS:
         for shape, pattern, expected in [
             ([1, 2, 3, 4], "1 2 3 a", dict(a=4)),
             ([10, 1, 2], "a 1 2", dict(a=10)),
@@ -148,10 +145,12 @@ class TestParseShapeImperative(unittest.TestCase):
         ]:
             x = numpy.ones(shape)
             parsed1 = parse_shape(x, pattern)
-            parsed2 = parse_shape(self.backend.from_numpy(x), pattern)
+            parsed2 = parse_shape(backend.from_numpy(x), pattern)
             assert parsed1 == parsed2 == expected
 
-    def test_failures(self):
+
+def test_failures():
+    for backend in _IMPERATIVE_BACKENDS:
         # every test should fail
         for shape, pattern in [
             ([1, 2, 3, 4], "a b c"),
@@ -163,34 +162,30 @@ class TestParseShapeImperative(unittest.TestCase):
         ]:
             with pytest.raises(RuntimeError):
                 x = numpy.ones(shape)
-                parse_shape(self.backend.from_numpy(x), pattern)
+                parse_shape(backend.from_numpy(x), pattern)
 
 
 _SYMBOLIC_BACKENDS = [
-    {"backend": backend}
-    for backend in (
-        collect_test_backends(symbolic=True, layers=False) + collect_test_backends(symbolic=True, layers=True)
-    )
-    if backend.framework_name != "tensorflow.keras"
+    *collect_test_backends(symbolic=True, layers=False),
+    *collect_test_backends(symbolic=True, layers=True),
 ]
+
 # tensorflow.keras needs special way to compile,
 # shape vars can be used only inside layers but not as outputs
+_SYMBOLIC_BACKENDS = [backend for backend in _SYMBOLIC_BACKENDS if backend.framework_name != "tensorflow.keras"]
 
 
-@parameterized_class(_SYMBOLIC_BACKENDS)
-class TestParseShapeSymbolic(unittest.TestCase):
-    backend: AbstractBackend
-
-    @parameterized.expand(
-        [
-            ([10, 20, 30, 40],),
-            ([10, 20, None, None],),
-            ([None, None, None, None],),
-        ]
-    )
-    def test_parse_shape_symbolic(self, shape):
-        print("special shape parsing for", self.backend.framework_name)
-        input_symbol = self.backend.create_symbol(shape)
+@pytest.mark.parametrize("backend", _SYMBOLIC_BACKENDS)
+def test_parse_shape_symbolic(backend):
+    for shape in [
+        [10, 20, 30, 40],
+        [10, 20, None, None],
+        [None, None, None, None],
+    ]:
+        print(
+            f"special shape parsing {backend.framework_name=} {shape=}",
+        )
+        input_symbol = backend.create_symbol(shape)
 
         shape_placeholder = parse_shape(input_symbol, "a b c d")
         shape = {}
@@ -198,43 +193,41 @@ class TestParseShapeSymbolic(unittest.TestCase):
             shape[name] = (
                 symbol
                 if isinstance(symbol, int)
-                else self.backend.eval_symbol(symbol, [(input_symbol, numpy.zeros([10, 20, 30, 40]))])
+                else backend.eval_symbol(symbol, [(input_symbol, numpy.zeros([10, 20, 30, 40]))])
             )
         print(shape)
         result_placeholder = rearrange(
             input_symbol, "a b (c1 c2) (d1 d2) -> (a b d1) c1 (c2 d2)", **parse_shape(input_symbol, "a b c1 _"), d2=2
         )
-        result = self.backend.eval_symbol(result_placeholder, [(input_symbol, numpy.zeros([10, 20, 30, 40]))])
+        result = backend.eval_symbol(result_placeholder, [(input_symbol, numpy.zeros([10, 20, 30, 40]))])
         print(result.shape)
         assert result.shape == (10 * 20 * 20, 30, 1 * 2)
         assert numpy.allclose(result, 0)
 
-    @parameterized.expand(
-        [
-            ([10, 20], [None, None], "...", dict()),
-            ([10], [None], "... a", dict(a=10)),
-            ([10, 20], [None], "... a", dict(a=20)),
-            ([10, 20, 30], [None, None, None], "... a", dict(a=30)),
-            ([10, 20, 30, 40], [None, None, None, None], "... a", dict(a=40)),
-            ([10], [None], "a ...", dict(a=10)),
-            ([10, 20], [None, None], "a ...", dict(a=10)),
-            ([10, 20, 30], [None, None, None], "a ...", dict(a=10)),
-            ([10, 20, 30, 40], [None, None, None, None], "a ...", dict(a=10)),
-            ([10, 20, 30, 40], [None, None, None, None], " a ... b", dict(a=10, b=40)),
-            ([10, 40], [None, None], " a ... b", dict(a=10, b=40)),
-        ]
-    )
-    def test_ellipsis(
-        self, static_shape: List[int], shape: List[Optional[int]], pattern: str, expected: Dict[str, int]
-    ):
-        input_symbol = self.backend.create_symbol(shape)
+
+@pytest.mark.parametrize("backend", _SYMBOLIC_BACKENDS)
+def test_parse_shape_symbolic_ellipsis(backend):
+    for static_shape, shape, pattern, expected in [
+        ([10, 20], [None, None], "...", dict()),
+        ([10], [None], "... a", dict(a=10)),
+        ([10, 20], [None], "... a", dict(a=20)),
+        ([10, 20, 30], [None, None, None], "... a", dict(a=30)),
+        ([10, 20, 30, 40], [None, None, None, None], "... a", dict(a=40)),
+        ([10], [None], "a ...", dict(a=10)),
+        ([10, 20], [None, None], "a ...", dict(a=10)),
+        ([10, 20, 30], [None, None, None], "a ...", dict(a=10)),
+        ([10, 20, 30, 40], [None, None, None, None], "a ...", dict(a=10)),
+        ([10, 20, 30, 40], [None, None, None, None], " a ... b", dict(a=10, b=40)),
+        ([10, 40], [None, None], " a ... b ", dict(a=10, b=40)),
+    ]:
+        input_symbol = backend.create_symbol(shape)
         shape_placeholder = parse_shape(input_symbol, pattern)
         out_shape = {}
         for name, symbol in shape_placeholder.items():
             if isinstance(symbol, int):
                 out_shape[name] = symbol
             else:
-                out_shape[name] = self.backend.eval_symbol(symbol, [(input_symbol, numpy.zeros(static_shape))])
+                out_shape[name] = backend.eval_symbol(symbol, [(input_symbol, numpy.zeros(static_shape))])
         assert out_shape == expected
 
 

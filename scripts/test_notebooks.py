@@ -1,14 +1,22 @@
+"""
+Script assumes torch, tf and numpy are already installed.
+Also needs:
+  "nbformat",
+  "nbconvert",
+  "jupyter",
+  "pillow",
+
+"""
+
 from typing import Dict
 
 from io import StringIO
 
-from tests import is_backend_tested
 
 __author__ = "Alex Rogozhnikov"
 
 from pathlib import Path
 import nbformat
-import pytest
 from nbconvert.preprocessors import ExecutePreprocessor
 
 
@@ -40,17 +48,8 @@ def test_notebook_1():
 
 def test_notebook_2_with_all_backends():
     [notebook] = Path(__file__).parent.with_name("docs").glob("2-*.ipynb")
-    backends = []
-    if is_backend_tested("torch"):
-        # notebook uses name pytorch
-        backends.append("pytorch")
-    if is_backend_tested("tensorflow"):
-        backends.append("tensorflow")
 
-    if len(backends) == 0:
-        pytest.skip()
-
-    for backend in backends:
+    for backend in ["pytorch", "tensorflow"]:
         print("Testing {} with backend {}".format(notebook, backend))
         replacements = {r"flavour = \"pytorch\"": r"flavour = \"{}\"".format(backend)}
         expected_string = "selected {} backend".format(backend)
@@ -60,13 +59,9 @@ def test_notebook_2_with_all_backends():
 
 def test_notebook_3():
     [notebook] = Path(__file__).parent.with_name("docs").glob("3-*.ipynb")
-    if not is_backend_tested("torch"):
-        pytest.skip()
     render_notebook(notebook, replacements={})
 
 
 def test_notebook_4():
     [notebook] = Path(__file__).parent.with_name("docs").glob("4-*.ipynb")
-    if not is_backend_tested("torch"):
-        pytest.skip()
     render_notebook(notebook, replacements={})
