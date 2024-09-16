@@ -61,7 +61,6 @@ def main():
         "nbformat",
         "nbconvert",
         "jupyter",
-        "parameterized",
         "pillow",
         "pytest",
     ]

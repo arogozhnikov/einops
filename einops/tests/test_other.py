@@ -1,11 +1,7 @@
-import unittest
 from doctest import testmod
-from typing import Dict, List, Optional
 
 import numpy
 import pytest
-
-from parameterized import parameterized, parameterized_class
 
 import einops
 import einops.layers
@@ -76,7 +72,6 @@ def test_optimize_transformations_numpy():
 
 
 _IMPERATIVE_BACKENDS = collect_test_backends(symbolic=False, layers=False)
-
 
 x_np = numpy.zeros([10, 20, 30, 40])
 
@@ -170,31 +165,26 @@ def test_failures():
                 parse_shape(backend.from_numpy(x), pattern)
 
 
-_SYMBOLIC_BACKENDS = [
-    {"backend": backend}
-    for backend in (
-        collect_test_backends(symbolic=True, layers=False) + collect_test_backends(symbolic=True, layers=True)
-    )
-    if backend.framework_name != "tensorflow.keras"
-]
+_SYMBOLIC_BACKENDS = collect_test_backends(symbolic=True, layers=False) + collect_test_backends(
+    symbolic=True, layers=True
+)
+
 # tensorflow.keras needs special way to compile,
 # shape vars can be used only inside layers but not as outputs
+_SYMBOLIC_BACKENDS = [backend for backend in _SYMBOLIC_BACKENDS if backend.framework_name != "tensorflow.keras"]
 
 
-@parameterized_class(_SYMBOLIC_BACKENDS)
-class TestParseShapeSymbolic(unittest.TestCase):
-    backend: AbstractBackend
-
-    @parameterized.expand(
-        [
-            ([10, 20, 30, 40],),
-            ([10, 20, None, None],),
-            ([None, None, None, None],),
-        ]
-    )
-    def test_parse_shape_symbolic(self, shape):
-        print("special shape parsing for", self.backend.framework_name)
-        input_symbol = self.backend.create_symbol(shape)
+@pytest.mark.parametrize("backend", _SYMBOLIC_BACKENDS)
+def test_parse_shape_symbolic(backend):
+    for shape in [
+        [10, 20, 30, 40],
+        [10, 20, None, None],
+        [None, None, None, None],
+    ]:
+        print(
+            f"special shape parsing {backend.framework_name=} {shape=}",
+        )
+        input_symbol = backend.create_symbol(shape)
 
         shape_placeholder = parse_shape(input_symbol, "a b c d")
         shape = {}
@@ -202,43 +192,41 @@ class TestParseShapeSymbolic(unittest.TestCase):
             shape[name] = (
                 symbol
                 if isinstance(symbol, int)
-                else self.backend.eval_symbol(symbol, [(input_symbol, numpy.zeros([10, 20, 30, 40]))])
+                else backend.eval_symbol(symbol, [(input_symbol, numpy.zeros([10, 20, 30, 40]))])
             )
         print(shape)
         result_placeholder = rearrange(
             input_symbol, "a b (c1 c2) (d1 d2) -> (a b d1) c1 (c2 d2)", **parse_shape(input_symbol, "a b c1 _"), d2=2
         )
-        result = self.backend.eval_symbol(result_placeholder, [(input_symbol, numpy.zeros([10, 20, 30, 40]))])
+        result = backend.eval_symbol(result_placeholder, [(input_symbol, numpy.zeros([10, 20, 30, 40]))])
         print(result.shape)
         assert result.shape == (10 * 20 * 20, 30, 1 * 2)
         assert numpy.allclose(result, 0)
 
-    @parameterized.expand(
-        [
-            ([10, 20], [None, None], "...", dict()),
-            ([10], [None], "... a", dict(a=10)),
-            ([10, 20], [None], "... a", dict(a=20)),
-            ([10, 20, 30], [None, None, None], "... a", dict(a=30)),
-            ([10, 20, 30, 40], [None, None, None, None], "... a", dict(a=40)),
-            ([10], [None], "a ...", dict(a=10)),
-            ([10, 20], [None, None], "a ...", dict(a=10)),
-            ([10, 20, 30], [None, None, None], "a ...", dict(a=10)),
-            ([10, 20, 30, 40], [None, None, None, None], "a ...", dict(a=10)),
-            ([10, 20, 30, 40], [None, None, None, None], " a ... b", dict(a=10, b=40)),
-            ([10, 40], [None, None], " a ... b", dict(a=10, b=40)),
-        ]
-    )
-    def test_ellipsis(
-        self, static_shape: List[int], shape: List[Optional[int]], pattern: str, expected: Dict[str, int]
-    ):
-        input_symbol = self.backend.create_symbol(shape)
+
+@pytest.mark.parametrize("backend", _SYMBOLIC_BACKENDS)
+def test_parse_shape_symbolic_ellipsis(backend):
+    for static_shape, shape, pattern, expected in [
+        ([10, 20], [None, None], "...", dict()),
+        ([10], [None], "... a", dict(a=10)),
+        ([10, 20], [None], "... a", dict(a=20)),
+        ([10, 20, 30], [None, None, None], "... a", dict(a=30)),
+        ([10, 20, 30, 40], [None, None, None, None], "... a", dict(a=40)),
+        ([10], [None], "a ...", dict(a=10)),
+        ([10, 20], [None, None], "a ...", dict(a=10)),
+        ([10, 20, 30], [None, None, None], "a ...", dict(a=10)),
+        ([10, 20, 30, 40], [None, None, None, None], "a ...", dict(a=10)),
+        ([10, 20, 30, 40], [None, None, None, None], " a ... b", dict(a=10, b=40)),
+        ([10, 40], [None, None], " a ... b ", dict(a=10, b=40)),
+    ]:
+        input_symbol = backend.create_symbol(shape)
         shape_placeholder = parse_shape(input_symbol, pattern)
         out_shape = {}
         for name, symbol in shape_placeholder.items():
             if isinstance(symbol, int):
                 out_shape[name] = symbol
             else:
-                out_shape[name] = self.backend.eval_symbol(symbol, [(input_symbol, numpy.zeros(static_shape))])
+                out_shape[name] = backend.eval_symbol(symbol, [(input_symbol, numpy.zeros(static_shape))])
         assert out_shape == expected
 
 
