@@ -28,7 +28,7 @@ Here are some open-source projects that can teach how to leverage einops for you
 
 
 - For protein folding, see [implementation](https://github.com/lucidrains/invariant-point-attention)
-  of invariant point attention from alphafold 2
+  of invariant point attention from AlphaFold 2
 
 ## Community introductions to einops
 
@@ -50,8 +50,6 @@ ML TLDR thread on einops:
 Book "Deep Reinforcement Learning in Action" by Brandon Brown & Alexander Zai
 contains an introduction into einops in chapter 10.
 
-[comment]: <> (MLP mixer introduction)
-[comment]: <> (https://www.youtube.com/watch?v=HqytB2GUbHA)
 
 ## Other einops-based projects worth looking at:
 
@@ -77,8 +75,9 @@ contains an introduction into einops in chapter 10.
 
 ## Related projects:
 
-- [numpy.einsum](https://numpy.org/doc/stable/reference/generated/numpy.einsum.html) &mdash; grand-dad of einops, this operation is now available in all modern DL frameworks 
+- [numpy.einsum](https://numpy.org/doc/stable/reference/generated/numpy.einsum.html) &mdash; grand-dad of einops, this operation is now available in all mainstream DL frameworks 
 - einops in Rust language <https://docs.rs/einops/0.1.0/einops>
 - einops in C++ for torch: <https://github.com/dorpxam/einops-cpp>
 - tensorcast in Julia language <https://juliahub.com/ui/Packages/TensorCast>
 - for those chasing an extreme compactness of API, <https://github.com/cgarciae/einop> provides 'one op', as the name suggests
+- <https://github.com/fferflo/einx> goes in opposite direction and creates einops-style operation for anything
