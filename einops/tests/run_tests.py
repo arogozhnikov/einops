@@ -13,6 +13,7 @@ __author__ = "Alex Rogozhnikov"
 def run(cmd, **env):
     # keeps printing output when testing
     cmd = cmd.split(" ") if isinstance(cmd, str) else cmd
+    print("running:", cmd)
     p = Popen(cmd, cwd=str(Path(__file__).parent), env={**os.environ, **env})
     p.communicate()
     return p.returncode
@@ -21,7 +22,7 @@ def run(cmd, **env):
 def main():
     _executable, *args = sys.argv
     frameworks = [x for x in args if x != "--pip-install"]
-    pip_install_is_set = "--pip-install" in frameworks
+    pip_install_is_set = "--pip-install" in args
     framework_name2installation = {
         "numpy": ["numpy"],
         "torch": ["torch --index-url https://download.pytorch.org/whl/cpu"],
