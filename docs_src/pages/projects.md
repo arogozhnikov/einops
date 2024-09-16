@@ -1,6 +1,7 @@
 Einops tutorials cover multiple einops usages (and you'd better first follow tutorials), 
 but it can also help to see einops in action.
 
+
 ## Selected projects
 
 Here are some open-source projects that can teach how to leverage einops for your problems
@@ -16,7 +17,7 @@ Here are some open-source projects that can teach how to leverage einops for you
 
 
 - capsule networks (aka capsnets) [implemented in einops](https://github.com/arogozhnikov/readable_capsnet)
-    - blazingly fast, concise (3-10 times less code), and memory efficient (3 times lower memory consumption) capsule networks, written with einops  
+    - blazingly fast, concise (3-10 times less code), and memory efficient capsule networks, written with einops  
 
 
 - [NuX](https://github.com/Information-Fusion-Lab-Umass/NuX) — normalizing flows in Jax
@@ -29,6 +30,7 @@ Here are some open-source projects that can teach how to leverage einops for you
 
 - For protein folding, see [implementation](https://github.com/lucidrains/invariant-point-attention)
   of invariant point attention from AlphaFold 2
+
 
 ## Community introductions to einops
 
@@ -50,27 +52,6 @@ ML TLDR thread on einops:
 Book "Deep Reinforcement Learning in Action" by Brandon Brown & Alexander Zai
 contains an introduction into einops in chapter 10.
 
-
-## Other einops-based projects worth looking at:
-
-(ordered randomly)
-
-- <https://github.com/The-AI-Summer/self-attention-cv>
-- <https://github.com/lucidrains/perceiver-pytorch>
-- <https://github.com/hila-chefer/Transformer-Explainability>
-- [https://github.com/microsoft/CvT](https://github.com/microsoft/CvT/blob/4cedb05b343e13ab08c0a29c5166b6e94c751112/lib/models/cls_cvt.py)
-- <https://github.com/lucidrains/g-mlp-gpt>
-- <https://github.com/zju3dv/LoFTR>
-- <https://github.com/WangFeng18/Swin-Transformer>
-- <https://github.com/kwea123/CasMVSNet_pl>
-- <https://github.com/kakao/DAFT>
-- <https://github.com/lucidrains/multistream-transformers>
-- <https://github.com/poets-ai/elegy>
-- <https://github.com/lucidrains/ponder-transformer>
-- <https://github.com/isaaccorley/torchrs>
-- <https://github.com/microsoft/esvit>
-- <https://github.com/zyddnys/manga-image-translator>
-- <https://github.com/google/jax-cfd>
 
 
 ## Related projects:
