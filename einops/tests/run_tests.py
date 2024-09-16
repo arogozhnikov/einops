@@ -1,9 +1,5 @@
 """
-Usage: python test.py <frameworks>
-
-1. Installs part of dependencies (make sure `which pip` points to correct location)
-2. Installs current version of einops in editable mode
-3. Runs the tests
+Runs tests that are appropriate for framework.
 """
 
 import os
@@ -23,7 +19,9 @@ def run(cmd, **env):
 
 
 def main():
-    _executable, *frameworks = sys.argv
+    _executable, *args = sys.argv
+    frameworks = [x for x in args if x != "--pip-install"]
+    pip_install_is_set = "--pip-install" in frameworks
     framework_name2installation = {
         "numpy": ["numpy"],
         "torch": ["torch --index-url https://download.pytorch.org/whl/cpu"],
@@ -37,10 +35,12 @@ def main():
     }
 
     usage = f"""
-    Usage:   python test.py <frameworks>
-    Example: python test.py numpy pytorch
+    Usage:   python -m einops.tests.run_tests <frameworks> [--pip-install]
+    Example: python -m einops.tests.run_tests numpy pytorch --pip-install
 
     Available frameworks: {list(framework_name2installation)}
+    When --pip-install is set, auto-installs requirements with pip.
+     (make sure which pip points to right pip)
     """
     if len(frameworks) == 0:
         print(usage)
@@ -57,17 +57,15 @@ def main():
             print(usage)
             raise RuntimeError(f"Unrecognized frameworks: {wrong_frameworks}")
 
-    # for framework in frameworks:
-    #     print(f"Installing {framework}")
-    #     pip_instructions = framework_name2installation[framework]
-    #     assert 0 == run("pip install {} --progress-bar off".format(" ".join(pip_instructions)))
-    #
-    # print("Install testing infra")
-    # other_dependencies = ["pytest"]
-    # assert 0 == run("pip install {} --progress-bar off".format(" ".join(other_dependencies)))
-    #
-    # # install einops
-    # assert 0 == run("pip install -e .")
+    if pip_install_is_set:
+        print("Install testing infra")
+        other_dependencies = ["pytest"]
+        assert 0 == run("pip install {} --progress-bar off -q".format(" ".join(other_dependencies)))
+
+        for framework in frameworks:
+            print(f"Installing {framework}")
+            pip_instructions = framework_name2installation[framework]
+            assert 0 == run("pip install {} --progress-bar off -q".format(" ".join(pip_instructions)))
 
     # we need to inform testing script which frameworks to use
     # this is done by setting an envvar EINOPS_TEST_BACKENDS
