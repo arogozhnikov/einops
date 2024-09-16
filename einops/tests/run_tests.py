@@ -27,7 +27,7 @@ def main():
     framework_name2installation = {
         "numpy": ["numpy"],
         "torch": ["torch --index-url https://download.pytorch.org/whl/cpu"],
-        "jax": ["jax[cpu]", "jaxlib", "flax"],
+        "jax": ["jax[cpu]", "flax"],
         "tensorflow": ["tensorflow"],
         "cupy": ["cupy"],
         # switch to stable paddlepaddle, because of https://github.com/PaddlePaddle/Paddle/issues/63927
