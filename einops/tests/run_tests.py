@@ -57,31 +57,25 @@ def main():
             print(usage)
             raise RuntimeError(f"Unrecognized frameworks: {wrong_frameworks}")
 
-    other_dependencies = [
-        "nbformat",
-        "nbconvert",
-        "jupyter",
-        "pillow",
-        "pytest",
-    ]
-    for framework in frameworks:
-        print(f"Installing {framework}")
-        pip_instructions = framework_name2installation[framework]
-        assert 0 == run("pip install {} --progress-bar off".format(" ".join(pip_instructions)))
-
-    print("Install testing infra")
-    assert 0 == run("pip install {} --progress-bar off".format(" ".join(other_dependencies)))
-
-    # install einops
-    assert 0 == run("pip install -e .")
+    # for framework in frameworks:
+    #     print(f"Installing {framework}")
+    #     pip_instructions = framework_name2installation[framework]
+    #     assert 0 == run("pip install {} --progress-bar off".format(" ".join(pip_instructions)))
+    #
+    # print("Install testing infra")
+    # other_dependencies = ["pytest"]
+    # assert 0 == run("pip install {} --progress-bar off".format(" ".join(other_dependencies)))
+    #
+    # # install einops
+    # assert 0 == run("pip install -e .")
 
     # we need to inform testing script which frameworks to use
-    # this is done by setting a flag EINOPS_TEST_BACKENDS
-    from tests import unparse_backends
+    # this is done by setting an envvar EINOPS_TEST_BACKENDS
+    from einops.tests import unparse_backends
 
     envvar_name, envvar_value = unparse_backends(backend_names=frameworks)
     return_code = run(
-        "python -m pytest tests",
+        "python -m pytest .",
         **{envvar_name: envvar_value},
     )
     assert return_code == 0
