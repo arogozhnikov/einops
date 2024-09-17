@@ -1,0 +1,32 @@
+name: deploy-docs
+on:
+  push:
+    branches:
+      # triggers on new commits / merged PRs to main
+      - main
+      - docs-test
+permissions:
+  contents: write
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure Git Credentials
+        # credentials of GitHub's public bot, so that commits 'belonged' to bot
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+      # - run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV
+      # - uses: actions/cache@v4
+      #   with:
+      #     key: mkdocs-material-${{ env.cache_id }}
+      #     path: .cache
+      #     restore-keys: |
+      #       mkdocs-material-
+      ## original deploy instruction has --force
+      # - run: mkdocs gh-deploy --force
+      - run: pip install hatch && hatch run docs:deploy_force

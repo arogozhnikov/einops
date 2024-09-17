@@ -72,6 +72,8 @@ convert = "python scripts/convert_readme.py"
 build = "convert && mkdocs build --clean --strict {args}"
 serve = "convert && mkdocs serve --dev-addr localhost:8000 {args}"
 deploy = "convert && mkdocs build --clean --strict && mkdocs gh-deploy"
+# when mkdocs deployed from github actions, it requires --force. Reason unclear.
+deploy_force = "convert && mkdocs build --clean --strict && mkdocs gh-deploy --force"
 
 
 [tool.hatch.envs.pypi.scripts]
