@@ -575,7 +575,7 @@ def rearrange(tensor: Union[Tensor, List[Tensor]], pattern: str, **axes_lengths)
 
     ```
 
-    When composing axes, C-order enumeration used (consecutive elements have different last axis)
+    When composing axes, C-order enumeration used (consecutive elements have different last axis).
     Find more examples in einops tutorial.
 
     Parameters:
@@ -625,7 +625,7 @@ def repeat(tensor: Union[Tensor, List[Tensor]], pattern: str, **axes_lengths) ->
 
     ```
 
-    When composing axes, C-order enumeration used (consecutive elements have different last axis)
+    When composing axes, C-order enumeration used (consecutive elements have different last axis).
     Find more examples in einops tutorial.
 
     Parameters:
