@@ -59,7 +59,7 @@ exclude = [
 dependencies = [
     "mkdocs~=1.6.1",
     "mkdocs-material~=9.5.34",
-    "mkdocstrings~=0.26.1",
+    "mkdocstrings[python]~=0.26.1",
     "mkdocs-jupyter~=0.25.0",
     # pygments is required by codehilite (highlighting in mkdocs)
     "pygments~=2.18.0",
