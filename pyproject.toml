@@ -57,13 +57,12 @@ exclude = [
 
 [tool.hatch.envs.docs]
 dependencies = [
-    "mkdocs~=1.4.0",
-    "mkdocs-material~=8.5.5",
-    "mkdocstrings[python-legacy]~=0.19.0",
-    "mkdocs-jupyter~=0.22.0",
-    # required by codehilite (highlithing in mkdocs)
-    "pygments~=2.13.0",
-    "lxml[html_clean]",
+    "mkdocs~=1.6.1",
+    "mkdocs-material~=9.5.34",
+    "mkdocstrings[python]~=0.26.1",
+    "mkdocs-jupyter~=0.25.0",
+    # pygments is required by codehilite (highlighting in mkdocs)
+    "pygments~=2.18.0",
 ]
 [tool.hatch.envs.docs.scripts]
 # For examples to build one has to run:
@@ -72,6 +71,8 @@ convert = "python scripts/convert_readme.py"
 build = "convert && mkdocs build --clean --strict {args}"
 serve = "convert && mkdocs serve --dev-addr localhost:8000 {args}"
 deploy = "convert && mkdocs build --clean --strict && mkdocs gh-deploy"
+# when mkdocs deployed from github actions, it requires --force. Reason unclear.
+deploy_force = "convert && mkdocs build --clean --strict && mkdocs gh-deploy --force"
 
 
 [tool.hatch.envs.pypi.scripts]

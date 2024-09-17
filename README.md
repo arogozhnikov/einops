@@ -334,7 +334,7 @@ python -m einops.tests.run_tests numpy pytorch jax --pip-install
 ```
 
 `numpy pytorch jax` is an example, any subset of testable frameworks can be provided.
-Every framework will be tested against numpy, so it is a requirement for tests.
+Every framework is tested against numpy, so it is a requirement for tests.
 
 Specifying `--pip-install` will install requirements in current virtualenv,
 and should be omitted if dependencies are installed locally.

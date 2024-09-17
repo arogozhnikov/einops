@@ -37,7 +37,12 @@ markdown_extensions:
   - markdown.extensions.md_in_html
 plugins:
   - search
-  - mkdocstrings
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_options:
+              warn_unknown_params: false
   - mkdocs-jupyter
 extra_javascript:
   - https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML
