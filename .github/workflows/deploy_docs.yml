@@ -2,9 +2,9 @@ name: deploy-docs
 on:
   push:
     branches:
-      # triggers on new commits / merged PRs to main
+      # triggers on new commits / merged PRs to main or a special branch
       - main
-      - docs-test
+      - docs-deploy-testing
 permissions:
   contents: write
 jobs:
@@ -20,6 +20,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: 3.12
+      ## Switched off cache, deployment is fast anyway.
       # - run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV
       # - uses: actions/cache@v4
       #   with:
