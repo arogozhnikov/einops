@@ -16,7 +16,7 @@ preferred-citation:
   authors:
   - given-names: Alex
     family-names: Rogozhnikov
-  journal: "Internaltional Conference on Learning Representations"
+  journal: "International Conference on Learning Representations"
   title: "Einops: Clear and Reliable Tensor Manipulations with Einstein-like Notation"
   year: 2022
   url: https://openreview.net/forum?id=oapKSVM2bc
