@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+title: einops
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Alex
+    family-names: Rogozhnikov
+repository-code: 'https://github.com/arogozhnikov/einops'
+abstract: >-
+  Flexible and powerful tensor operations for readable and reliable code (for pytorch, jax, TF and others)
+license: MIT
+preferred-citation:
+  type: article
+  authors:
+  - given-names: Alex
+    family-names: Rogozhnikov
+  journal: "Internaltional Conference on Learning Representations"
+  title: "Einops: Clear and Reliable Tensor Manipulations with Einstein-like Notation"
+  year: 2022
+  url: https://openreview.net/forum?id=oapKSVM2bc
