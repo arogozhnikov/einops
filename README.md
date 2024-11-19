@@ -21,7 +21,7 @@ https://user-images.githubusercontent.com/6318811/177030658-66f0eb5d-e136-44d8-9
 [![Run tests](https://github.com/arogozhnikov/einops/actions/workflows/run_tests.yml/badge.svg)](https://github.com/arogozhnikov/einops/actions/workflows/run_tests.yml)
 [![PyPI version](https://badge.fury.io/py/einops.svg)](https://badge.fury.io/py/einops)
 [![Documentation](https://img.shields.io/badge/documentation-link-blue.svg)](https://einops.rocks/)
-![Supported python versions](https://raw.githubusercontent.com/arogozhnikov/einops/master/docs/resources/python_badge.svg)
+![Supported python versions](https://raw.githubusercontent.com/arogozhnikov/einops/main/docs/resources/python_badge.svg)
 
 
 Flexible and powerful tensor operations for readable and reliable code. <br />
@@ -33,7 +33,7 @@ Supports numpy, pytorch, tensorflow, jax, and [others](#supported-frameworks).
 - 0.7.0: no-hassle `torch.compile`, support of [array api standard](https://data-apis.org/array-api/latest/API_specification/index.html) and more
 - 10'000🎉: github reports that more than 10k project use einops
 - einops 0.6.1: paddle backend added
-- einops 0.6 introduces [packing and unpacking](https://github.com/arogozhnikov/einops/blob/master/docs/4-pack-and-unpack.ipynb)
+- einops 0.6 introduces [packing and unpacking](https://github.com/arogozhnikov/einops/blob/main/docs/4-pack-and-unpack.ipynb)
 - einops 0.5: einsum is now a part of einops
 - [Einops paper](https://openreview.net/pdf?id=oapKSVM2bcj) is accepted for oral presentation at ICLR 2022 (yes, it worth reading).
   Talk recordings are [available](https://iclr.cc/virtual/2022/oral/6603)
@@ -43,7 +43,7 @@ Supports numpy, pytorch, tensorflow, jax, and [others](#supported-frameworks).
 <summary>Previous updates</summary>
 - flax and oneflow backend added
 - torch.jit.script is supported for pytorch layers
-- powerful EinMix added to einops. [Einmix tutorial notebook](https://github.com/arogozhnikov/einops/blob/master/docs/3-einmix-layer.ipynb) 
+- powerful EinMix added to einops. [Einmix tutorial notebook](https://github.com/arogozhnikov/einops/blob/main/docs/3-einmix-layer.ipynb) 
 </details>
 
 <!--<div align="center">
@@ -89,9 +89,9 @@ pip install einops
 
 Tutorials are the most convenient way to see `einops` in action
 
-- part 1: [einops fundamentals](https://github.com/arogozhnikov/einops/blob/master/docs/1-einops-basics.ipynb)
-- part 2: [einops for deep learning](https://github.com/arogozhnikov/einops/blob/master/docs/2-einops-for-deep-learning.ipynb)
-- part 3: [packing and unpacking](https://github.com/arogozhnikov/einops/blob/master/docs/4-pack-and-unpack.ipynb)
+- part 1: [einops fundamentals](https://github.com/arogozhnikov/einops/blob/main/docs/1-einops-basics.ipynb)
+- part 2: [einops for deep learning](https://github.com/arogozhnikov/einops/blob/main/docs/2-einops-for-deep-learning.ipynb)
+- part 3: [packing and unpacking](https://github.com/arogozhnikov/einops/blob/main/docs/4-pack-and-unpack.ipynb)
 - part 4: [improve pytorch code with einops](http://einops.rocks/pytorch-examples.html)
 
 Kapil Sachdeva recorded a small [intro to einops](https://www.youtube.com/watch?v=xGy75Pjsqzo).
@@ -100,7 +100,7 @@ Kapil Sachdeva recorded a small [intro to einops](https://www.youtube.com/watch?
 
 `einops` has a minimalistic yet powerful API.
 
-Three core operations provided ([einops tutorial](https://github.com/arogozhnikov/einops/blob/master/docs/)
+Three core operations provided ([einops tutorial](https://github.com/arogozhnikov/einops/blob/main/docs/)
 shows those cover stacking, reshape, transposition, squeeze/unsqueeze, repeat, tile, concatenate, view and numerous reductions)
 
 ```python
