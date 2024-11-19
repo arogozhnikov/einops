@@ -316,6 +316,7 @@ which includes
 - [MLX](https://github.com/ml-explore/mlx)
 - [pydata/sparse](https://github.com/pydata/sparse) >= 0.15
 - [quantco/ndonnx](https://github.com/Quantco/ndonnx)
+- recent releases of jax and cupy.
 - dask is supported via [array-api-compat](https://github.com/data-apis/array-api-compat)
 
 
