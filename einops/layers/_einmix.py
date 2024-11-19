@@ -18,7 +18,7 @@ class _EinmixMixin:
         EinMix - Einstein summation with automated tensor management and axis packing/unpacking.
 
         EinMix is an advanced tool, helpful tutorial:
-        https://github.com/arogozhnikov/einops/blob/master/docs/3-einmix-layer.ipynb
+        https://github.com/arogozhnikov/einops/blob/main/docs/3-einmix-layer.ipynb
 
         Imagine taking einsum with two arguments, one of each input, and one - tensor with weights
         >>> einsum('time batch channel_in, channel_in channel_out -> time batch channel_out', input, weight)
