@@ -623,7 +623,7 @@ class PaddleBackend(AbstractBackend):
         self.paddle = paddle
 
     def is_appropriate_type(self, tensor):
-        return paddle.is_tensor(tensor)
+        return self.paddle.is_tensor(tensor)
 
     def from_numpy(self, x):
         tensor = self.paddle.to_tensor(x)
