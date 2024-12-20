@@ -1,7 +1,7 @@
 from typing import Any, List, Optional, Dict
 
 from einops import EinopsError
-from einops.parsing import ParsedExpression
+from einops.parsing import ParsedExpression, _ellipsis
 import warnings
 import string
 from ..einops import _product
@@ -71,9 +71,13 @@ class _EinmixMixin:
             set.difference(right.identifiers, {*left.identifiers, *weight.identifiers}),
             "Unrecognized identifiers on the right side of EinMix {}",
         )
-
-        if left.has_ellipsis or right.has_ellipsis or weight.has_ellipsis:
-            raise EinopsError("Ellipsis is not supported in EinMix (right now)")
+        if weight.has_ellipsis:
+            raise EinopsError("Ellipsis is not supported in weight, as its shape should be fully specified")
+        if left.has_ellipsis or right.has_ellipsis:
+            if not (left.has_ellipsis and right.has_ellipsis):
+                raise EinopsError(f"Ellipsis in EinMix should be on both sides, {pattern}")
+            if left.has_ellipsis_parenthesized:
+                raise EinopsError(f"Ellipsis on left side can't be in parenthesis, got {pattern}")
         if any(x.has_non_unitary_anonymous_axes for x in [left, right, weight]):
             raise EinopsError("Anonymous axes (numbers) are not allowed in EinMix")
         if "(" in weight_shape or ")" in weight_shape:
@@ -86,16 +90,18 @@ class _EinmixMixin:
             names: List[str] = []
             for group in left.composition:
                 names += group
+            names = [name if name != _ellipsis else "..." for name in names]
             composition = " ".join(names)
-            pre_reshape_pattern = f"{left_pattern}->{composition}"
+            pre_reshape_pattern = f"{left_pattern}-> {composition}"
             pre_reshape_lengths = {name: length for name, length in axes_lengths.items() if name in names}
 
-        if any(len(group) != 1 for group in right.composition):
+        if any(len(group) != 1 for group in right.composition) or right.has_ellipsis_parenthesized:
             names = []
             for group in right.composition:
                 names += group
+            names = [name if name != _ellipsis else "..." for name in names]
             composition = " ".join(names)
-            post_reshape_pattern = f"{composition}->{right_pattern}"
+            post_reshape_pattern = f"{composition} ->{right_pattern}"
 
         self._create_rearrange_layers(pre_reshape_pattern, pre_reshape_lengths, post_reshape_pattern, {})
 
@@ -116,22 +122,36 @@ class _EinmixMixin:
         # single output element is a combination of fan_in input elements
         _fan_in = _product([axes_lengths[axis] for (axis,) in weight.composition if axis not in right.identifiers])
         if bias_shape is not None:
+            # maybe I should put ellipsis in the beginning for simplicity?
             if not isinstance(bias_shape, str):
                 raise EinopsError("bias shape should be string specifying which axes bias depends on")
             bias = ParsedExpression(bias_shape)
-            _report_axes(set.difference(bias.identifiers, right.identifiers), "Bias axes {} not present in output")
+            _report_axes(
+                set.difference(bias.identifiers, right.identifiers),
+                "Bias axes {} not present in output",
+            )
             _report_axes(
                 set.difference(bias.identifiers, set(axes_lengths)),
                 "Sizes not provided for bias axes {}",
             )
 
             _bias_shape = []
+            used_non_trivial_size = False
             for axes in right.composition:
-                for axis in axes:
-                    if axis in bias.identifiers:
-                        _bias_shape.append(axes_lengths[axis])
-                    else:
-                        _bias_shape.append(1)
+                if axes == _ellipsis:
+                    if used_non_trivial_size:
+                        raise EinopsError("all bias dimensions should go after ellipsis in the output")
+                else:
+                    # handles ellipsis correctly
+                    for axis in axes:
+                        if axis == _ellipsis:
+                            if used_non_trivial_size:
+                                raise EinopsError("all bias dimensions should go after ellipsis in the output")
+                        elif axis in bias.identifiers:
+                            _bias_shape.append(axes_lengths[axis])
+                            used_non_trivial_size = True
+                        else:
+                            _bias_shape.append(1)
         else:
             _bias_shape = None
 
@@ -142,15 +162,26 @@ class _EinmixMixin:
         # rewrite einsum expression with single-letter latin identifiers so that
         # expression will be understood by any framework
         mapped_identifiers = {*left.identifiers, *right.identifiers, *weight.identifiers}
+        if _ellipsis in mapped_identifiers:
+            mapped_identifiers.remove(_ellipsis)
+        mapped_identifiers = list(sorted(mapped_identifiers))
         mapping2letters = {k: letter for letter, k in zip(string.ascii_lowercase, mapped_identifiers)}
+        mapping2letters[_ellipsis] = "..."  # preserve ellipsis
 
-        def write_flat(axes: list):
-            return "".join(mapping2letters[axis] for axis in axes)
+        def write_flat_remapped(axes: ParsedExpression):
+            result = []
+            for composed_axis in axes.composition:
+                if isinstance(composed_axis, list):
+                    result.extend([mapping2letters[axis] for axis in composed_axis])
+                else:
+                    assert composed_axis == _ellipsis
+                    result.append("...")
+            return "".join(result)
 
         self.einsum_pattern: str = "{},{}->{}".format(
-            write_flat(left.flat_axes_order()),
-            write_flat(weight.flat_axes_order()),
-            write_flat(right.flat_axes_order()),
+            write_flat_remapped(left),
+            write_flat_remapped(weight),
+            write_flat_remapped(right),
         )
 
     def _create_rearrange_layers(
@@ -174,3 +205,23 @@ class _EinmixMixin:
         for axis, length in self.axes_lengths.items():
             params += ", {}={}".format(axis, length)
         return "{}({})".format(self.__class__.__name__, params)
+
+
+class _EinmixDebugger(_EinmixMixin):
+    """Used only to test mixin"""
+
+    def _create_rearrange_layers(
+        self,
+        pre_reshape_pattern: Optional[str],
+        pre_reshape_lengths: Optional[Dict],
+        post_reshape_pattern: Optional[str],
+        post_reshape_lengths: Optional[Dict],
+    ):
+        self.pre_reshape_pattern = pre_reshape_pattern
+        self.pre_reshape_lengths = pre_reshape_lengths
+        self.post_reshape_pattern = post_reshape_pattern
+        self.post_reshape_lengths = post_reshape_lengths
+
+    def _create_parameters(self, weight_shape, weight_bound, bias_shape, bias_bound):
+        self.saved_weight_shape = weight_shape
+        self.saved_bias_shape = bias_shape
