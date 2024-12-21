@@ -4,7 +4,7 @@ from collections import namedtuple
 import numpy
 import pytest
 
-from einops import rearrange, reduce
+from einops import rearrange, reduce, EinopsError
 from einops.tests import collect_test_backends, is_backend_tested, FLOAT_REDUCTIONS as REDUCTIONS
 
 __author__ = "Alex Rogozhnikov"
@@ -433,3 +433,37 @@ def test_einmix_decomposition():
     assert mixin7.einsum_pattern == "a...bc,cdb->a...db"
     assert mixin7.saved_weight_shape == [3, 4, 2]
     assert mixin7.saved_bias_shape == [1, 4, 2]  # (a) d b, ellipsis does not participate
+
+
+def test_einmix_restrictions():
+    """
+    Testing different cases
+    """
+    from einops.layers._einmix import _EinmixDebugger
+
+    with pytest.raises(EinopsError):
+        _EinmixDebugger(
+            "a b c d e -> e d c b a",
+            weight_shape="d a b",
+            d=2, a=3, # missing b
+        )  # fmt: off
+
+    with pytest.raises(EinopsError):
+        _EinmixDebugger(
+            "a b c d e -> e d c b a",
+            weight_shape="w a b",
+            d=2, a=3, b=1 # missing d
+        )  # fmt: off
+
+    with pytest.raises(EinopsError):
+        _EinmixDebugger(
+            "(...) a -> ... a",
+            weight_shape="a", a=1, # ellipsis on the left
+        )  # fmt: off
+
+    with pytest.raises(EinopsError):
+        _EinmixDebugger(
+            "(...) a -> a ...",
+            weight_shape="a", a=1, # ellipsis on the right side after bias axis
+            bias_shape='a',
+        )  # fmt: off
