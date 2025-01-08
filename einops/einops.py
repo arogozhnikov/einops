@@ -470,7 +470,7 @@ def reduce(tensor: Union[Tensor, List[Tensor]], pattern: str, reduction: Reducti
     # Axis t does not appear on RHS - thus we reduced over t
     >>> y = reduce(x, 't b c -> b c', 'max')
 
-    # same as previous, but using verbose names for axes 
+    # same as previous, but using verbose names for axes
     >>> y = reduce(x, 'time batch channel -> batch channel', 'max')
 
     # let's pretend now that x is a batch of images
@@ -482,7 +482,7 @@ def reduce(tensor: Union[Tensor, List[Tensor]], pattern: str, reduction: Reducti
     # same as previous, using anonymous axes
     >>> y1 = reduce(x, 'b c (h1 2) (w1 2) -> b c h1 w1', 'max')
 
-    # adaptive 2d max-pooling to 3 * 4 grid, 
+    # adaptive 2d max-pooling to 3 * 4 grid,
     # each element is max of 10x10 tile in the original tensor.
     >>> reduce(x, 'b c (h1 h2) (w1 w2) -> b c h1 w1', 'max', h1=3, w1=4).shape
     (10, 20, 3, 4)
