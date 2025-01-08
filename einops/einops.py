@@ -474,12 +474,14 @@ def reduce(tensor: Union[Tensor, List[Tensor]], pattern: str, reduction: Reducti
     >>> y = reduce(x, 'time batch channel -> batch channel', 'max')
 
     # let's pretend now that x is a batch of images
+    # with 4 dims: batch=10, height=20, width=30, channel=40
     >>> x = np.random.randn(10, 20, 30, 40)
 
     # 2d max-pooling with kernel size = 2 * 2 for image processing
     >>> y1 = reduce(x, 'b c (h1 h2) (w1 w2) -> b c h1 w1', 'max', h2=2, w2=2)
 
-    # same as previous, using anonymous axes
+    # same as previous, using anonymous axes,
+    # note: only reduced axes can be anonymous
     >>> y1 = reduce(x, 'b c (h1 2) (w1 2) -> b c h1 w1', 'max')
 
     # adaptive 2d max-pooling to 3 * 4 grid,
@@ -500,6 +502,7 @@ def reduce(tensor: Union[Tensor, List[Tensor]], pattern: str, reduction: Reducti
 
     # same as previous, but using empty compositions
     >>> y = x - reduce(x, 'b c h w -> b c () ()', 'mean')
+
     ```
 
     Parameters:
