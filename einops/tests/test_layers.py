@@ -4,7 +4,7 @@ from collections import namedtuple
 import numpy
 import pytest
 
-from einops import rearrange, reduce
+from einops import rearrange, reduce, EinopsError
 from einops.tests import collect_test_backends, is_backend_tested, FLOAT_REDUCTIONS as REDUCTIONS
 
 __author__ = "Alex Rogozhnikov"
@@ -343,3 +343,127 @@ def test_flax_layers():
         # check serialization
         fbytes = flax.serialization.to_bytes(params)
         _loaded = flax.serialization.from_bytes(params, fbytes)
+
+
+def test_einmix_decomposition():
+    """
+    Testing that einmix correctly decomposes into smaller transformations.
+    """
+    from einops.layers._einmix import _EinmixDebugger
+
+    mixin1 = _EinmixDebugger(
+        "a b c d e -> e d c b a",
+        weight_shape="d a b",
+        d=2, a=3, b=5,
+    )  # fmt: off
+    assert mixin1.pre_reshape_pattern is None
+    assert mixin1.post_reshape_pattern is None
+    assert mixin1.einsum_pattern == "abcde,dab->edcba"
+    assert mixin1.saved_weight_shape == [2, 3, 5]
+    assert mixin1.saved_bias_shape is None
+
+    mixin2 = _EinmixDebugger(
+        "a b c d e -> e d c b a",
+        weight_shape="d a b",
+        bias_shape="a b c d e",
+        a=1, b=2, c=3, d=4, e=5,
+    )  # fmt: off
+    assert mixin2.pre_reshape_pattern is None
+    assert mixin2.post_reshape_pattern is None
+    assert mixin2.einsum_pattern == "abcde,dab->edcba"
+    assert mixin2.saved_weight_shape == [4, 1, 2]
+    assert mixin2.saved_bias_shape == [5, 4, 3, 2, 1]
+
+    mixin3 = _EinmixDebugger(
+        "... -> ...",
+        weight_shape="",
+        bias_shape="",
+    )  # fmt: off
+    assert mixin3.pre_reshape_pattern is None
+    assert mixin3.post_reshape_pattern is None
+    assert mixin3.einsum_pattern == "...,->..."
+    assert mixin3.saved_weight_shape == []
+    assert mixin3.saved_bias_shape == []
+
+    mixin4 = _EinmixDebugger(
+        "b a ...  -> b c ...",
+        weight_shape="b a c",
+        a=1, b=2, c=3,
+    )  # fmt: off
+    assert mixin4.pre_reshape_pattern is None
+    assert mixin4.post_reshape_pattern is None
+    assert mixin4.einsum_pattern == "ba...,bac->bc..."
+    assert mixin4.saved_weight_shape == [2, 1, 3]
+    assert mixin4.saved_bias_shape is None
+
+    mixin5 = _EinmixDebugger(
+        "(b a) ... -> b c (...)",
+        weight_shape="b a c",
+        a=1, b=2, c=3,
+    )  # fmt: off
+    assert mixin5.pre_reshape_pattern == "(b a) ... -> b a ..."
+    assert mixin5.pre_reshape_lengths == dict(a=1, b=2)
+    assert mixin5.post_reshape_pattern == "b c ... -> b c (...)"
+    assert mixin5.einsum_pattern == "ba...,bac->bc..."
+    assert mixin5.saved_weight_shape == [2, 1, 3]
+    assert mixin5.saved_bias_shape is None
+
+    mixin6 = _EinmixDebugger(
+        "b ... (a c) -> b ... (a d)",
+        weight_shape="c d",
+        bias_shape="a d",
+        a=1, c=3, d=4,
+    )  # fmt: off
+    assert mixin6.pre_reshape_pattern == "b ... (a c) -> b ... a c"
+    assert mixin6.pre_reshape_lengths == dict(a=1, c=3)
+    assert mixin6.post_reshape_pattern == "b ... a d -> b ... (a d)"
+    assert mixin6.einsum_pattern == "b...ac,cd->b...ad"
+    assert mixin6.saved_weight_shape == [3, 4]
+    assert mixin6.saved_bias_shape == [1, 1, 4]  # (b) a d, ellipsis does not participate
+
+    mixin7 = _EinmixDebugger(
+        "a ... (b c) -> a (... d b)",
+        weight_shape="c d b",
+        bias_shape="d b",
+        b=2, c=3, d=4,
+    )  # fmt: off
+    assert mixin7.pre_reshape_pattern == "a ... (b c) -> a ... b c"
+    assert mixin7.pre_reshape_lengths == dict(b=2, c=3)
+    assert mixin7.post_reshape_pattern == "a ... d b -> a (... d b)"
+    assert mixin7.einsum_pattern == "a...bc,cdb->a...db"
+    assert mixin7.saved_weight_shape == [3, 4, 2]
+    assert mixin7.saved_bias_shape == [1, 4, 2]  # (a) d b, ellipsis does not participate
+
+
+def test_einmix_restrictions():
+    """
+    Testing different cases
+    """
+    from einops.layers._einmix import _EinmixDebugger
+
+    with pytest.raises(EinopsError):
+        _EinmixDebugger(
+            "a b c d e -> e d c b a",
+            weight_shape="d a b",
+            d=2, a=3, # missing b
+        )  # fmt: off
+
+    with pytest.raises(EinopsError):
+        _EinmixDebugger(
+            "a b c d e -> e d c b a",
+            weight_shape="w a b",
+            d=2, a=3, b=1 # missing d
+        )  # fmt: off
+
+    with pytest.raises(EinopsError):
+        _EinmixDebugger(
+            "(...) a -> ... a",
+            weight_shape="a", a=1, # ellipsis on the left
+        )  # fmt: off
+
+    with pytest.raises(EinopsError):
+        _EinmixDebugger(
+            "(...) a -> a ...",
+            weight_shape="a", a=1, # ellipsis on the right side after bias axis
+            bias_shape='a',
+        )  # fmt: off
