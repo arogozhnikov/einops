@@ -17,21 +17,21 @@ class _EinmixMixin:
         """
         EinMix - Einstein summation with automated tensor management and axis packing/unpacking.
 
-        EinMix is an advanced tool, helpful tutorial:
+        EinMix is a combination of einops and MLP, see tutorial:
         https://github.com/arogozhnikov/einops/blob/main/docs/3-einmix-layer.ipynb
 
         Imagine taking einsum with two arguments, one of each input, and one - tensor with weights
         >>> einsum('time batch channel_in, channel_in channel_out -> time batch channel_out', input, weight)
 
-        This layer manages weights for you, syntax highlights separate role of weight matrix
+        This layer manages weights for you, syntax highlights a special role of weight matrix
         >>> EinMix('time batch channel_in -> time batch channel_out', weight_shape='channel_in channel_out')
-        But otherwise it is the same einsum under the hood.
+        But otherwise it is the same einsum under the hood. Plus einops-rearrange.
 
-        Simple linear layer with bias term (you have one like that in your framework)
+        Simple linear layer with a bias term (you have one like that in your framework)
         >>> EinMix('t b cin -> t b cout', weight_shape='cin cout', bias_shape='cout', cin=10, cout=20)
         There is no restriction to mix the last axis. Let's mix along height
         >>> EinMix('h w c-> hout w c', weight_shape='h hout', bias_shape='hout', h=32, hout=32)
-        Channel-wise multiplication (like one used in normalizations)
+        Example of channel-wise multiplication (like one used in normalizations)
         >>> EinMix('t b c -> t b c', weight_shape='c', c=128)
         Multi-head linear layer (each head is own linear layer):
         >>> EinMix('t b (head cin) -> t b (head cout)', weight_shape='head cin cout', ...)
@@ -42,14 +42,16 @@ class _EinmixMixin:
         - when channel dimension is not last, use EinMix, not transposition
         - patch/segment embeddings
         - when need only within-group connections to reduce number of weights and computations
-        - perfect as a part of sequential models
-        - next-gen MLPs (follow tutorial to learn more!)
+        - next-gen MLPs (follow tutorial link above to learn more!)
+        - in general, any time you want to combine linear layer and einops.rearrange
 
-        Uniform He initialization is applied to weight tensor. This accounts for number of elements mixed.
+        Uniform He initialization is applied to weight tensor.
+        This accounts for the number of elements mixed and produced.
 
         Parameters
         :param pattern: transformation pattern, left side - dimensions of input, right side - dimensions of output
         :param weight_shape: axes of weight. A tensor of this shape is created, stored, and optimized in a layer
+               If bias_shape is not specified, bias is not created.
         :param bias_shape: axes of bias added to output. Weights of this shape are created and stored. If `None` (the default), no bias is added.
         :param axes_lengths: dimensions of weight tensor
         """
