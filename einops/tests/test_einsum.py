@@ -187,6 +187,7 @@ valid_backends_functional = [
     "cupy",
     "tensorflow.keras",
     "paddle",
+    "pytensor",
 ]
 
 
@@ -254,7 +255,7 @@ def test_functional_symbolic():
                 )
                 if predicted_out_data.shape != out_shape:
                     raise ValueError(f"Expected output shape {out_shape} but got {predicted_out_data.shape}")
-                assert np.testing.assert_array_almost_equal(predicted_out_data, expected_out_data, decimal=5)
+                np.testing.assert_array_almost_equal(predicted_out_data, expected_out_data, decimal=5)
 
 
 def test_functional_errors():

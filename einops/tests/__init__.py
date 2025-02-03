@@ -87,7 +87,9 @@ def collect_test_backends(symbolic=False, layers=False) -> List[_backends.Abstra
             ]
     else:
         if not layers:
-            backend_types = []
+            backend_types = [
+                _backends.PyTensorBackend,
+            ]
         else:
             backend_types = [
                 _backends.TFKerasBackend,

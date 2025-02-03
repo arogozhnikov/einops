@@ -210,7 +210,7 @@ def test_parse_shape_symbolic_ellipsis(backend):
     for static_shape, shape, pattern, expected in [
         ([10, 20], [None, None], "...", dict()),
         ([10], [None], "... a", dict(a=10)),
-        ([10, 20], [None], "... a", dict(a=20)),
+        ([10, 20], [None, None], "... a", dict(a=20)),
         ([10, 20, 30], [None, None, None], "... a", dict(a=30)),
         ([10, 20, 30, 40], [None, None, None, None], "... a", dict(a=40)),
         ([10], [None], "a ...", dict(a=10)),
