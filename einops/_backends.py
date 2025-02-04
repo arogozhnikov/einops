@@ -77,7 +77,8 @@ class AbstractBackend:
     def create_symbol(self, shape):
         raise NotImplementedError("framework doesn't support symbolic computations")
 
-    def eval_symbol(self, symbol, input_dict):
+    def eval_symbol(self, symbol, symbol_value_pairs):
+        # symbol-value pairs is list[tuple[symbol, value-tensor]]
         raise NotImplementedError("framework doesn't support symbolic computations")
 
     def arange(self, start, stop):
@@ -431,9 +432,9 @@ class TFKerasBackend(AbstractBackend):
     def create_symbol(self, shape):
         return self.keras.Input(batch_shape=shape)
 
-    def eval_symbol(self, symbol, input_dict):
-        model = self.keras.models.Model([var for (var, _) in input_dict], symbol)
-        return model.predict_on_batch([val for (_, val) in input_dict])
+    def eval_symbol(self, symbol, symbol_value_pairs):
+        model = self.keras.models.Model([var for (var, _) in symbol_value_pairs], symbol)
+        return model.predict_on_batch([val for (_, val) in symbol_value_pairs])
 
     def arange(self, start, stop):
         return self.K.arange(start, stop)
@@ -689,9 +690,8 @@ class PyTensorBackend(AbstractBackend):
             shape = (shape,)
         return self.pt.tensor(shape=shape)
 
-    def eval_symbol(self, symbol, input_dict):
-        # input_dict is actually a list of tuple?
-        return symbol.eval(dict(input_dict))
+    def eval_symbol(self, symbol, symbol_value_pairs):
+        return symbol.eval(dict(symbol_value_pairs))
 
     def arange(self, start, stop):
         return self.pt.arange(start, stop)
