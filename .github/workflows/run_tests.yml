@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.8', '3.10', '3.12']
+        python-version: ['3.9', '3.11', '3.13']
         # currently there is conflict between tf, oneflow and paddle in protobuf versions.
         # cupy is not tested because it demands gpu
         # oneflow testing is dropped, see details at https://github.com/Oneflow-Inc/oneflow/issues/10340
