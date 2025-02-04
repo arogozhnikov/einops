@@ -16,7 +16,7 @@ jobs:
         # The last pytensor release that supports python 3.8 doesn't include einsum, so we skip that combination.
         frameworks: ['numpy pytorch tensorflow jax', 'pytensor']
         exclude:
-          - python-version: '3.8'
+          - python-version: '3.13'
             frameworks: 'pytensor'
 
     steps:
