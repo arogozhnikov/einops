@@ -662,3 +662,58 @@ class TinygradBackend(AbstractBackend):
 
     def einsum(self, pattern, *x):
         return self.tinygrad.Tensor.einsum(pattern, *x)
+
+
+class PyTensorBackend(AbstractBackend):
+    framework_name = "pytensor"
+
+    def __init__(self):
+        from pytensor import tensor
+
+        self.pt = tensor
+
+    def is_appropriate_type(self, tensor):
+        return isinstance(tensor, self.pt.TensorVariable)
+
+    def is_float_type(self, x):
+        return x.dtype in self.pt.type.float_dtypes
+
+    def from_numpy(self, x):
+        return self.pt.as_tensor(x)
+
+    def to_numpy(self, x):
+        return x.eval()  # Will only work if there are no symbolic inputs
+
+    def create_symbol(self, shape):
+        if not isinstance(shape, tuple | list):
+            shape = (shape,)
+        return self.pt.tensor(shape=shape)
+
+    def eval_symbol(self, symbol, input_dict):
+        # input_dict is actually a list of tuple?
+        return symbol.eval(dict(input_dict))
+
+    def arange(self, start, stop):
+        return self.pt.arange(start, stop)
+
+    def shape(self, x):
+        # use the static shape dimensions where known
+        return tuple(
+            static_dim if static_dim is not None else symbolic_dim
+            for static_dim, symbolic_dim in zip(x.type.shape, x.shape)
+        )
+
+    def stack_on_zeroth_dimension(self, tensors: list):
+        return self.pt.stack(tensors)
+
+    def tile(self, x, repeats):
+        return self.pt.tile(x, repeats)
+
+    def concat(self, tensors, axis: int):
+        return self.pt.concatenate(tensors, axis=axis)
+
+    def add_axis(self, x, new_position):
+        return self.pt.expand_dims(x, new_position)
+
+    def einsum(self, pattern, *x):
+        return self.pt.einsum(pattern, *x)
