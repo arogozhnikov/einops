@@ -330,7 +330,7 @@ To start with devcontainers in vs code, clone repo, and click 'Reopen in Devcont
 Starting from einops 0.8.1, einops distributes tests as a part of package.
 
 ```bash
-# pip install einops 
+# pip install einops pytest
 python -m einops.tests.run_tests numpy pytorch jax --pip-install
 ```
 
