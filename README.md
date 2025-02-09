@@ -327,15 +327,14 @@ Devcontainer is provided, this environment can be used locally, or on your serve
 or within github codespaces. 
 To start with devcontainers in vs code, clone repo, and click 'Reopen in Devcontainer'. 
 
-Starting from the next version, einops will distribute tests as a part of package.
-To run tests:
+Starting from einops 0.8.1, einops distributes tests as a part of package.
 
 ```bash
-# pip install einops
+# pip install einops pytest
 python -m einops.tests.run_tests numpy pytorch jax --pip-install
 ```
 
-`numpy pytorch jax` is an example, any subset of testable frameworks can be provided.
+`numpy pytorch jax` is an _example_, any subset of testable frameworks can be provided.
 Every framework is tested against numpy, so it is a requirement for tests.
 
 Specifying `--pip-install` will install requirements in current virtualenv,
