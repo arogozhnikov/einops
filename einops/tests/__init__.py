@@ -5,11 +5,11 @@ These functions allow testing only some frameworks, not all.
 
 import logging
 import os
+import warnings
 from functools import lru_cache
 from typing import List, Tuple
 
 from einops import _backends
-import warnings
 
 __author__ = "Alex Rogozhnikov"
 

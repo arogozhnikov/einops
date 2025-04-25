@@ -3,7 +3,7 @@ import itertools
 import string
 import typing
 from collections import OrderedDict
-from typing import Set, Tuple, List, Dict, Union, Callable, Optional, TypeVar, cast, Any, overload
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, TypeVar, Union, cast, overload
 
 if typing.TYPE_CHECKING:
     # for docstrings in pycharm
@@ -11,7 +11,7 @@ if typing.TYPE_CHECKING:
 
 from . import EinopsError
 from ._backends import get_backend
-from .parsing import ParsedExpression, _ellipsis, AnonymousAxis
+from .parsing import AnonymousAxis, ParsedExpression, _ellipsis
 
 Tensor = TypeVar("Tensor")
 ReductionCallable = Callable[[Tensor, Tuple[int, ...]], Tensor]

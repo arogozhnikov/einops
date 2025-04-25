@@ -270,8 +270,9 @@ def test_pack_unpack_against_numpy():
 
 
 def test_pack_unpack_array_api():
-    from einops import array_api as AA
     import numpy as xp
+
+    from einops import array_api as AA
 
     if xp.__version__ < "2.0.0":
         pytest.skip()

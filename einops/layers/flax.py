@@ -1,5 +1,5 @@
 from dataclasses import field
-from typing import Optional, Dict, cast
+from typing import Dict, Optional, cast
 
 import flax.linen as nn
 import jax

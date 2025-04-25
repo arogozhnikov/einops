@@ -7,7 +7,7 @@ import einops
 import einops.layers
 import einops.parsing
 from einops._backends import AbstractBackend
-from einops.einops import rearrange, parse_shape, _optimize_transformation
+from einops.einops import _optimize_transformation, parse_shape, rearrange
 from einops.tests import collect_test_backends, is_backend_tested
 
 __author__ = "Alex Rogozhnikov"
@@ -254,7 +254,8 @@ def test_torch_compile():
         pytest.skip()
     import torch
     from torch import nn
-    from einops import repeat, reduce, pack, unpack, einsum
+
+    from einops import einsum, pack, reduce, repeat, unpack
     from einops._torch_specific import allow_ops_in_compiled_graph
 
     allow_ops_in_compiled_graph()

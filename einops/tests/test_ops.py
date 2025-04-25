@@ -5,8 +5,9 @@ import numpy as np
 import pytest
 
 from einops import EinopsError
-from einops.einops import rearrange, reduce, repeat, _enumerate_directions
-from einops.tests import collect_test_backends, is_backend_tested, FLOAT_REDUCTIONS as REDUCTIONS
+from einops.einops import _enumerate_directions, rearrange, reduce, repeat
+from einops.tests import FLOAT_REDUCTIONS as REDUCTIONS
+from einops.tests import collect_test_backends, is_backend_tested
 
 imp_op_backends = collect_test_backends(symbolic=False, layers=False)
 sym_op_backends = collect_test_backends(symbolic=True, layers=False)
@@ -114,6 +115,7 @@ def test_ellipsis_ops_imperative():
 
 def test_rearrange_array_api():
     import numpy as xp
+
     from einops import array_api as AA
 
     if xp.__version__ < "2.0.0":
@@ -128,6 +130,7 @@ def test_rearrange_array_api():
 
 def test_reduce_array_api():
     import numpy as xp
+
     from einops import array_api as AA
 
     if xp.__version__ < "2.0.0":
@@ -353,7 +356,7 @@ def test_reduction_with_callable_imperatives():
         y = numpy.sum(y, axis=tuple_of_axes)
         return numpy.log(y) + minused
 
-    from einops._backends import TorchBackend, TensorflowBackend, TFKerasBackend, NumpyBackend
+    from einops._backends import NumpyBackend, TensorflowBackend, TFKerasBackend, TorchBackend
 
     backend2callback = {
         TorchBackend.framework_name: logsumexp_torch,
@@ -539,6 +542,7 @@ def test_repeat_symbolic():
 
 def test_repeat_array_api():
     import numpy as xp
+
     from einops import array_api as AA
 
     if xp.__version__ < "2.0.0":

@@ -1,8 +1,7 @@
 from functools import lru_cache
-from typing import List, Union, TypeVar, Tuple, Sequence
+from typing import List, Sequence, Tuple, TypeVar, Union
 
 from einops import EinopsError
-
 from einops._backends import get_backend
 from einops.parsing import ParsedExpression
 

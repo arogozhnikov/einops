@@ -13,5 +13,5 @@ class EinopsError(RuntimeError):
 
 __all__ = ["rearrange", "reduce", "repeat", "einsum", "pack", "unpack", "parse_shape", "asnumpy", "EinopsError"]
 
-from .einops import rearrange, reduce, repeat, einsum, parse_shape, asnumpy
+from .einops import asnumpy, einsum, parse_shape, rearrange, reduce, repeat
 from .packing import pack, unpack

@@ -1,5 +1,6 @@
-from typing import List, Tuple, Sequence
-from .einops import Tensor, Reduction, EinopsError, _prepare_transformation_recipe, _apply_recipe_array_api
+from typing import List, Sequence, Tuple
+
+from .einops import EinopsError, Reduction, Tensor, _apply_recipe_array_api, _prepare_transformation_recipe
 from .packing import analyze_pattern, prod
 
 

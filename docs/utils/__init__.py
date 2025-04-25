@@ -1,8 +1,7 @@
 import numpy as np
-
-from PIL.Image import fromarray
 from IPython import get_ipython
 from IPython.display import display_html
+from PIL.Image import fromarray
 
 
 def display_np_arrays_as_images():

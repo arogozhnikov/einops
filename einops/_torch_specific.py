@@ -14,6 +14,7 @@ import warnings
 from typing import Dict, List, Tuple
 
 import torch
+
 from einops.einops import TransformRecipe, _reconstruct_from_shape_uncached
 
 
@@ -111,7 +112,7 @@ def allow_ops_in_compiled_graph():
         )
         return
 
-    from .einops import rearrange, reduce, repeat, einsum
+    from .einops import einsum, rearrange, reduce, repeat
     from .packing import pack, unpack
 
     allow_in_graph(rearrange)

@@ -4,8 +4,9 @@ from collections import namedtuple
 import numpy
 import pytest
 
-from einops import rearrange, reduce, EinopsError
-from einops.tests import collect_test_backends, is_backend_tested, FLOAT_REDUCTIONS as REDUCTIONS
+from einops import EinopsError, rearrange, reduce
+from einops.tests import FLOAT_REDUCTIONS as REDUCTIONS
+from einops.tests import collect_test_backends, is_backend_tested
 
 __author__ = "Alex Rogozhnikov"
 
@@ -177,9 +178,10 @@ def create_torch_model(use_reduce=False, add_scripted_layer=False):
     if not is_backend_tested("torch"):
         pytest.skip()
     else:
-        from torch.nn import Sequential, Conv2d, MaxPool2d, Linear, ReLU
-        from einops.layers.torch import Rearrange, Reduce, EinMix
         import torch.jit
+        from torch.nn import Conv2d, Linear, MaxPool2d, ReLU, Sequential
+
+        from einops.layers.torch import EinMix, Rearrange, Reduce
 
         return Sequential(
             Conv2d(3, 6, kernel_size=(5, 5)),
@@ -248,9 +250,12 @@ def test_keras_layer():
         if tf.__version__ < "2.16.":
             # current implementation of layers follows new TF interface
             pytest.skip()
+        from tensorflow.keras.layers import Conv2D as Conv2d
+        from tensorflow.keras.layers import Dense as Linear
+        from tensorflow.keras.layers import ReLU
         from tensorflow.keras.models import Sequential
-        from tensorflow.keras.layers import Conv2D as Conv2d, Dense as Linear, ReLU
-        from einops.layers.keras import Rearrange, Reduce, EinMix, keras_custom_objects
+
+        from einops.layers.keras import EinMix, Rearrange, Reduce, keras_custom_objects
 
         def create_keras_model():
             return Sequential(
@@ -307,12 +312,12 @@ def test_flax_layers():
     if not is_backend_tested("jax"):
         pytest.skip()
     else:
+        import flax
         import jax
         import jax.numpy as jnp
-
-        import flax
         from flax import linen as nn
-        from einops.layers.flax import EinMix, Reduce, Rearrange
+
+        from einops.layers.flax import EinMix, Rearrange, Reduce
 
         class NN(nn.Module):
             @nn.compact

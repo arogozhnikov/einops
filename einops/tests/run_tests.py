@@ -4,8 +4,8 @@ Runs tests that are appropriate for framework.
 
 import os
 import sys
-from subprocess import Popen
 from pathlib import Path
+from subprocess import Popen
 
 __author__ = "Alex Rogozhnikov"
 

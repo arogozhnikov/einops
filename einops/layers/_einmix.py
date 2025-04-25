@@ -1,9 +1,10 @@
-from typing import Any, List, Optional, Dict
+import string
+import warnings
+from typing import Any, Dict, List, Optional
 
 from einops import EinopsError
 from einops.parsing import ParsedExpression, _ellipsis
-import warnings
-import string
+
 from ..einops import _product
 
 

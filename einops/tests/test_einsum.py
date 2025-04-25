@@ -1,9 +1,11 @@
+import string
 from typing import Any, Callable
-from einops.tests import collect_test_backends
-from einops.einops import _compactify_pattern_for_einsum, einsum, EinopsError
+
 import numpy as np
 import pytest
-import string
+
+from einops.einops import EinopsError, _compactify_pattern_for_einsum, einsum
+from einops.tests import collect_test_backends
 
 
 class Arguments:

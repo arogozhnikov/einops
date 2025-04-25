@@ -8,14 +8,13 @@ Also needs:
 
 """
 
-from typing import Dict
-
 from io import StringIO
-
+from typing import Dict
 
 __author__ = "Alex Rogozhnikov"
 
 from pathlib import Path
+
 import nbformat
 from nbconvert.preprocessors import ExecutePreprocessor
 
