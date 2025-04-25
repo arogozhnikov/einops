@@ -387,8 +387,8 @@ def test_enumerating_directions():
             axes1 = _enumerate_directions(x)
             axes2 = _enumerate_directions(backend.from_numpy(x))
             assert len(axes1) == len(axes2) == len(shape)
+            axes2 = [backend.to_numpy(ax) for ax in axes2]
             for ax1, ax2 in zip(axes1, axes2):
-                ax2 = backend.to_numpy(ax2)
                 assert ax1.shape == ax2.shape
                 assert numpy.allclose(ax1, ax2)
 
