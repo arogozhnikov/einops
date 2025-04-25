@@ -28,7 +28,7 @@ def reduce(tensor: Tensor, pattern: str, reduction: Reduction, **axes_lengths: i
         else:
             message += "\n Input is list. "
         message += "Additional info: {}.".format(axes_lengths)
-        raise EinopsError(message + "\n {}".format(e))
+        raise EinopsError(message + "\n {}".format(e)) from None
 
 
 def repeat(tensor: Tensor, pattern: str, **axes_lengths) -> Tensor:
@@ -116,9 +116,9 @@ def unpack(tensor: Tensor, packed_shapes: List[Shape], pattern: str) -> List[Ten
             )
             for i, element_shape in enumerate(packed_shapes)
         ]
-    except Exception:
+    except Exception as e:
         # this hits if there is an error during reshapes, which means passed shapes were incorrect
         raise RuntimeError(
             f'Error during unpack(..., "{pattern}"): could not split axis of size {split_positions[-1]}'
             f" into requested {packed_shapes}"
-        )
+        ) from e
