@@ -882,8 +882,7 @@ def einsum(*tensors_and_pattern: Union[Tensor, str]) -> Tensor:
     ```
     the following formula is computed:
     ```tex
-    output[a, b, k] =
-        \sum_{c, d, g} x[a, b, c] * y[c, b, d] * z[a, g, k]
+    output[a, b, k] = \sum_{c, d, g} x[a, b, c] * y[c, b, d] * z[a, g, k]
     ```
     where the summation over `c`, `d`, and `g` is performed
     because those axes names do not appear on the right-hand side.
