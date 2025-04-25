@@ -56,7 +56,7 @@ def get_backend(tensor) -> "AbstractBackend":
                     _type2backend[_type] = backend
                     return backend
 
-    raise RuntimeError("Tensor type unknown to einops {}".format(type(tensor)))
+    raise RuntimeError(f"Tensor type unknown to einops {type(tensor)}")
 
 
 class AbstractBackend:
@@ -129,7 +129,7 @@ class AbstractBackend:
         raise NotImplementedError("backend does not provide layers")
 
     def __repr__(self):
-        return "<einops backend for {}>".format(self.framework_name)
+        return f"<einops backend for {self.framework_name}>"
 
     def einsum(self, pattern, *x):
         raise NotImplementedError("backend does not support einsum")

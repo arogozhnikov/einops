@@ -22,13 +22,13 @@ def reduce(tensor: Tensor, pattern: str, reduction: Reduction, **axes_lengths: i
             axes_lengths=hashable_axes_lengths,
         )
     except EinopsError as e:
-        message = ' Error while processing {}-reduction pattern "{}".'.format(reduction, pattern)
+        message = f' Error while processing {reduction}-reduction pattern "{pattern}".'
         if not isinstance(tensor, list):
-            message += "\n Input tensor shape: {}. ".format(tensor.shape)
+            message += f"\n Input tensor shape: {tensor.shape}. "
         else:
             message += "\n Input is list. "
-        message += "Additional info: {}.".format(axes_lengths)
-        raise EinopsError(message + "\n {}".format(e)) from None
+        message += f"Additional info: {axes_lengths}."
+        raise EinopsError(message + f"\n {e}") from None
 
 
 def repeat(tensor: Tensor, pattern: str, **axes_lengths) -> Tensor:

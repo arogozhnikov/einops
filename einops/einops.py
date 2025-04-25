@@ -302,31 +302,31 @@ def _prepare_transformation_recipe(
 
     # checking that axes are in agreement - new axes appear only in repeat, while disappear only in reduction
     if not left.has_ellipsis and rght.has_ellipsis:
-        raise EinopsError("Ellipsis found in right side, but not left side of a pattern {}".format(pattern))
+        raise EinopsError(f"Ellipsis found in right side, but not left side of a pattern {pattern}")
     if left.has_ellipsis and left.has_ellipsis_parenthesized:
-        raise EinopsError("Ellipsis inside parenthesis in the left side is not allowed: {}".format(pattern))
+        raise EinopsError(f"Ellipsis inside parenthesis in the left side is not allowed: {pattern}")
     if operation == "rearrange":
         if left.has_non_unitary_anonymous_axes or rght.has_non_unitary_anonymous_axes:
             raise EinopsError("Non-unitary anonymous axes are not supported in rearrange (exception is length 1)")
         difference = set.symmetric_difference(left.identifiers, rght.identifiers)
         if len(difference) > 0:
-            raise EinopsError("Identifiers only on one side of expression (should be on both): {}".format(difference))
+            raise EinopsError(f"Identifiers only on one side of expression (should be on both): {difference}")
     elif operation == "repeat":
         difference = set.difference(left.identifiers, rght.identifiers)
         if len(difference) > 0:
-            raise EinopsError("Unexpected identifiers on the left side of repeat: {}".format(difference))
+            raise EinopsError(f"Unexpected identifiers on the left side of repeat: {difference}")
         axes_without_size = set.difference(
             {ax for ax in rght.identifiers if not isinstance(ax, AnonymousAxis)},
             {*left.identifiers, *axes_names},
         )
         if len(axes_without_size) > 0:
-            raise EinopsError("Specify sizes for new axes in repeat: {}".format(axes_without_size))
+            raise EinopsError(f"Specify sizes for new axes in repeat: {axes_without_size}")
     elif operation in _reductions or callable(operation):
         difference = set.difference(rght.identifiers, left.identifiers)
         if len(difference) > 0:
-            raise EinopsError("Unexpected identifiers on the right side of reduce {}: {}".format(operation, difference))
+            raise EinopsError(f"Unexpected identifiers on the right side of reduce {operation}: {difference}")
     else:
-        raise EinopsError("Unknown reduction {}. Expect one of {}.".format(operation, _reductions))
+        raise EinopsError(f"Unknown reduction {operation}. Expect one of {_reductions}.")
 
     if left.has_ellipsis:
         n_other_dims = len(left.composition) - 1
@@ -394,7 +394,7 @@ def _prepare_transformation_recipe(
         if not ParsedExpression.check_axis_name(elementary_axis):
             raise EinopsError("Invalid name for an axis", elementary_axis)
         if elementary_axis not in axis_name2known_length:
-            raise EinopsError("Axis {} is not used in transform".format(elementary_axis))
+            raise EinopsError(f"Axis {elementary_axis} is not used in transform")
         axis_name2known_length[elementary_axis] = _expected_axis_length
 
     input_axes_known_unknown = []
@@ -403,7 +403,7 @@ def _prepare_transformation_recipe(
         known: Set[str] = {axis for axis in composite_axis if axis_name2known_length[axis] != _unknown_axis_length}
         unknown: Set[str] = {axis for axis in composite_axis if axis_name2known_length[axis] == _unknown_axis_length}
         if len(unknown) > 1:
-            raise EinopsError("Could not infer sizes for {}".format(unknown))
+            raise EinopsError(f"Could not infer sizes for {unknown}")
         assert len(unknown) + len(known) == len(composite_axis)
         input_axes_known_unknown.append(
             ([axis_name2position[axis] for axis in known], [axis_name2position[axis] for axis in unknown])
@@ -541,13 +541,13 @@ def reduce(tensor: Union[Tensor, List[Tensor]], pattern: str, reduction: Reducti
             backend, recipe, cast(Tensor, tensor), reduction_type=reduction, axes_lengths=hashable_axes_lengths
         )
     except EinopsError as e:
-        message = ' Error while processing {}-reduction pattern "{}".'.format(reduction, pattern)
+        message = f' Error while processing {reduction}-reduction pattern "{pattern}".'
         if not isinstance(tensor, list):
-            message += "\n Input tensor shape: {}. ".format(shape)
+            message += f"\n Input tensor shape: {shape}. "
         else:
             message += "\n Input is list. "
-        message += "Additional info: {}.".format(axes_lengths)
-        raise EinopsError(message + "\n {}".format(e)) from None
+        message += f"Additional info: {axes_lengths}."
+        raise EinopsError(message + f"\n {e}") from None
 
 
 @overload

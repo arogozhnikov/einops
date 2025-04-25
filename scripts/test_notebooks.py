@@ -50,9 +50,9 @@ def test_notebook_2_with_all_backends():
     [notebook] = Path(__file__).parent.with_name("docs").glob("2-*.ipynb")
 
     for backend in ["pytorch", "tensorflow"]:
-        print("Testing {} with backend {}".format(notebook, backend))
-        replacements = {r"flavour = \"pytorch\"": r"flavour = \"{}\"".format(backend)}
-        expected_string = "selected {} backend".format(backend)
+        print(f"Testing {notebook} with backend {backend}")
+        replacements = {r"flavour = \"pytorch\"": rf"flavour = \"{backend}\""}
+        expected_string = f"selected {backend} backend"
         result = render_notebook(notebook, replacements=replacements)
         assert expected_string in result
 

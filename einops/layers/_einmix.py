@@ -109,7 +109,7 @@ class _EinmixMixin:
 
         for axis in weight.identifiers:
             if axis not in axes_lengths:
-                raise EinopsError("Dimension {} of weight should be specified".format(axis))
+                raise EinopsError(f"Dimension {axis} of weight should be specified")
         _report_axes(
             set.difference(set(axes_lengths), {*left.identifiers, *weight.identifiers}),
             "Axes {} are not used in pattern",
@@ -180,10 +180,8 @@ class _EinmixMixin:
                     result.append("...")
             return "".join(result)
 
-        self.einsum_pattern: str = "{},{}->{}".format(
-            write_flat_remapped(left),
-            write_flat_remapped(weight),
-            write_flat_remapped(right),
+        self.einsum_pattern: str = (
+            f"{write_flat_remapped(left)},{write_flat_remapped(weight)}->{write_flat_remapped(right)}"
         )
 
     def _create_rearrange_layers(
@@ -205,8 +203,8 @@ class _EinmixMixin:
         if self.bias_shape is not None:
             params += f", '{self.bias_shape}'"
         for axis, length in self.axes_lengths.items():
-            params += ", {}={}".format(axis, length)
-        return "{}({})".format(self.__class__.__name__, params)
+            params += f", {axis}={length}"
+        return f"{self.__class__.__name__}({params})"
 
 
 class _EinmixDebugger(_EinmixMixin):

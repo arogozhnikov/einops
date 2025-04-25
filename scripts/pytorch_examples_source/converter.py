@@ -21,9 +21,9 @@ for cell in notebook["cells"]:
         source = cell["source"]
         if source.startswith("#left") or source.startswith("#right"):
             trimmed_source = source[source.index("\n") + 1 :]
-            cache += "<div>{}</div>".format(highlight(trimmed_source, PythonLexer(), HtmlFormatter()))
+            cache += f"<div>{highlight(trimmed_source, PythonLexer(), HtmlFormatter())}</div>"
         if source.startswith("#right"):
-            content += "<div class='leftright-wrapper'><div class='leftright-cells'>{}</div></div> ".format(cache)
+            content += f"<div class='leftright-wrapper'><div class='leftright-cells'>{cache}</div></div> "
             cache = ""
 
     elif cell["cell_type"] == "markdown":
