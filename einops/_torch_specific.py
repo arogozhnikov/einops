@@ -106,7 +106,9 @@ def allow_ops_in_compiled_graph():
     try:
         from torch._dynamo import allow_in_graph
     except ImportError:
-        warnings.warn("allow_ops_in_compiled_graph failed to import torch: ensure pytorch >=2.0", ImportWarning)
+        warnings.warn(
+            "allow_ops_in_compiled_graph failed to import torch: ensure pytorch >=2.0", ImportWarning, stacklevel=1
+        )
         return
 
     from .einops import rearrange, reduce, repeat, einsum

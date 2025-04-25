@@ -118,7 +118,7 @@ class _EinmixMixin:
             set.difference(weight.identifiers, {*left.identifiers, *right.identifiers}), "Weight axes {} are redundant"
         )
         if len(weight.identifiers) == 0:
-            warnings.warn("EinMix: weight has no dimensions (means multiplication by a number)")
+            warnings.warn("EinMix: weight has no dimensions (means multiplication by a number)", stacklevel=2)
 
         _weight_shape = [axes_lengths[axis] for (axis,) in weight.composition]
         # single output element is a combination of fan_in input elements
