@@ -9,6 +9,7 @@ import nbformat
 from pygments import highlight
 from pygments.formatters import HtmlFormatter
 from pygments.lexers import PythonLexer
+from pathlib import Path
 
 notebook = nbformat.read("Pytorch.ipynb", as_version=nbformat.NO_CONVERT)
 
@@ -98,5 +99,4 @@ result = f"""
 </html>
 """
 
-with open("../../docs/pytorch-examples.html", "w") as f:
-    f.write(result)
+Path("../../docs/pytorch-examples.html").write_text(result)
