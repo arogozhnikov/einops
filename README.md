@@ -314,8 +314,9 @@ Additionally, einops can be used with any framework that supports
 which includes
 
 - numpy >= 2.0
-- [MLX](https://github.com/ml-explore/mlx)
-- [pydata/sparse](https://github.com/pydata/sparse) >= 0.15
+- [MLX](https://github.com/ml-explore/mlx)  # yes, einops works with apple's framework
+- [pydata/sparse](https://github.com/pydata/sparse) >= 0.15 # and works with sparse tensors
+- [cubed](https://github.com/cubed-dev/cubed) # and with distributed tensors too
 - [quantco/ndonnx](https://github.com/Quantco/ndonnx)
 - recent releases of jax and cupy.
 - dask is supported via [array-api-compat](https://github.com/data-apis/array-api-compat)
