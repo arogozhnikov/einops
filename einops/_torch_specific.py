@@ -34,7 +34,7 @@ class TorchJitBackend:
         elif operation == "mean":
             return x.mean(dim=reduced_axes)
         elif operation == "prod":
-            for i in list(sorted(reduced_axes))[::-1]:
+            for i in sorted(reduced_axes)[::-1]:
                 x = x.prod(dim=i)
             return x
         else:

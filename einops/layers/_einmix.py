@@ -166,7 +166,7 @@ class _EinmixMixin:
         mapped_identifiers = {*left.identifiers, *right.identifiers, *weight.identifiers}
         if _ellipsis in mapped_identifiers:
             mapped_identifiers.remove(_ellipsis)
-        mapped_identifiers = list(sorted(mapped_identifiers))
+        mapped_identifiers = sorted(mapped_identifiers)
         mapping2letters = {k: letter for letter, k in zip(string.ascii_lowercase, mapped_identifiers)}
         mapping2letters[_ellipsis] = "..."  # preserve ellipsis
 
