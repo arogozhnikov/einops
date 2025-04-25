@@ -98,7 +98,8 @@ def test_rearrange_symbolic():
                 assert numpy.allclose(result_sum1, result_sum2)
 
 
-reduction_patterns = rearrangement_patterns + [
+reduction_patterns = [
+    *rearrangement_patterns,
     testcase("b c h w -> b ()", dict(b=10), (10, 20, 30, 40), [(10,), (10, 20, 30)]),
     testcase("b c (h1 h2) (w1 w2) -> b c h1 w1", dict(h1=15, h2=2, w2=2), (10, 20, 30, 40), [(10, 20, 31, 40)]),
     testcase("b ... c -> b", dict(b=10), (10, 20, 30, 40), [(10,), (11, 10)]),

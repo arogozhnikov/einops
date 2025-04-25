@@ -164,7 +164,7 @@ def tensor_train_example_numpy():
     Gs[-1] = Gs[-1][:, :, :, :1]
 
     # einsum way
-    y = x.reshape((1,) + x.shape)
+    y = x.reshape((1, *x.shape))
     for G in Gs:
         # taking partial results left-to-right
         # y = numpy.einsum('i j alpha beta, alpha i ...  -> beta ... j', G, y)

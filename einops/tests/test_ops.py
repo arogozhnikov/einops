@@ -299,7 +299,7 @@ def test_reduction_symbolic():
 def test_reduction_stress_imperatives():
     for backend in imp_op_backends:
         print("Stress-testing reduction for ", backend.framework_name)
-        for reduction in REDUCTIONS + ("rearrange",):
+        for reduction in [*REDUCTIONS, "rearrange"]:
             dtype = "int64"
             coincide = numpy.array_equal
             if reduction in ["mean", "prod"]:
