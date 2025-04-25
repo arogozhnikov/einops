@@ -179,25 +179,23 @@ _SYMBOLIC_BACKENDS = [backend for backend in _SYMBOLIC_BACKENDS if backend.frame
 
 @pytest.mark.parametrize("backend", _SYMBOLIC_BACKENDS)
 def test_parse_shape_symbolic(backend):
-    for shape in [
+    for input_shape in [
         [10, 20, 30, 40],
         [10, 20, None, None],
         [None, None, None, None],
     ]:
-        print(
-            f"special shape parsing {backend.framework_name=} {shape=}",
-        )
-        input_symbol = backend.create_symbol(shape)
+        print(f"special shape parsing {backend.framework_name=} {input_shape=}")
+        input_symbol = backend.create_symbol(input_shape)
 
         shape_placeholder = parse_shape(input_symbol, "a b c d")
-        shape = {}
+        out_shape = {}
         for name, symbol in shape_placeholder.items():
-            shape[name] = (
+            out_shape[name] = (
                 symbol
                 if isinstance(symbol, int)
                 else backend.eval_symbol(symbol, [(input_symbol, numpy.zeros([10, 20, 30, 40]))])
-            )
-        print(shape)
+            )  # out shape element is either int, or symbol that we are able to eval
+        print(out_shape)
         result_placeholder = rearrange(
             input_symbol, "a b (c1 c2) (d1 d2) -> (a b d1) c1 (c2 d2)", **parse_shape(input_symbol, "a b c1 _"), d2=2
         )
