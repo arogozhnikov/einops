@@ -3,7 +3,7 @@ import itertools
 import string
 import typing
 from collections import OrderedDict
-from typing import Set, Tuple, List, Dict, Union, Callable, Optional, TypeVar, cast, Any
+from typing import Set, Tuple, List, Dict, Union, Callable, Optional, TypeVar, cast, Any, overload
 
 if typing.TYPE_CHECKING:
     # for docstrings in pycharm
@@ -273,7 +273,7 @@ def _apply_recipe_array_api(
             tensor = getattr(xp, reduction_type)(tensor, axis=tuple(reduced_axes))
     if len(added_axes) > 0:
         # we use broadcasting
-        for axis_position, axis_length in added_axes.items():
+        for axis_position, _axis_length in added_axes.items():
             tensor = xp.expand_dims(tensor, axis=axis_position)
 
         final_shape = list(tensor.shape)
@@ -457,6 +457,14 @@ def _prepare_recipes_for_all_dims(
     return {ndim: _prepare_transformation_recipe(pattern, operation, axes_names, ndim=ndim) for ndim in dims}
 
 
+@overload
+def reduce(tensor: List[Tensor], pattern: str, reduction: Reduction, **axes_lengths: Size) -> Tensor: ...
+
+
+@overload
+def reduce(tensor: Tensor, pattern: str, reduction: Reduction, **axes_lengths: Size) -> Tensor: ...
+
+
 def reduce(tensor: Union[Tensor, List[Tensor]], pattern: str, reduction: Reduction, **axes_lengths: Size) -> Tensor:
     """
     einops.reduce combines rearrangement and reduction using reader-friendly notation.
@@ -539,7 +547,15 @@ def reduce(tensor: Union[Tensor, List[Tensor]], pattern: str, reduction: Reducti
         else:
             message += "\n Input is list. "
         message += "Additional info: {}.".format(axes_lengths)
-        raise EinopsError(message + "\n {}".format(e))
+        raise EinopsError(message + "\n {}".format(e)) from None
+
+
+@overload
+def rearrange(tensor: List[Tensor], pattern: str, **axes_lengths: Size) -> Tensor: ...
+
+
+@overload
+def rearrange(tensor: Tensor, pattern: str, **axes_lengths: Size) -> Tensor: ...
 
 
 def rearrange(tensor: Union[Tensor, List[Tensor]], pattern: str, **axes_lengths: Size) -> Tensor:
@@ -600,6 +616,14 @@ def rearrange(tensor: Union[Tensor, List[Tensor]], pattern: str, **axes_lengths:
     return reduce(tensor, pattern, reduction="rearrange", **axes_lengths)
 
 
+@overload
+def repeat(tensor: List[Tensor], pattern: str, **axes_lengths: Size) -> Tensor: ...
+
+
+@overload
+def repeat(tensor: Tensor, pattern: str, **axes_lengths: Size) -> Tensor: ...
+
+
 def repeat(tensor: Union[Tensor, List[Tensor]], pattern: str, **axes_lengths: Size) -> Tensor:
     """
     einops.repeat allows reordering elements and repeating them in arbitrary combinations.
@@ -623,11 +647,11 @@ def repeat(tensor: Union[Tensor, List[Tensor]], pattern: str, **axes_lengths: Si
     >>> repeat(image, 'h w -> (h2 h) (w3 w)', h2=2, w3=3).shape
     (60, 120)
 
-    # convert each pixel to a small square 2x2. Upsample image by 2x
+    # convert each pixel to a small square 2x2, i.e. upsample an image by 2x
     >>> repeat(image, 'h w -> (h h2) (w w2)', h2=2, w2=2).shape
     (60, 80)
 
-    # pixelate image first by downsampling by 2x, then upsampling
+    # 'pixelate' an image first by downsampling by 2x, then upsampling
     >>> downsampled = reduce(image, '(h h2) (w w2) -> h w', 'mean', h2=2, w2=2)
     >>> repeat(downsampled, 'h w -> (h h2) (w w2)', h2=2, w2=2).shape
     (30, 40)
