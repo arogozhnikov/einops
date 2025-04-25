@@ -2,7 +2,8 @@ from typing import Dict, Optional, cast
 
 import torch
 
-from .._torch_specific import apply_for_scriptable_torch
+from einops._torch_specific import apply_for_scriptable_torch
+
 from . import RearrangeMixin, ReduceMixin
 from ._einmix import _EinmixMixin
 

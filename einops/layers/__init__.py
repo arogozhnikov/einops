@@ -2,8 +2,8 @@ __author__ = "Alex Rogozhnikov"
 
 from typing import Any, Dict
 
-from .. import EinopsError
-from ..einops import TransformRecipe, _apply_recipe, _prepare_recipes_for_all_dims, get_backend
+from einops import EinopsError
+from einops.einops import TransformRecipe, _apply_recipe, _prepare_recipes_for_all_dims, get_backend
 
 
 class RearrangeMixin:

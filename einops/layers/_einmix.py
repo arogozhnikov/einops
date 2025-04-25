@@ -3,9 +3,8 @@ import warnings
 from typing import Any, Dict, List, Optional
 
 from einops import EinopsError
+from einops.einops import _product
 from einops.parsing import ParsedExpression, _ellipsis
-
-from ..einops import _product
 
 
 def _report_axes(axes: set, report_message: str):
