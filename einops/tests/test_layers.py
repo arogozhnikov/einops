@@ -69,7 +69,7 @@ def test_rearrange_symbolic():
     for backend in collect_test_backends(symbolic=True, layers=True):
         print("Test layer for ", backend.framework_name)
 
-        for pattern, axes_lengths, input_shape, wrong_shapes in rearrangement_patterns:
+        for pattern, axes_lengths, input_shape, _wrong_shapes in rearrangement_patterns:
             x = numpy.arange(numpy.prod(input_shape), dtype="float32").reshape(input_shape)
             result_numpy = rearrange(x, pattern, **axes_lengths)
             layer = backend.layers().Rearrange(pattern, **axes_lengths)
@@ -150,7 +150,7 @@ def test_reduce_symbolic():
     for backend in collect_test_backends(symbolic=True, layers=True):
         print("Test layer for ", backend.framework_name)
         for reduction in REDUCTIONS:
-            for pattern, axes_lengths, input_shape, wrong_shapes in reduction_patterns:
+            for pattern, axes_lengths, input_shape, _wrong_shapes in reduction_patterns:
                 x = numpy.arange(1, 1 + numpy.prod(input_shape), dtype="float32").reshape(input_shape)
                 x /= x.mean()
                 result_numpy = reduce(x, pattern, reduction, **axes_lengths)
