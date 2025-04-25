@@ -26,7 +26,7 @@ def test_backends_installed():
     """
     from . import parse_backends_to_test
 
-    backends_to_test = parse_backends_to_test()
+    backends_to_test = set(parse_backends_to_test())
     errors = []
     for backend_type in AbstractBackend.__subclasses__():
         if backend_type.framework_name not in backends_to_test:
@@ -34,9 +34,11 @@ def test_backends_installed():
         try:
             # instantiate
             backend_type()
+            backends_to_test.remove(backend_type.framework_name)
         except Exception as e:
             errors.append((backend_type.framework_name, e))
     assert len(errors) == 0, errors
+    assert len(backends_to_test) == 0, f"did not instantiate {backends_to_test=}, they won't be tested"
 
 
 def test_optimize_transformations_numpy():
@@ -47,7 +49,7 @@ def test_optimize_transformations_numpy():
     shapes += [[2, 3, 5, 7, 11, 17]]
 
     for shape in shapes:
-        for attempt in range(5):
+        for _attempt in range(5):
             n_dimensions = len(shape)
             x = numpy.random.randint(0, 2**12, size=shape).reshape([-1])
             init_shape = shape[:]
