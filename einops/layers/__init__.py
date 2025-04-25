@@ -37,7 +37,7 @@ class RearrangeMixin:
                 self.pattern, operation="rearrange", axes_names=tuple(self.axes_lengths)
             )
         except EinopsError as e:
-            raise EinopsError(" Error while preparing {!r}\n {}".format(self, e))
+            raise EinopsError(" Error while preparing {!r}\n {}".format(self, e)) from None
 
     def _apply_recipe(self, x):
         backend = get_backend(x)
@@ -87,7 +87,7 @@ class ReduceMixin:
                 self.pattern, operation=self.reduction, axes_names=tuple(self.axes_lengths)
             )
         except EinopsError as e:
-            raise EinopsError(" Error while preparing {!r}\n {}".format(self, e))
+            raise EinopsError(" Error while preparing {!r}\n {}".format(self, e)) from None
 
     def _apply_recipe(self, x):
         backend = get_backend(x)
