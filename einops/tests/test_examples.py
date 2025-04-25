@@ -197,14 +197,14 @@ def test_pytorch_yolo_fragment():
 
     import torch
 
-    def old_way(input, num_classes, num_anchors, anchors, stride_h, stride_w):
+    def old_way(tensor, num_classes, num_anchors, anchors, stride_h, stride_w):
         # https://github.com/BobLiu20/YOLOv3_PyTorch/blob/c6b483743598b5f64d520d81e7e5f47ba936d4c9/nets/yolo_loss.py#L28-L44
-        bs = input.size(0)
-        in_h = input.size(2)
-        in_w = input.size(3)
+        bs = tensor.size(0)
+        in_h = tensor.size(2)
+        in_w = tensor.size(3)
         scaled_anchors = [(a_w / stride_w, a_h / stride_h) for a_w, a_h in anchors]
 
-        prediction = input.view(bs, num_anchors, 5 + num_classes, in_h, in_w).permute(0, 1, 3, 4, 2).contiguous()
+        prediction = tensor.view(bs, num_anchors, 5 + num_classes, in_h, in_w).permute(0, 1, 3, 4, 2).contiguous()
         # Get outputs
         x = torch.sigmoid(prediction[..., 0])  # Center x
         y = torch.sigmoid(prediction[..., 1])  # Center y
@@ -250,15 +250,15 @@ def test_pytorch_yolo_fragment():
         )
         return output
 
-    def new_way(input, num_classes, num_anchors, anchors, stride_h, stride_w):
-        raw_predictions = rearrange(input, " b (anchor prediction) h w -> prediction b anchor h w", anchor=num_anchors)
+    def new_way(tensor, num_classes, num_anchors, anchors, stride_h, stride_w):
+        raw_predictions = rearrange(tensor, " b (anchor prediction) h w -> prediction b anchor h w", anchor=num_anchors)
 
-        anchors = torch.FloatTensor(anchors).to(input.device)
+        anchors = torch.FloatTensor(anchors).to(tensor.device)
         anchor_sizes = rearrange(anchors, "anchor dim -> dim () anchor () ()")
 
         _, _, _, in_h, in_w = raw_predictions.shape
-        grid_h = rearrange(torch.arange(in_h).float(), "h -> () () h ()").to(input.device)
-        grid_w = rearrange(torch.arange(in_w).float(), "w -> () () () w").to(input.device)
+        grid_h = rearrange(torch.arange(in_h).float(), "h -> () () h ()").to(tensor.device)
+        grid_w = rearrange(torch.arange(in_w).float(), "w -> () () () w").to(tensor.device)
 
         predicted_bboxes = torch.zeros_like(raw_predictions)
         predicted_bboxes[0] = (raw_predictions[0].sigmoid() + grid_h) * stride_h  # center y
@@ -276,9 +276,9 @@ def test_pytorch_yolo_fragment():
     anchors = [[50, 100], [100, 50], [75, 75]]
     num_anchors = len(anchors)
 
-    input = torch.randn([batch_size, num_anchors * (5 + num_classes), 1, 1])
+    x = torch.randn([batch_size, num_anchors * (5 + num_classes), 1, 1])
     result1 = old_way(
-        input=input,
+        tensor=x,
         num_anchors=num_anchors,
         num_classes=num_classes,
         stride_h=stride_h,
@@ -286,7 +286,7 @@ def test_pytorch_yolo_fragment():
         anchors=anchors,
     )
     result2 = new_way(
-        input=input,
+        tensor=x,
         num_anchors=num_anchors,
         num_classes=num_classes,
         stride_h=stride_h,
