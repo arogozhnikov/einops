@@ -6,7 +6,7 @@ from typing import List, Optional, Set, Tuple, Union
 _ellipsis: str = "…"  # NB, this is a single unicode symbol. String is used as it is not a list, but can be iterated
 
 
-class AnonymousAxis(object):
+class AnonymousAxis:
     """Important thing: all instances of this class are not equal to each other"""
 
     def __init__(self, value: str):
@@ -18,7 +18,7 @@ class AnonymousAxis(object):
                 raise EinopsError("Anonymous axis should have positive length, not {}".format(self.value))
 
     def __repr__(self):
-        return "{}-axis".format(str(self.value))
+        return f"{str(self.value)}-axis"
 
 
 class ParsedExpression:
@@ -134,11 +134,16 @@ class ParsedExpression:
             return False, "axis name should should not start or end with underscore"
         else:
             if keyword.iskeyword(name):
-                warnings.warn("It is discouraged to use axes names that are keywords: {}".format(name), RuntimeWarning)
+                warnings.warn(
+                    "It is discouraged to use axes names that are keywords: {}".format(name),
+                    RuntimeWarning,
+                    stacklevel=2,
+                )
             if name in ["axis"]:
                 warnings.warn(
-                    "It is discouraged to use 'axis' as an axis name " "and will raise an error in future",
+                    "It is discouraged to use 'axis' as an axis name and will raise an error in future",
                     FutureWarning,
+                    stacklevel=2,
                 )
             return True, ""
 
