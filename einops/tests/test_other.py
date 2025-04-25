@@ -29,7 +29,15 @@ def test_backends_installed():
 
     backends_to_test = set(parse_backends_to_test())
     errors = []
-    for backend_type in AbstractBackend.__subclasses__():
+    # Find backend subclasses recursively
+    backend_subclasses = []
+    backends = AbstractBackend.__subclasses__()
+    while backends:
+        backend = backends.pop()
+        backends += backend.__subclasses__()
+        backend_subclasses.append(backend)
+
+    for backend_type in backend_subclasses:
         if backend_type.framework_name not in backends_to_test:
             continue
         try:
