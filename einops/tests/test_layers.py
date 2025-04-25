@@ -1,7 +1,7 @@
 import pickle
 from collections import namedtuple
 
-import numpy
+import numpy as np
 import pytest
 
 from einops import EinopsError, rearrange, reduce
@@ -39,12 +39,12 @@ def test_rearrange_imperative():
         print("Test layer for ", backend.framework_name)
 
         for pattern, axes_lengths, input_shape, wrong_shapes in rearrangement_patterns:
-            x = numpy.arange(numpy.prod(input_shape), dtype="float32").reshape(input_shape)
+            x = np.arange(np.prod(input_shape), dtype="float32").reshape(input_shape)
             result_numpy = rearrange(x, pattern, **axes_lengths)
             layer = backend.layers().Rearrange(pattern, **axes_lengths)
             for shape in wrong_shapes:
                 try:
-                    layer(backend.from_numpy(numpy.zeros(shape, dtype="float32")))
+                    layer(backend.from_numpy(np.zeros(shape, dtype="float32")))
                 except BaseException:
                     pass
                 else:
@@ -54,8 +54,8 @@ def test_rearrange_imperative():
             layer2 = pickle.loads(pickle.dumps(layer))
             result1 = backend.to_numpy(layer(backend.from_numpy(x)))
             result2 = backend.to_numpy(layer2(backend.from_numpy(x)))
-            assert numpy.allclose(result_numpy, result1)
-            assert numpy.allclose(result1, result2)
+            assert np.allclose(result_numpy, result1)
+            assert np.allclose(result1, result2)
 
             just_sum = backend.layers().Reduce("...->", reduction="sum")
 
@@ -63,7 +63,7 @@ def test_rearrange_imperative():
             result = just_sum(layer(variable))
 
             result.backward()
-            assert numpy.allclose(backend.to_numpy(variable.grad), 1)
+            assert np.allclose(backend.to_numpy(variable.grad), 1)
 
 
 def test_rearrange_symbolic():
@@ -71,7 +71,7 @@ def test_rearrange_symbolic():
         print("Test layer for ", backend.framework_name)
 
         for pattern, axes_lengths, input_shape, _wrong_shapes in rearrangement_patterns:
-            x = numpy.arange(numpy.prod(input_shape), dtype="float32").reshape(input_shape)
+            x = np.arange(np.prod(input_shape), dtype="float32").reshape(input_shape)
             result_numpy = rearrange(x, pattern, **axes_lengths)
             layer = backend.layers().Rearrange(pattern, **axes_lengths)
             input_shape_of_nones = [None] * len(input_shape)
@@ -83,20 +83,20 @@ def test_rearrange_symbolic():
 
                 result_symbol1 = layer(symbol)
                 result1 = backend.eval_symbol(result_symbol1, eval_inputs)
-                assert numpy.allclose(result_numpy, result1)
+                assert np.allclose(result_numpy, result1)
 
                 layer2 = pickle.loads(pickle.dumps(layer))
                 result_symbol2 = layer2(symbol)
                 result2 = backend.eval_symbol(result_symbol2, eval_inputs)
-                assert numpy.allclose(result1, result2)
+                assert np.allclose(result1, result2)
 
                 # now testing back-propagation
                 just_sum = backend.layers().Reduce("...->", reduction="sum")
 
                 result_sum1 = backend.eval_symbol(just_sum(result_symbol1), eval_inputs)
-                result_sum2 = numpy.sum(x)
+                result_sum2 = np.sum(x)
 
-                assert numpy.allclose(result_sum1, result_sum2)
+                assert np.allclose(result_sum1, result_sum2)
 
 
 reduction_patterns = [
@@ -113,13 +113,13 @@ def test_reduce_imperative():
         for reduction in REDUCTIONS:
             for pattern, axes_lengths, input_shape, wrong_shapes in reduction_patterns:
                 print(backend, reduction, pattern, axes_lengths, input_shape, wrong_shapes)
-                x = numpy.arange(1, 1 + numpy.prod(input_shape), dtype="float32").reshape(input_shape)
+                x = np.arange(1, 1 + np.prod(input_shape), dtype="float32").reshape(input_shape)
                 x /= x.mean()
                 result_numpy = reduce(x, pattern, reduction, **axes_lengths)
                 layer = backend.layers().Reduce(pattern, reduction, **axes_lengths)
                 for shape in wrong_shapes:
                     try:
-                        layer(backend.from_numpy(numpy.zeros(shape, dtype="float32")))
+                        layer(backend.from_numpy(np.zeros(shape, dtype="float32")))
                     except BaseException:
                         pass
                     else:
@@ -129,8 +129,8 @@ def test_reduce_imperative():
                 layer2 = pickle.loads(pickle.dumps(layer))
                 result1 = backend.to_numpy(layer(backend.from_numpy(x)))
                 result2 = backend.to_numpy(layer2(backend.from_numpy(x)))
-                assert numpy.allclose(result_numpy, result1)
-                assert numpy.allclose(result1, result2)
+                assert np.allclose(result_numpy, result1)
+                assert np.allclose(result1, result2)
 
                 just_sum = backend.layers().Reduce("...->", reduction="sum")
 
@@ -140,12 +140,12 @@ def test_reduce_imperative():
                 result.backward()
                 grad = backend.to_numpy(variable.grad)
                 if reduction == "sum":
-                    assert numpy.allclose(grad, 1)
+                    assert np.allclose(grad, 1)
                 if reduction == "mean":
-                    assert numpy.allclose(grad, grad.min())
+                    assert np.allclose(grad, grad.min())
                 if reduction in ["max", "min"]:
-                    assert numpy.all(numpy.isin(grad, [0, 1]))
-                    assert numpy.sum(grad) > 0.5
+                    assert np.all(np.isin(grad, [0, 1]))
+                    assert np.sum(grad) > 0.5
 
 
 def test_reduce_symbolic():
@@ -153,7 +153,7 @@ def test_reduce_symbolic():
         print("Test layer for ", backend.framework_name)
         for reduction in REDUCTIONS:
             for pattern, axes_lengths, input_shape, _wrong_shapes in reduction_patterns:
-                x = numpy.arange(1, 1 + numpy.prod(input_shape), dtype="float32").reshape(input_shape)
+                x = np.arange(1, 1 + np.prod(input_shape), dtype="float32").reshape(input_shape)
                 x /= x.mean()
                 result_numpy = reduce(x, pattern, reduction, **axes_lengths)
                 layer = backend.layers().Reduce(pattern, reduction, **axes_lengths)
@@ -166,12 +166,12 @@ def test_reduce_symbolic():
 
                     result_symbol1 = layer(symbol)
                     result1 = backend.eval_symbol(result_symbol1, eval_inputs)
-                    assert numpy.allclose(result_numpy, result1)
+                    assert np.allclose(result_numpy, result1)
 
                     layer2 = pickle.loads(pickle.dumps(layer))
                     result_symbol2 = layer2(symbol)
                     result2 = backend.eval_symbol(result_symbol2, eval_inputs)
-                    assert numpy.allclose(result1, result2)
+                    assert np.allclose(result1, result2)
 
 
 def create_torch_model(use_reduce=False, add_scripted_layer=False):
@@ -278,9 +278,9 @@ def test_keras_layer():
         model1 = create_keras_model()
         model2 = create_keras_model()
 
-        input = numpy.random.normal(size=[10, 32, 32, 3]).astype("float32")
+        input = np.random.normal(size=[10, 32, 32, 3]).astype("float32")
         # two randomly init models should provide different outputs
-        assert not numpy.allclose(model1.predict_on_batch(input), model2.predict_on_batch(input))
+        assert not np.allclose(model1.predict_on_batch(input), model2.predict_on_batch(input))
 
         # get some temp filename
         tmp_model_filename = "/tmp/einops_tf_model.h5"
@@ -289,7 +289,7 @@ def test_keras_layer():
         tf.keras.models.save_model(model1, tmp_model_filename)
         model3 = tf.keras.models.load_model(tmp_model_filename, custom_objects=keras_custom_objects)
 
-        numpy.testing.assert_allclose(model1.predict_on_batch(input), model3.predict_on_batch(input))
+        np.testing.assert_allclose(model1.predict_on_batch(input), model3.predict_on_batch(input))
 
         weight_filename = "/tmp/einops_tf_model.weights.h5"
         # save arch as json
@@ -298,10 +298,10 @@ def test_keras_layer():
         model4.load_weights(weight_filename)
         model2.load_weights(weight_filename)
         # check that differently-inialized model receives same weights
-        numpy.testing.assert_allclose(model1.predict_on_batch(input), model2.predict_on_batch(input))
+        np.testing.assert_allclose(model1.predict_on_batch(input), model2.predict_on_batch(input))
         # ulimate test
         # save-load architecture, and then load weights - should return same result
-        numpy.testing.assert_allclose(model1.predict_on_batch(input), model4.predict_on_batch(input))
+        np.testing.assert_allclose(model1.predict_on_batch(input), model4.predict_on_batch(input))
 
 
 def test_flax_layers():

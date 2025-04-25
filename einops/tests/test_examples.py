@@ -1,4 +1,4 @@
-import numpy
+import numpy as np
 import pytest
 
 from einops import parse_shape, rearrange, reduce
@@ -135,31 +135,31 @@ def test_rearrange_examples():
     for backend in imp_op_backends:
         print("testing source_examples for ", backend.framework_name)
         for test in tests:
-            x = numpy.arange(10 * 20 * 30 * 40).reshape([10, 20, 30, 40])
+            x = np.arange(10 * 20 * 30 * 40).reshape([10, 20, 30, 40])
             result1 = test(x)
             result2 = backend.to_numpy(test(backend.from_numpy(x)))
-            assert numpy.array_equal(result1, result2)
+            assert np.array_equal(result1, result2)
 
             # now with strides
-            x = numpy.arange(10 * 2 * 20 * 3 * 30 * 1 * 40).reshape([10 * 2, 20 * 3, 30 * 1, 40 * 1])
+            x = np.arange(10 * 2 * 20 * 3 * 30 * 1 * 40).reshape([10 * 2, 20 * 3, 30 * 1, 40 * 1])
             # known torch bug - torch doesn't support negative steps
             last_step = -1 if (backend.framework_name != "torch" and backend.framework_name != "oneflow") else 1
-            indexing_expression = numpy.index_exp[::2, ::3, ::1, ::last_step]
+            indexing_expression = np.index_exp[::2, ::3, ::1, ::last_step]
             result1 = test(x[indexing_expression])
             result2 = backend.to_numpy(test(backend.from_numpy(x)[indexing_expression]))
-            assert numpy.array_equal(result1, result2)
+            assert np.array_equal(result1, result2)
 
 
 def tensor_train_example_numpy():
     # kept here just for a collection, only tested for numpy
     # https://arxiv.org/pdf/1509.06569.pdf, (5)
-    x = numpy.ones([3, 4, 5, 6])
+    x = np.ones([3, 4, 5, 6])
     rank = 4
-    if numpy.__version__ < "1.15.0":
+    if np.__version__ < "1.15.0":
         # numpy.einsum fails here, skip test
         return
     # creating appropriate Gs
-    Gs = [numpy.ones([d, d, rank, rank]) for d in x.shape]
+    Gs = [np.ones([d, d, rank, rank]) for d in x.shape]
     Gs[0] = Gs[0][:, :, :1, :]
     Gs[-1] = Gs[-1][:, :, :, :1]
 
@@ -168,7 +168,7 @@ def tensor_train_example_numpy():
     for G in Gs:
         # taking partial results left-to-right
         # y = numpy.einsum('i j alpha beta, alpha i ...  -> beta ... j', G, y)
-        y = numpy.einsum("i j a b, a i ...  -> b ... j", G, y)
+        y = np.einsum("i j a b, a i ...  -> b ... j", G, y)
     y1 = y.reshape(-1)
 
     # alternative way
@@ -179,7 +179,7 @@ def tensor_train_example_numpy():
         y = y @ rearrange(G, "i j alpha beta -> (alpha i) (j beta)")
         y = rearrange(y, "rest (beta j) -> (beta rest j)", beta=beta, j=j)
     y2 = y
-    assert numpy.allclose(y1, y2)
+    assert np.allclose(y1, y2)
 
     # yet another way
     y = x
@@ -188,7 +188,7 @@ def tensor_train_example_numpy():
         y = rearrange(y, "i ... (j alpha) -> ... j (alpha i)", alpha=alpha, i=i)
         y = y @ rearrange(G, "i j alpha beta -> (alpha i) (j beta)")
     y3 = y.reshape(-1)
-    assert numpy.allclose(y1, y3)
+    assert np.allclose(y1, y3)
 
 
 def test_pytorch_yolo_fragment():
