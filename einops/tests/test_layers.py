@@ -341,8 +341,12 @@ def test_flax_layers():
         value0 = eval_at_point(params)
         value1, grad1 = vandg(params)
         assert jnp.allclose(value0, value1)
+        if jax.__version__ < "0.6.0":
+            tree_map = jax.tree_map
+        else:
+            tree_map = jax.tree.map
 
-        params2 = jax.tree_map(lambda x1, x2: x1 - x2 * 0.001, params, grad1)
+        params2 = tree_map(lambda x1, x2: x1 - x2 * 0.001, params, grad1)
 
         value2 = eval_at_point(params2)
         assert value0 >= value2, (value0, value2)
