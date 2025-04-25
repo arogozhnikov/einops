@@ -471,5 +471,5 @@ def test_einmix_restrictions():
         _EinmixDebugger(
             "(...) a -> a ...",
             weight_shape="a", a=1, # ellipsis on the right side after bias axis
-            bias_shape='a',
+            bias_shape="a",
         )  # fmt: off
