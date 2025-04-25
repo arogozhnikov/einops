@@ -29,7 +29,7 @@ def get_backend(tensor) -> "AbstractBackend":
     if _result is not None:
         return _result
 
-    for framework_name, backend in list(_loaded_backends.items()):
+    for _framework_name, backend in list(_loaded_backends.items()):
         if backend.is_appropriate_type(tensor):
             _type2backend[_type] = backend
             return backend
@@ -56,7 +56,7 @@ def get_backend(tensor) -> "AbstractBackend":
                     _type2backend[_type] = backend
                     return backend
 
-    raise RuntimeError("Tensor type unknown to einops {}".format(type(tensor)))
+    raise RuntimeError(f"Tensor type unknown to einops {type(tensor)}")
 
 
 class AbstractBackend:
@@ -129,7 +129,7 @@ class AbstractBackend:
         raise NotImplementedError("backend does not provide layers")
 
     def __repr__(self):
-        return "<einops backend for {}>".format(self.framework_name)
+        return f"<einops backend for {self.framework_name}>"
 
     def einsum(self, pattern, *x):
         raise NotImplementedError("backend does not support einsum")
@@ -197,7 +197,7 @@ class JaxBackend(NumpyBackend):
     framework_name = "jax"
 
     def __init__(self):
-        super(JaxBackend, self).__init__()
+        super().__init__()
         self.onp = self.np
 
         import jax.numpy
@@ -248,7 +248,7 @@ class TorchBackend(AbstractBackend):
             return x.mean(dim=reduced_axes)
         elif operation in ("any", "all", "prod"):
             # pytorch supports reducing only one operation at a time
-            for i in list(sorted(reduced_axes))[::-1]:
+            for i in sorted(reduced_axes)[::-1]:
                 x = getattr(x, operation)(dim=i)
             return x
         else:
@@ -334,8 +334,7 @@ class HashableTuple:
         self.elements = elements
 
     def __iter__(self):
-        for x in self.elements:
-            yield x
+        yield from self.elements
 
     def __len__(self):
         return len(self.elements)

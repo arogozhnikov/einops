@@ -1,5 +1,6 @@
-from typing import List, Tuple, Sequence
-from .einops import Tensor, Reduction, EinopsError, _prepare_transformation_recipe, _apply_recipe_array_api
+from typing import List, Sequence, Tuple
+
+from .einops import EinopsError, Reduction, Tensor, _apply_recipe_array_api, _prepare_transformation_recipe
 from .packing import analyze_pattern, prod
 
 
@@ -22,13 +23,13 @@ def reduce(tensor: Tensor, pattern: str, reduction: Reduction, **axes_lengths: i
             axes_lengths=hashable_axes_lengths,
         )
     except EinopsError as e:
-        message = ' Error while processing {}-reduction pattern "{}".'.format(reduction, pattern)
+        message = f' Error while processing {reduction}-reduction pattern "{pattern}".'
         if not isinstance(tensor, list):
-            message += "\n Input tensor shape: {}. ".format(tensor.shape)
+            message += f"\n Input tensor shape: {tensor.shape}. "
         else:
             message += "\n Input is list. "
-        message += "Additional info: {}.".format(axes_lengths)
-        raise EinopsError(message + "\n {}".format(e))
+        message += f"Additional info: {axes_lengths}."
+        raise EinopsError(message + f"\n {e}") from None
 
 
 def repeat(tensor: Tensor, pattern: str, **axes_lengths) -> Tensor:
@@ -116,9 +117,9 @@ def unpack(tensor: Tensor, packed_shapes: List[Shape], pattern: str) -> List[Ten
             )
             for i, element_shape in enumerate(packed_shapes)
         ]
-    except Exception:
+    except Exception as e:
         # this hits if there is an error during reshapes, which means passed shapes were incorrect
         raise RuntimeError(
             f'Error during unpack(..., "{pattern}"): could not split axis of size {split_positions[-1]}'
             f" into requested {packed_shapes}"
-        )
+        ) from e

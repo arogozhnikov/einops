@@ -1,11 +1,12 @@
 import pickle
 from collections import namedtuple
 
-import numpy
+import numpy as np
 import pytest
 
-from einops import rearrange, reduce, EinopsError
-from einops.tests import collect_test_backends, is_backend_tested, FLOAT_REDUCTIONS as REDUCTIONS
+from einops import EinopsError, rearrange, reduce
+from einops.tests import FLOAT_REDUCTIONS as REDUCTIONS
+from einops.tests import collect_test_backends, is_backend_tested
 
 __author__ = "Alex Rogozhnikov"
 
@@ -38,12 +39,12 @@ def test_rearrange_imperative():
         print("Test layer for ", backend.framework_name)
 
         for pattern, axes_lengths, input_shape, wrong_shapes in rearrangement_patterns:
-            x = numpy.arange(numpy.prod(input_shape), dtype="float32").reshape(input_shape)
+            x = np.arange(np.prod(input_shape), dtype="float32").reshape(input_shape)
             result_numpy = rearrange(x, pattern, **axes_lengths)
             layer = backend.layers().Rearrange(pattern, **axes_lengths)
             for shape in wrong_shapes:
                 try:
-                    layer(backend.from_numpy(numpy.zeros(shape, dtype="float32")))
+                    layer(backend.from_numpy(np.zeros(shape, dtype="float32")))
                 except BaseException:
                     pass
                 else:
@@ -53,8 +54,8 @@ def test_rearrange_imperative():
             layer2 = pickle.loads(pickle.dumps(layer))
             result1 = backend.to_numpy(layer(backend.from_numpy(x)))
             result2 = backend.to_numpy(layer2(backend.from_numpy(x)))
-            assert numpy.allclose(result_numpy, result1)
-            assert numpy.allclose(result1, result2)
+            assert np.allclose(result_numpy, result1)
+            assert np.allclose(result1, result2)
 
             just_sum = backend.layers().Reduce("...->", reduction="sum")
 
@@ -62,15 +63,15 @@ def test_rearrange_imperative():
             result = just_sum(layer(variable))
 
             result.backward()
-            assert numpy.allclose(backend.to_numpy(variable.grad), 1)
+            assert np.allclose(backend.to_numpy(variable.grad), 1)
 
 
 def test_rearrange_symbolic():
     for backend in collect_test_backends(symbolic=True, layers=True):
         print("Test layer for ", backend.framework_name)
 
-        for pattern, axes_lengths, input_shape, wrong_shapes in rearrangement_patterns:
-            x = numpy.arange(numpy.prod(input_shape), dtype="float32").reshape(input_shape)
+        for pattern, axes_lengths, input_shape, _wrong_shapes in rearrangement_patterns:
+            x = np.arange(np.prod(input_shape), dtype="float32").reshape(input_shape)
             result_numpy = rearrange(x, pattern, **axes_lengths)
             layer = backend.layers().Rearrange(pattern, **axes_lengths)
             input_shape_of_nones = [None] * len(input_shape)
@@ -82,23 +83,24 @@ def test_rearrange_symbolic():
 
                 result_symbol1 = layer(symbol)
                 result1 = backend.eval_symbol(result_symbol1, eval_inputs)
-                assert numpy.allclose(result_numpy, result1)
+                assert np.allclose(result_numpy, result1)
 
                 layer2 = pickle.loads(pickle.dumps(layer))
                 result_symbol2 = layer2(symbol)
                 result2 = backend.eval_symbol(result_symbol2, eval_inputs)
-                assert numpy.allclose(result1, result2)
+                assert np.allclose(result1, result2)
 
                 # now testing back-propagation
                 just_sum = backend.layers().Reduce("...->", reduction="sum")
 
                 result_sum1 = backend.eval_symbol(just_sum(result_symbol1), eval_inputs)
-                result_sum2 = numpy.sum(x)
+                result_sum2 = np.sum(x)
 
-                assert numpy.allclose(result_sum1, result_sum2)
+                assert np.allclose(result_sum1, result_sum2)
 
 
-reduction_patterns = rearrangement_patterns + [
+reduction_patterns = [
+    *rearrangement_patterns,
     testcase("b c h w -> b ()", dict(b=10), (10, 20, 30, 40), [(10,), (10, 20, 30)]),
     testcase("b c (h1 h2) (w1 w2) -> b c h1 w1", dict(h1=15, h2=2, w2=2), (10, 20, 30, 40), [(10, 20, 31, 40)]),
     testcase("b ... c -> b", dict(b=10), (10, 20, 30, 40), [(10,), (11, 10)]),
@@ -111,13 +113,13 @@ def test_reduce_imperative():
         for reduction in REDUCTIONS:
             for pattern, axes_lengths, input_shape, wrong_shapes in reduction_patterns:
                 print(backend, reduction, pattern, axes_lengths, input_shape, wrong_shapes)
-                x = numpy.arange(1, 1 + numpy.prod(input_shape), dtype="float32").reshape(input_shape)
+                x = np.arange(1, 1 + np.prod(input_shape), dtype="float32").reshape(input_shape)
                 x /= x.mean()
                 result_numpy = reduce(x, pattern, reduction, **axes_lengths)
                 layer = backend.layers().Reduce(pattern, reduction, **axes_lengths)
                 for shape in wrong_shapes:
                     try:
-                        layer(backend.from_numpy(numpy.zeros(shape, dtype="float32")))
+                        layer(backend.from_numpy(np.zeros(shape, dtype="float32")))
                     except BaseException:
                         pass
                     else:
@@ -127,8 +129,8 @@ def test_reduce_imperative():
                 layer2 = pickle.loads(pickle.dumps(layer))
                 result1 = backend.to_numpy(layer(backend.from_numpy(x)))
                 result2 = backend.to_numpy(layer2(backend.from_numpy(x)))
-                assert numpy.allclose(result_numpy, result1)
-                assert numpy.allclose(result1, result2)
+                assert np.allclose(result_numpy, result1)
+                assert np.allclose(result1, result2)
 
                 just_sum = backend.layers().Reduce("...->", reduction="sum")
 
@@ -138,20 +140,20 @@ def test_reduce_imperative():
                 result.backward()
                 grad = backend.to_numpy(variable.grad)
                 if reduction == "sum":
-                    assert numpy.allclose(grad, 1)
+                    assert np.allclose(grad, 1)
                 if reduction == "mean":
-                    assert numpy.allclose(grad, grad.min())
+                    assert np.allclose(grad, grad.min())
                 if reduction in ["max", "min"]:
-                    assert numpy.all(numpy.in1d(grad, [0, 1]))
-                    assert numpy.sum(grad) > 0.5
+                    assert np.all(np.isin(grad, [0, 1]))
+                    assert np.sum(grad) > 0.5
 
 
 def test_reduce_symbolic():
     for backend in collect_test_backends(symbolic=True, layers=True):
         print("Test layer for ", backend.framework_name)
         for reduction in REDUCTIONS:
-            for pattern, axes_lengths, input_shape, wrong_shapes in reduction_patterns:
-                x = numpy.arange(1, 1 + numpy.prod(input_shape), dtype="float32").reshape(input_shape)
+            for pattern, axes_lengths, input_shape, _wrong_shapes in reduction_patterns:
+                x = np.arange(1, 1 + np.prod(input_shape), dtype="float32").reshape(input_shape)
                 x /= x.mean()
                 result_numpy = reduce(x, pattern, reduction, **axes_lengths)
                 layer = backend.layers().Reduce(pattern, reduction, **axes_lengths)
@@ -164,21 +166,22 @@ def test_reduce_symbolic():
 
                     result_symbol1 = layer(symbol)
                     result1 = backend.eval_symbol(result_symbol1, eval_inputs)
-                    assert numpy.allclose(result_numpy, result1)
+                    assert np.allclose(result_numpy, result1)
 
                     layer2 = pickle.loads(pickle.dumps(layer))
                     result_symbol2 = layer2(symbol)
                     result2 = backend.eval_symbol(result_symbol2, eval_inputs)
-                    assert numpy.allclose(result1, result2)
+                    assert np.allclose(result1, result2)
 
 
 def create_torch_model(use_reduce=False, add_scripted_layer=False):
     if not is_backend_tested("torch"):
         pytest.skip()
     else:
-        from torch.nn import Sequential, Conv2d, MaxPool2d, Linear, ReLU
-        from einops.layers.torch import Rearrange, Reduce, EinMix
         import torch.jit
+        from torch.nn import Conv2d, Linear, MaxPool2d, ReLU, Sequential
+
+        from einops.layers.torch import EinMix, Rearrange, Reduce
 
         return Sequential(
             Conv2d(3, 6, kernel_size=(5, 5)),
@@ -239,6 +242,7 @@ def test_torch_layers_scripting():
 
 
 def test_keras_layer():
+    rng = np.random.default_rng()
     if not is_backend_tested("tensorflow"):
         pytest.skip()
     else:
@@ -247,9 +251,12 @@ def test_keras_layer():
         if tf.__version__ < "2.16.":
             # current implementation of layers follows new TF interface
             pytest.skip()
+        from tensorflow.keras.layers import Conv2D as Conv2d
+        from tensorflow.keras.layers import Dense as Linear
+        from tensorflow.keras.layers import ReLU
         from tensorflow.keras.models import Sequential
-        from tensorflow.keras.layers import Conv2D as Conv2d, Dense as Linear, ReLU
-        from einops.layers.keras import Rearrange, Reduce, EinMix, keras_custom_objects
+
+        from einops.layers.keras import EinMix, Rearrange, Reduce, keras_custom_objects
 
         def create_keras_model():
             return Sequential(
@@ -272,9 +279,9 @@ def test_keras_layer():
         model1 = create_keras_model()
         model2 = create_keras_model()
 
-        input = numpy.random.normal(size=[10, 32, 32, 3]).astype("float32")
+        input = rng.normal(size=[10, 32, 32, 3]).astype("float32")
         # two randomly init models should provide different outputs
-        assert not numpy.allclose(model1.predict_on_batch(input), model2.predict_on_batch(input))
+        assert not np.allclose(model1.predict_on_batch(input), model2.predict_on_batch(input))
 
         # get some temp filename
         tmp_model_filename = "/tmp/einops_tf_model.h5"
@@ -283,7 +290,7 @@ def test_keras_layer():
         tf.keras.models.save_model(model1, tmp_model_filename)
         model3 = tf.keras.models.load_model(tmp_model_filename, custom_objects=keras_custom_objects)
 
-        numpy.testing.assert_allclose(model1.predict_on_batch(input), model3.predict_on_batch(input))
+        np.testing.assert_allclose(model1.predict_on_batch(input), model3.predict_on_batch(input))
 
         weight_filename = "/tmp/einops_tf_model.weights.h5"
         # save arch as json
@@ -292,10 +299,10 @@ def test_keras_layer():
         model4.load_weights(weight_filename)
         model2.load_weights(weight_filename)
         # check that differently-inialized model receives same weights
-        numpy.testing.assert_allclose(model1.predict_on_batch(input), model2.predict_on_batch(input))
+        np.testing.assert_allclose(model1.predict_on_batch(input), model2.predict_on_batch(input))
         # ulimate test
         # save-load architecture, and then load weights - should return same result
-        numpy.testing.assert_allclose(model1.predict_on_batch(input), model4.predict_on_batch(input))
+        np.testing.assert_allclose(model1.predict_on_batch(input), model4.predict_on_batch(input))
 
 
 def test_flax_layers():
@@ -306,12 +313,12 @@ def test_flax_layers():
     if not is_backend_tested("jax"):
         pytest.skip()
     else:
+        import flax
         import jax
         import jax.numpy as jnp
-
-        import flax
         from flax import linen as nn
-        from einops.layers.flax import EinMix, Reduce, Rearrange
+
+        from einops.layers.flax import EinMix, Rearrange, Reduce
 
         class NN(nn.Module):
             @nn.compact
@@ -334,8 +341,12 @@ def test_flax_layers():
         value0 = eval_at_point(params)
         value1, grad1 = vandg(params)
         assert jnp.allclose(value0, value1)
+        if jax.__version__ < "0.6.0":
+            tree_map = jax.tree_map
+        else:
+            tree_map = jax.tree.map
 
-        params2 = jax.tree_map(lambda x1, x2: x1 - x2 * 0.001, params, grad1)
+        params2 = tree_map(lambda x1, x2: x1 - x2 * 0.001, params, grad1)
 
         value2 = eval_at_point(params2)
         assert value0 >= value2, (value0, value2)
@@ -465,5 +476,5 @@ def test_einmix_restrictions():
         _EinmixDebugger(
             "(...) a -> a ...",
             weight_shape="a", a=1, # ellipsis on the right side after bias axis
-            bias_shape='a',
+            bias_shape="a",
         )  # fmt: off

@@ -1,8 +1,7 @@
 from functools import lru_cache
-from typing import List, Union, TypeVar, Tuple, Sequence
+from typing import List, Sequence, Tuple, TypeVar, Union
 
 from einops import EinopsError
-
 from einops._backends import get_backend
 from einops.parsing import ParsedExpression
 
@@ -182,9 +181,9 @@ def unpack(tensor: Tensor, packed_shapes: List[Shape], pattern: str) -> List[Ten
             )
             for i, element_shape in enumerate(packed_shapes)
         ]
-    except Exception:
+    except Exception as e:
         # this hits if there is an error during reshapes, which means passed shapes were incorrect
-        raise RuntimeError(
+        raise EinopsError(
             f'Error during unpack(..., "{pattern}"): could not split axis of size {split_positions[-1]}'
             f" into requested {packed_shapes}"
-        )
+        ) from e

@@ -14,6 +14,7 @@ import warnings
 from typing import Dict, List, Tuple
 
 import torch
+
 from einops.einops import TransformRecipe, _reconstruct_from_shape_uncached
 
 
@@ -34,7 +35,7 @@ class TorchJitBackend:
         elif operation == "mean":
             return x.mean(dim=reduced_axes)
         elif operation == "prod":
-            for i in list(sorted(reduced_axes))[::-1]:
+            for i in sorted(reduced_axes)[::-1]:
                 x = x.prod(dim=i)
             return x
         else:
@@ -106,10 +107,12 @@ def allow_ops_in_compiled_graph():
     try:
         from torch._dynamo import allow_in_graph
     except ImportError:
-        warnings.warn("allow_ops_in_compiled_graph failed to import torch: ensure pytorch >=2.0", ImportWarning)
+        warnings.warn(
+            "allow_ops_in_compiled_graph failed to import torch: ensure pytorch >=2.0", ImportWarning, stacklevel=1
+        )
         return
 
-    from .einops import rearrange, reduce, repeat, einsum
+    from .einops import einsum, rearrange, reduce, repeat
     from .packing import pack, unpack
 
     allow_in_graph(rearrange)

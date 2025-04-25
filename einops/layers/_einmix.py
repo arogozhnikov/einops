@@ -1,10 +1,10 @@
-from typing import Any, List, Optional, Dict
+import string
+import warnings
+from typing import Any, Dict, List, Optional
 
 from einops import EinopsError
+from einops.einops import _product
 from einops.parsing import ParsedExpression, _ellipsis
-import warnings
-import string
-from ..einops import _product
 
 
 def _report_axes(axes: set, report_message: str):
@@ -109,7 +109,7 @@ class _EinmixMixin:
 
         for axis in weight.identifiers:
             if axis not in axes_lengths:
-                raise EinopsError("Dimension {} of weight should be specified".format(axis))
+                raise EinopsError(f"Dimension {axis} of weight should be specified")
         _report_axes(
             set.difference(set(axes_lengths), {*left.identifiers, *weight.identifiers}),
             "Axes {} are not used in pattern",
@@ -118,7 +118,7 @@ class _EinmixMixin:
             set.difference(weight.identifiers, {*left.identifiers, *right.identifiers}), "Weight axes {} are redundant"
         )
         if len(weight.identifiers) == 0:
-            warnings.warn("EinMix: weight has no dimensions (means multiplication by a number)")
+            warnings.warn("EinMix: weight has no dimensions (means multiplication by a number)", stacklevel=2)
 
         _weight_shape = [axes_lengths[axis] for (axis,) in weight.composition]
         # single output element is a combination of fan_in input elements
@@ -166,7 +166,7 @@ class _EinmixMixin:
         mapped_identifiers = {*left.identifiers, *right.identifiers, *weight.identifiers}
         if _ellipsis in mapped_identifiers:
             mapped_identifiers.remove(_ellipsis)
-        mapped_identifiers = list(sorted(mapped_identifiers))
+        mapped_identifiers = sorted(mapped_identifiers)
         mapping2letters = {k: letter for letter, k in zip(string.ascii_lowercase, mapped_identifiers)}
         mapping2letters[_ellipsis] = "..."  # preserve ellipsis
 
@@ -180,10 +180,8 @@ class _EinmixMixin:
                     result.append("...")
             return "".join(result)
 
-        self.einsum_pattern: str = "{},{}->{}".format(
-            write_flat_remapped(left),
-            write_flat_remapped(weight),
-            write_flat_remapped(right),
+        self.einsum_pattern: str = (
+            f"{write_flat_remapped(left)},{write_flat_remapped(weight)}->{write_flat_remapped(right)}"
         )
 
     def _create_rearrange_layers(
@@ -205,8 +203,8 @@ class _EinmixMixin:
         if self.bias_shape is not None:
             params += f", '{self.bias_shape}'"
         for axis, length in self.axes_lengths.items():
-            params += ", {}={}".format(axis, length)
-        return "{}({})".format(self.__class__.__name__, params)
+            params += f", {axis}={length}"
+        return f"{self.__class__.__name__}({params})"
 
 
 class _EinmixDebugger(_EinmixMixin):

@@ -1,12 +1,13 @@
-from einops import EinopsError
 import keyword
 import warnings
 from typing import List, Optional, Set, Tuple, Union
 
+from einops import EinopsError
+
 _ellipsis: str = "…"  # NB, this is a single unicode symbol. String is used as it is not a list, but can be iterated
 
 
-class AnonymousAxis(object):
+class AnonymousAxis:
     """Important thing: all instances of this class are not equal to each other"""
 
     def __init__(self, value: str):
@@ -15,10 +16,10 @@ class AnonymousAxis(object):
             if self.value == 1:
                 raise EinopsError("No need to create anonymous axis of length 1. Report this as an issue")
             else:
-                raise EinopsError("Anonymous axis should have positive length, not {}".format(self.value))
+                raise EinopsError(f"Anonymous axis should have positive length, not {self.value}")
 
     def __repr__(self):
-        return "{}-axis".format(str(self.value))
+        return f"{str(self.value)}-axis"
 
 
 class ParsedExpression:
@@ -50,7 +51,7 @@ class ParsedExpression:
         def add_axis_name(x):
             if x in self.identifiers:
                 if not (allow_underscore and x == "_") and not allow_duplicates:
-                    raise EinopsError('Indexing expression contains duplicate dimension "{}"'.format(x))
+                    raise EinopsError(f'Indexing expression contains duplicate dimension "{x}"')
             if x == _ellipsis:
                 self.identifiers.add(_ellipsis)
                 if bracket_group is None:
@@ -70,7 +71,7 @@ class ParsedExpression:
                     return
                 is_axis_name, reason = self.check_axis_name_return_reason(x, allow_underscore=allow_underscore)
                 if not (is_number or is_axis_name):
-                    raise EinopsError("Invalid axis identifier: {}\n{}".format(x, reason))
+                    raise EinopsError(f"Invalid axis identifier: {x}\n{reason}")
                 if is_number:
                     x = AnonymousAxis(x)
                 self.identifiers.add(x)
@@ -102,10 +103,10 @@ class ParsedExpression:
                 else:
                     current_identifier += char
             else:
-                raise EinopsError("Unknown character '{}'".format(char))
+                raise EinopsError(f"Unknown character '{char}'")
 
         if bracket_group is not None:
-            raise EinopsError('Imbalanced parentheses in expression: "{}"'.format(expression))
+            raise EinopsError(f'Imbalanced parentheses in expression: "{expression}"')
         if current_identifier is not None:
             add_axis_name(current_identifier)
 
@@ -134,11 +135,16 @@ class ParsedExpression:
             return False, "axis name should should not start or end with underscore"
         else:
             if keyword.iskeyword(name):
-                warnings.warn("It is discouraged to use axes names that are keywords: {}".format(name), RuntimeWarning)
+                warnings.warn(
+                    f"It is discouraged to use axes names that are keywords: {name}",
+                    RuntimeWarning,
+                    stacklevel=2,
+                )
             if name in ["axis"]:
                 warnings.warn(
-                    "It is discouraged to use 'axis' as an axis name " "and will raise an error in future",
+                    "It is discouraged to use 'axis' as an axis name and will raise an error in future",
                     FutureWarning,
+                    stacklevel=2,
                 )
             return True, ""
 

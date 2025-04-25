@@ -1,4 +1,4 @@
-from typing import Optional, Dict, cast
+from typing import Dict, Optional, cast
 
 import paddle
 

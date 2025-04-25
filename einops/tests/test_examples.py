@@ -1,7 +1,7 @@
-import numpy
+import numpy as np
 import pytest
 
-from einops import rearrange, parse_shape, reduce
+from einops import parse_shape, rearrange, reduce
 from einops.tests import is_backend_tested
 from einops.tests.test_ops import imp_op_backends
 
@@ -135,40 +135,40 @@ def test_rearrange_examples():
     for backend in imp_op_backends:
         print("testing source_examples for ", backend.framework_name)
         for test in tests:
-            x = numpy.arange(10 * 20 * 30 * 40).reshape([10, 20, 30, 40])
+            x = np.arange(10 * 20 * 30 * 40).reshape([10, 20, 30, 40])
             result1 = test(x)
             result2 = backend.to_numpy(test(backend.from_numpy(x)))
-            assert numpy.array_equal(result1, result2)
+            assert np.array_equal(result1, result2)
 
             # now with strides
-            x = numpy.arange(10 * 2 * 20 * 3 * 30 * 1 * 40).reshape([10 * 2, 20 * 3, 30 * 1, 40 * 1])
+            x = np.arange(10 * 2 * 20 * 3 * 30 * 1 * 40).reshape([10 * 2, 20 * 3, 30 * 1, 40 * 1])
             # known torch bug - torch doesn't support negative steps
             last_step = -1 if (backend.framework_name != "torch" and backend.framework_name != "oneflow") else 1
-            indexing_expression = numpy.index_exp[::2, ::3, ::1, ::last_step]
+            indexing_expression = np.index_exp[::2, ::3, ::1, ::last_step]
             result1 = test(x[indexing_expression])
             result2 = backend.to_numpy(test(backend.from_numpy(x)[indexing_expression]))
-            assert numpy.array_equal(result1, result2)
+            assert np.array_equal(result1, result2)
 
 
 def tensor_train_example_numpy():
     # kept here just for a collection, only tested for numpy
     # https://arxiv.org/pdf/1509.06569.pdf, (5)
-    x = numpy.ones([3, 4, 5, 6])
+    x = np.ones([3, 4, 5, 6])
     rank = 4
-    if numpy.__version__ < "1.15.0":
+    if np.__version__ < "1.15.0":
         # numpy.einsum fails here, skip test
         return
     # creating appropriate Gs
-    Gs = [numpy.ones([d, d, rank, rank]) for d in x.shape]
+    Gs = [np.ones([d, d, rank, rank]) for d in x.shape]
     Gs[0] = Gs[0][:, :, :1, :]
     Gs[-1] = Gs[-1][:, :, :, :1]
 
     # einsum way
-    y = x.reshape((1,) + x.shape)
+    y = x.reshape((1, *x.shape))
     for G in Gs:
         # taking partial results left-to-right
         # y = numpy.einsum('i j alpha beta, alpha i ...  -> beta ... j', G, y)
-        y = numpy.einsum("i j a b, a i ...  -> b ... j", G, y)
+        y = np.einsum("i j a b, a i ...  -> b ... j", G, y)
     y1 = y.reshape(-1)
 
     # alternative way
@@ -179,7 +179,7 @@ def tensor_train_example_numpy():
         y = y @ rearrange(G, "i j alpha beta -> (alpha i) (j beta)")
         y = rearrange(y, "rest (beta j) -> (beta rest j)", beta=beta, j=j)
     y2 = y
-    assert numpy.allclose(y1, y2)
+    assert np.allclose(y1, y2)
 
     # yet another way
     y = x
@@ -188,7 +188,7 @@ def tensor_train_example_numpy():
         y = rearrange(y, "i ... (j alpha) -> ... j (alpha i)", alpha=alpha, i=i)
         y = y @ rearrange(G, "i j alpha beta -> (alpha i) (j beta)")
     y3 = y.reshape(-1)
-    assert numpy.allclose(y1, y3)
+    assert np.allclose(y1, y3)
 
 
 def test_pytorch_yolo_fragment():
@@ -197,14 +197,14 @@ def test_pytorch_yolo_fragment():
 
     import torch
 
-    def old_way(input, num_classes, num_anchors, anchors, stride_h, stride_w):
+    def old_way(tensor, num_classes, num_anchors, anchors, stride_h, stride_w):
         # https://github.com/BobLiu20/YOLOv3_PyTorch/blob/c6b483743598b5f64d520d81e7e5f47ba936d4c9/nets/yolo_loss.py#L28-L44
-        bs = input.size(0)
-        in_h = input.size(2)
-        in_w = input.size(3)
+        bs = tensor.size(0)
+        in_h = tensor.size(2)
+        in_w = tensor.size(3)
         scaled_anchors = [(a_w / stride_w, a_h / stride_h) for a_w, a_h in anchors]
 
-        prediction = input.view(bs, num_anchors, 5 + num_classes, in_h, in_w).permute(0, 1, 3, 4, 2).contiguous()
+        prediction = tensor.view(bs, num_anchors, 5 + num_classes, in_h, in_w).permute(0, 1, 3, 4, 2).contiguous()
         # Get outputs
         x = torch.sigmoid(prediction[..., 0])  # Center x
         y = torch.sigmoid(prediction[..., 1])  # Center y
@@ -250,15 +250,15 @@ def test_pytorch_yolo_fragment():
         )
         return output
 
-    def new_way(input, num_classes, num_anchors, anchors, stride_h, stride_w):
-        raw_predictions = rearrange(input, " b (anchor prediction) h w -> prediction b anchor h w", anchor=num_anchors)
+    def new_way(tensor, num_classes, num_anchors, anchors, stride_h, stride_w):
+        raw_predictions = rearrange(tensor, " b (anchor prediction) h w -> prediction b anchor h w", anchor=num_anchors)
 
-        anchors = torch.FloatTensor(anchors).to(input.device)
+        anchors = torch.FloatTensor(anchors).to(tensor.device)
         anchor_sizes = rearrange(anchors, "anchor dim -> dim () anchor () ()")
 
         _, _, _, in_h, in_w = raw_predictions.shape
-        grid_h = rearrange(torch.arange(in_h).float(), "h -> () () h ()").to(input.device)
-        grid_w = rearrange(torch.arange(in_w).float(), "w -> () () () w").to(input.device)
+        grid_h = rearrange(torch.arange(in_h).float(), "h -> () () h ()").to(tensor.device)
+        grid_w = rearrange(torch.arange(in_w).float(), "w -> () () () w").to(tensor.device)
 
         predicted_bboxes = torch.zeros_like(raw_predictions)
         predicted_bboxes[0] = (raw_predictions[0].sigmoid() + grid_h) * stride_h  # center y
@@ -276,9 +276,9 @@ def test_pytorch_yolo_fragment():
     anchors = [[50, 100], [100, 50], [75, 75]]
     num_anchors = len(anchors)
 
-    input = torch.randn([batch_size, num_anchors * (5 + num_classes), 1, 1])
+    x = torch.randn([batch_size, num_anchors * (5 + num_classes), 1, 1])
     result1 = old_way(
-        input=input,
+        tensor=x,
         num_anchors=num_anchors,
         num_classes=num_classes,
         stride_h=stride_h,
@@ -286,7 +286,7 @@ def test_pytorch_yolo_fragment():
         anchors=anchors,
     )
     result2 = new_way(
-        input=input,
+        tensor=x,
         num_anchors=num_anchors,
         num_classes=num_classes,
         stride_h=stride_h,

@@ -1,5 +1,5 @@
 from dataclasses import field
-from typing import Optional, Dict, cast
+from typing import Dict, Optional, cast
 
 import flax.linen as nn
 import jax
@@ -14,7 +14,7 @@ __author__ = "Alex Rogozhnikov"
 class Reduce(nn.Module):
     pattern: str
     reduction: str
-    sizes: dict = field(default_factory=lambda: {})
+    sizes: dict = field(default_factory=dict)
 
     def setup(self):
         self.reducer = ReduceMixin(self.pattern, self.reduction, **self.sizes)
@@ -25,7 +25,7 @@ class Reduce(nn.Module):
 
 class Rearrange(nn.Module):
     pattern: str
-    sizes: dict = field(default_factory=lambda: {})
+    sizes: dict = field(default_factory=dict)
 
     def setup(self):
         self.rearranger = RearrangeMixin(self.pattern, **self.sizes)
@@ -38,7 +38,7 @@ class EinMix(nn.Module, _EinmixMixin):
     pattern: str
     weight_shape: str
     bias_shape: Optional[str] = None
-    sizes: dict = field(default_factory=lambda: {})
+    sizes: dict = field(default_factory=dict)
 
     def setup(self):
         self.initialize_einmix(

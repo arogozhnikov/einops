@@ -5,11 +5,11 @@ These functions allow testing only some frameworks, not all.
 
 import logging
 import os
+import warnings
 from functools import lru_cache
 from typing import List, Tuple
 
 from einops import _backends
-import warnings
 
 __author__ = "Alex Rogozhnikov"
 
@@ -105,5 +105,5 @@ def collect_test_backends(symbolic=False, layers=False) -> List[_backends.Abstra
         except ImportError:
             # problem with backend installation fails a specific test function,
             # but will be skipped in all other test cases
-            warnings.warn("backend could not be initialized for tests: {}".format(backend_type))
+            warnings.warn(f"backend could not be initialized for tests: {backend_type}", stacklevel=1)
     return result

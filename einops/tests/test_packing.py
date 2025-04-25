@@ -7,6 +7,8 @@ import pytest
 from einops import EinopsError, asnumpy, pack, unpack
 from einops.tests import collect_test_backends
 
+rng = np.random.default_rng()
+
 
 def pack_unpack(xs, pattern):
     x, ps = pack(xs, pattern)
@@ -61,7 +63,7 @@ class CaptureException:
 
 def test_numpy_trivial(H=13, W=17):
     def rand(*shape):
-        return np.random.random(shape)
+        return rng.random(shape)
 
     def check(a, b):
         assert a.dtype == b.dtype
@@ -149,15 +151,15 @@ def test_pack_unpack_with_numpy():
         shape = case.shape
         pattern = case.pattern
 
-        x = np.random.random(shape)
+        x = rng.random(shape)
         # all correct, no minus 1
         unpack_and_pack(x, [[2], [1], [2]], pattern)
         # no -1, asking for wrong shapes
-        with pytest.raises(BaseException):
+        with pytest.raises(EinopsError):
             unpack_and_pack(x, [[2], [1], [2]], pattern + " non_existent_axis")
-        with pytest.raises(BaseException):
+        with pytest.raises(EinopsError):
             unpack_and_pack(x, [[2], [1], [1]], pattern)
-        with pytest.raises(BaseException):
+        with pytest.raises(EinopsError):
             unpack_and_pack(x, [[4], [1], [1]], pattern)
         # all correct, with -1
         unpack_and_pack(x, [[2], [1], [-1]], pattern)
@@ -166,12 +168,12 @@ def test_pack_unpack_with_numpy():
         _, _, last = unpack_and_pack(x, [[2], [3], [-1]], pattern)
         assert last.shape[case.dim()] == 0
         # asking for more elements than available
-        with pytest.raises(BaseException):
+        with pytest.raises(EinopsError):
             unpack(x, [[2], [4], [-1]], pattern)
         # this one does not raise, because indexing x[2:1] just returns zero elements
-        # with pytest.raises(BaseException):
+        # with pytest.raises(EinopsError):
         #     unpack(x, [[2], [-1], [4]], pattern)
-        with pytest.raises(BaseException):
+        with pytest.raises(EinopsError):
             unpack(x, [[-1], [1], [5]], pattern)
 
         # all correct, -1 nested
@@ -183,17 +185,17 @@ def test_pack_unpack_with_numpy():
         assert all(len(r.shape) == len(x.shape) + 1 for r in rs)
 
         # asking for more elements, -1 nested
-        with pytest.raises(BaseException):
+        with pytest.raises(EinopsError):
             unpack(x, [[-1, 2], [1], [5]], pattern)
-        with pytest.raises(BaseException):
+        with pytest.raises(EinopsError):
             unpack(x, [[2, 2], [2], [5, -1]], pattern)
 
         # asking for non-divisible number of elements
-        with pytest.raises(BaseException):
+        with pytest.raises(EinopsError):
             unpack(x, [[2, 1], [1], [3, -1]], pattern)
-        with pytest.raises(BaseException):
+        with pytest.raises(EinopsError):
             unpack(x, [[2, 1], [3, -1], [1]], pattern)
-        with pytest.raises(BaseException):
+        with pytest.raises(EinopsError):
             unpack(x, [[3, -1], [2, 1], [1]], pattern)
 
         # -1 takes zero
@@ -215,15 +217,15 @@ def test_pack_unpack_against_numpy():
             shape = case.shape
             pattern = case.pattern
 
-            x = np.random.random(shape)
+            x = rng.random(shape)
             x = backend.from_numpy(x)
             # all correct, no minus 1
             unpack_and_pack(x, [[2], [1], [2]], pattern)
             # no -1, asking for wrong shapes
-            with pytest.raises(BaseException):
+            with pytest.raises(EinopsError):
                 unpack(x, [[2], [1], [1]], pattern)
 
-            with pytest.raises(BaseException):
+            with pytest.raises(EinopsError):
                 unpack(x, [[4], [1], [1]], pattern)
             # all correct, with -1
             unpack_and_pack(x, [[2], [1], [-1]], pattern)
@@ -231,12 +233,12 @@ def test_pack_unpack_against_numpy():
             unpack_and_pack(x, [[-1], [1], [2]], pattern)
 
             # asking for more elements than available
-            with pytest.raises(BaseException):
+            with pytest.raises(EinopsError):
                 unpack(x, [[2], [4], [-1]], pattern)
             # this one does not raise, because indexing x[2:1] just returns zero elements
-            # with pytest.raises(BaseException):
+            # with pytest.raises(EinopsError):
             #     unpack(x, [[2], [-1], [4]], pattern)
-            with pytest.raises(BaseException):
+            with pytest.raises(EinopsError):
                 unpack(x, [[-1], [1], [5]], pattern)
 
             # all correct, -1 nested
@@ -245,17 +247,17 @@ def test_pack_unpack_against_numpy():
             unpack_and_pack(x, [[2, -1], [1, 2], [1, 1]], pattern)
 
             # asking for more elements, -1 nested
-            with pytest.raises(BaseException):
+            with pytest.raises(EinopsError):
                 unpack(x, [[-1, 2], [1], [5]], pattern)
-            with pytest.raises(BaseException):
+            with pytest.raises(EinopsError):
                 unpack(x, [[2, 2], [2], [5, -1]], pattern)
 
             # asking for non-divisible number of elements
-            with pytest.raises(BaseException):
+            with pytest.raises(EinopsError):
                 unpack(x, [[2, 1], [1], [3, -1]], pattern)
-            with pytest.raises(BaseException):
+            with pytest.raises(EinopsError):
                 unpack(x, [[2, 1], [3, -1], [1]], pattern)
-            with pytest.raises(BaseException):
+            with pytest.raises(EinopsError):
                 unpack(x, [[3, -1], [2, 1], [1]], pattern)
 
             if check_zero_len:
@@ -270,8 +272,9 @@ def test_pack_unpack_against_numpy():
 
 
 def test_pack_unpack_array_api():
-    from einops import array_api as AA
     import numpy as xp
+
+    from einops import array_api as AA
 
     if xp.__version__ < "2.0.0":
         pytest.skip()
@@ -279,7 +282,7 @@ def test_pack_unpack_array_api():
     for case in cases:
         shape = case.shape
         pattern = case.pattern
-        x_np = np.random.random(shape)
+        x_np = rng.random(shape)
         x_xp = xp.from_dlpack(x_np)
 
         for ps in [
@@ -305,5 +308,5 @@ def test_pack_unpack_array_api():
             [[1], [2, 3]],
             [[1], [5], [-1, 2]],
         ]:
-            with pytest.raises(BaseException):
+            with pytest.raises(EinopsError):
                 unpack(x_np, ps, pattern)

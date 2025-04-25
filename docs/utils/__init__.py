@@ -1,8 +1,7 @@
 import numpy as np
-
-from PIL.Image import fromarray
 from IPython import get_ipython
 from IPython.display import display_html
+from PIL.Image import fromarray
 
 
 def display_np_arrays_as_images():
@@ -18,7 +17,7 @@ def display_np_arrays_as_images():
         if 2 <= len(obj.shape) <= 3:
             pass
         else:
-            print("<array of shape {}>".format(obj.shape))
+            print(f"<array of shape {obj.shape}>")
 
     get_ipython().display_formatter.formatters["image/png"].for_type(np.ndarray, np_to_png)
     get_ipython().display_formatter.formatters["text/plain"].for_type(np.ndarray, np_to_text)
@@ -37,6 +36,6 @@ _style_inline = """<style>
 
 def guess(x):
     display_html(
-        _style_inline + "<h4>Answer is: <span class='einops-answer'>{x}</span> (hover to see)</h4>".format(x=tuple(x)),
+        _style_inline + f"<h4>Answer is: <span class='einops-answer'>{tuple(x)}</span> (hover to see)</h4>",
         raw=True,
     )

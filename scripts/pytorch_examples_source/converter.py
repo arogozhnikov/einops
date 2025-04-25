@@ -4,12 +4,13 @@ It will convert pytorch.ipynb to html page docs/pytorch-examples.html
 
 """
 
-import nbformat
-import markdown
+from pathlib import Path
 
+import markdown
+import nbformat
 from pygments import highlight
-from pygments.lexers import PythonLexer
 from pygments.formatters import HtmlFormatter
+from pygments.lexers import PythonLexer
 
 notebook = nbformat.read("Pytorch.ipynb", as_version=nbformat.NO_CONVERT)
 
@@ -19,11 +20,11 @@ cache = ""
 for cell in notebook["cells"]:
     if cell["cell_type"] == "code":
         source = cell["source"]
-        if source.startswith("#left") or source.startswith("#right"):
+        if source.startswith(("#left", "#right")):
             trimmed_source = source[source.index("\n") + 1 :]
-            cache += "<div>{}</div>".format(highlight(trimmed_source, PythonLexer(), HtmlFormatter()))
+            cache += f"<div>{highlight(trimmed_source, PythonLexer(), HtmlFormatter())}</div>"
         if source.startswith("#right"):
-            content += "<div class='leftright-wrapper'><div class='leftright-cells'>{}</div></div> ".format(cache)
+            content += f"<div class='leftright-wrapper'><div class='leftright-cells'>{cache}</div></div> "
             cache = ""
 
     elif cell["cell_type"] == "markdown":
@@ -99,5 +100,4 @@ result = f"""
 </html>
 """
 
-with open("../../docs/pytorch-examples.html", "w") as f:
-    f.write(result)
+Path("../../docs/pytorch-examples.html").write_text(result)

@@ -1,10 +1,11 @@
-from typing import Optional, Dict, cast
+from typing import Dict, Optional, cast
 
 import torch
 
+from einops._torch_specific import apply_for_scriptable_torch
+
 from . import RearrangeMixin, ReduceMixin
 from ._einmix import _EinmixMixin
-from .._torch_specific import apply_for_scriptable_torch
 
 __author__ = "Alex Rogozhnikov"
 

@@ -2,9 +2,8 @@ __author__ = "Alex Rogozhnikov"
 
 from typing import Any, Dict
 
-
-from ..einops import TransformRecipe, _apply_recipe, _prepare_recipes_for_all_dims, get_backend
-from .. import EinopsError
+from einops import EinopsError
+from einops.einops import TransformRecipe, _apply_recipe, _prepare_recipes_for_all_dims, get_backend
 
 
 class RearrangeMixin:
@@ -28,8 +27,8 @@ class RearrangeMixin:
     def __repr__(self) -> str:
         params = repr(self.pattern)
         for axis, length in self.axes_lengths.items():
-            params += ", {}={}".format(axis, length)
-        return "{}({})".format(self.__class__.__name__, params)
+            params += f", {axis}={length}"
+        return f"{self.__class__.__name__}({params})"
 
     def multirecipe(self) -> Dict[int, TransformRecipe]:
         try:
@@ -37,7 +36,7 @@ class RearrangeMixin:
                 self.pattern, operation="rearrange", axes_names=tuple(self.axes_lengths)
             )
         except EinopsError as e:
-            raise EinopsError(" Error while preparing {!r}\n {}".format(self, e))
+            raise EinopsError(f" Error while preparing {self!r}\n {e}") from None
 
     def _apply_recipe(self, x):
         backend = get_backend(x)
@@ -76,10 +75,10 @@ class ReduceMixin:
         self._axes_lengths = tuple(self.axes_lengths.items())
 
     def __repr__(self):
-        params = "{!r}, {!r}".format(self.pattern, self.reduction)
+        params = f"{self.pattern!r}, {self.reduction!r}"
         for axis, length in self.axes_lengths.items():
-            params += ", {}={}".format(axis, length)
-        return "{}({})".format(self.__class__.__name__, params)
+            params += f", {axis}={length}"
+        return f"{self.__class__.__name__}({params})"
 
     def multirecipe(self) -> Dict[int, TransformRecipe]:
         try:
@@ -87,7 +86,7 @@ class ReduceMixin:
                 self.pattern, operation=self.reduction, axes_names=tuple(self.axes_lengths)
             )
         except EinopsError as e:
-            raise EinopsError(" Error while preparing {!r}\n {}".format(self, e))
+            raise EinopsError(f" Error while preparing {self!r}\n {e}") from None
 
     def _apply_recipe(self, x):
         backend = get_backend(x)

@@ -1,22 +1,23 @@
 from doctest import testmod
 
-import numpy
+import numpy as np
 import pytest
 
 import einops
 import einops.layers
-import einops.parsing
 from einops._backends import AbstractBackend
-from einops.einops import rearrange, parse_shape, _optimize_transformation
+from einops.einops import _optimize_transformation, parse_shape, rearrange
 from einops.tests import collect_test_backends, is_backend_tested
 
 __author__ = "Alex Rogozhnikov"
 
+rng = np.random.default_rng()
+
 
 def test_doctests_examples():
     # tests docstrings, additionally
-    testmod(einops.layers, raise_on_error=True, extraglobs=dict(np=numpy))
-    testmod(einops.einops, raise_on_error=True, extraglobs=dict(np=numpy))
+    testmod(einops.layers, raise_on_error=True, extraglobs=dict(np=np))
+    testmod(einops.einops, raise_on_error=True, extraglobs=dict(np=np))
 
 
 def test_backends_installed():
@@ -26,17 +27,27 @@ def test_backends_installed():
     """
     from . import parse_backends_to_test
 
-    backends_to_test = parse_backends_to_test()
+    backends_to_test = set(parse_backends_to_test())
     errors = []
-    for backend_type in AbstractBackend.__subclasses__():
+    # Find backend subclasses recursively
+    backend_subclasses = []
+    backends = AbstractBackend.__subclasses__()
+    while backends:
+        backend = backends.pop()
+        backends += backend.__subclasses__()
+        backend_subclasses.append(backend)
+
+    for backend_type in backend_subclasses:
         if backend_type.framework_name not in backends_to_test:
             continue
         try:
             # instantiate
             backend_type()
+            backends_to_test.remove(backend_type.framework_name)
         except Exception as e:
             errors.append((backend_type.framework_name, e))
     assert len(errors) == 0, errors
+    assert len(backends_to_test) == 0, f"did not instantiate {backends_to_test=}, they won't be tested"
 
 
 def test_optimize_transformations_numpy():
@@ -47,33 +58,33 @@ def test_optimize_transformations_numpy():
     shapes += [[2, 3, 5, 7, 11, 17]]
 
     for shape in shapes:
-        for attempt in range(5):
+        for _attempt in range(5):
             n_dimensions = len(shape)
-            x = numpy.random.randint(0, 2**12, size=shape).reshape([-1])
+            x = rng.integers(0, 2**12, size=shape).reshape([-1])
             init_shape = shape[:]
-            n_reduced = numpy.random.randint(0, n_dimensions + 1)
-            reduced_axes = tuple(numpy.random.permutation(n_dimensions)[:n_reduced])
-            axes_reordering = numpy.random.permutation(n_dimensions - n_reduced)
-            final_shape = numpy.random.randint(0, 1024, size=333)  # just random
+            n_reduced = rng.integers(0, n_dimensions + 1)
+            reduced_axes = tuple(rng.permutation(n_dimensions)[:n_reduced])
+            axes_reordering = rng.permutation(n_dimensions - n_reduced)
+            final_shape = rng.integers(0, 1024, size=333)  # just random
 
             init_shape2, reduced_axes2, axes_reordering2, final_shape2 = combination2 = _optimize_transformation(
                 init_shape, reduced_axes, axes_reordering, final_shape
             )
 
-            assert numpy.array_equal(final_shape, final_shape2)
+            assert np.array_equal(final_shape, final_shape2)
             result1 = x.reshape(init_shape).sum(axis=reduced_axes).transpose(axes_reordering).reshape([-1])
             result2 = x.reshape(init_shape2).sum(axis=reduced_axes2).transpose(axes_reordering2).reshape([-1])
-            assert numpy.array_equal(result1, result2)
+            assert np.array_equal(result1, result2)
 
             # testing we can't optimize this formula again
             combination3 = _optimize_transformation(*combination2)
             for a, b in zip(combination2, combination3):
-                assert numpy.array_equal(a, b)
+                assert np.array_equal(a, b)
 
 
 _IMPERATIVE_BACKENDS = collect_test_backends(symbolic=False, layers=False)
 
-x_np = numpy.zeros([10, 20, 30, 40])
+x_np = np.zeros([10, 20, 30, 40])
 
 
 def test_parse_shape_imperative():
@@ -130,7 +141,7 @@ def test_ellipsis():
             ([10, 20, 30, 40], " a ... b", dict(a=10, b=40)),
             ([10, 40], " a ... b", dict(a=10, b=40)),
         ]:
-            x = numpy.ones(shape)
+            x = np.ones(shape)
             parsed1 = parse_shape(x, pattern)
             parsed2 = parse_shape(backend.from_numpy(x), pattern)
             assert parsed1 == parsed2 == expected
@@ -143,7 +154,7 @@ def test_parse_with_anonymous_axes():
             ([10, 1, 2], "a 1 2", dict(a=10)),
             ([10, 1, 2], "a () 2", dict(a=10)),
         ]:
-            x = numpy.ones(shape)
+            x = np.ones(shape)
             parsed1 = parse_shape(x, pattern)
             parsed2 = parse_shape(backend.from_numpy(x), pattern)
             assert parsed1 == parsed2 == expected
@@ -161,7 +172,7 @@ def test_failures():
             ([1, 2, 3, 4], "a b c ()"),
         ]:
             with pytest.raises(RuntimeError):
-                x = numpy.ones(shape)
+                x = np.ones(shape)
                 parse_shape(backend.from_numpy(x), pattern)
 
 
@@ -177,32 +188,30 @@ _SYMBOLIC_BACKENDS = [backend for backend in _SYMBOLIC_BACKENDS if backend.frame
 
 @pytest.mark.parametrize("backend", _SYMBOLIC_BACKENDS)
 def test_parse_shape_symbolic(backend):
-    for shape in [
+    for input_shape in [
         [10, 20, 30, 40],
         [10, 20, None, None],
         [None, None, None, None],
     ]:
-        print(
-            f"special shape parsing {backend.framework_name=} {shape=}",
-        )
-        input_symbol = backend.create_symbol(shape)
+        print(f"special shape parsing {backend.framework_name=} {input_shape=}")
+        input_symbol = backend.create_symbol(input_shape)
 
         shape_placeholder = parse_shape(input_symbol, "a b c d")
-        shape = {}
+        out_shape = {}
         for name, symbol in shape_placeholder.items():
-            shape[name] = (
+            out_shape[name] = (
                 symbol
                 if isinstance(symbol, int)
-                else backend.eval_symbol(symbol, [(input_symbol, numpy.zeros([10, 20, 30, 40]))])
-            )
-        print(shape)
+                else backend.eval_symbol(symbol, [(input_symbol, np.zeros([10, 20, 30, 40]))])
+            )  # out shape element is either int, or symbol that we are able to eval
+        print(out_shape)
         result_placeholder = rearrange(
             input_symbol, "a b (c1 c2) (d1 d2) -> (a b d1) c1 (c2 d2)", **parse_shape(input_symbol, "a b c1 _"), d2=2
         )
-        result = backend.eval_symbol(result_placeholder, [(input_symbol, numpy.zeros([10, 20, 30, 40]))])
+        result = backend.eval_symbol(result_placeholder, [(input_symbol, np.zeros([10, 20, 30, 40]))])
         print(result.shape)
         assert result.shape == (10 * 20 * 20, 30, 1 * 2)
-        assert numpy.allclose(result, 0)
+        assert np.allclose(result, 0)
 
 
 @pytest.mark.parametrize("backend", _SYMBOLIC_BACKENDS)
@@ -227,7 +236,7 @@ def test_parse_shape_symbolic_ellipsis(backend):
             if isinstance(symbol, int):
                 out_shape[name] = symbol
             else:
-                out_shape[name] = backend.eval_symbol(symbol, [(input_symbol, numpy.zeros(static_shape))])
+                out_shape[name] = backend.eval_symbol(symbol, [(input_symbol, np.zeros(static_shape))])
         assert out_shape == expected
 
 
@@ -237,7 +246,7 @@ def test_is_float_type():
     for backend in backends:
         for dtype in ["int32", "int64", "float32", "float64"]:
             is_float = "float" in dtype
-            input = numpy.zeros([3, 4, 5], dtype=dtype)
+            input = np.zeros([3, 4, 5], dtype=dtype)
             input = backend.from_numpy(input)
             assert backend.is_float_type(input) == is_float, (dtype, backend, input.dtype)
 
@@ -254,7 +263,8 @@ def test_torch_compile():
         pytest.skip()
     import torch
     from torch import nn
-    from einops import repeat, reduce, pack, unpack, einsum
+
+    from einops import einsum, pack, reduce, repeat, unpack
     from einops._torch_specific import allow_ops_in_compiled_graph
 
     allow_ops_in_compiled_graph()

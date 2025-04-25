@@ -2,16 +2,16 @@
 # ruff: noqa: E402
 
 __author__ = "Alex Rogozhnikov"
-__version__ = "0.8.1"
+__version__ = "0.8.2"
 
 
 class EinopsError(RuntimeError):
     """Runtime error thrown by einops"""
 
-    pass
+    pass  # noqa: PIE790
 
 
-__all__ = ["rearrange", "reduce", "repeat", "einsum", "pack", "unpack", "parse_shape", "asnumpy", "EinopsError"]
+__all__ = ["EinopsError", "asnumpy", "einsum", "pack", "parse_shape", "rearrange", "reduce", "repeat", "unpack"]
 
-from .einops import rearrange, reduce, repeat, einsum, parse_shape, asnumpy
+from .einops import asnumpy, einsum, parse_shape, rearrange, reduce, repeat
 from .packing import pack, unpack

@@ -11,15 +11,13 @@ Layers in einops==0.8.0 were re-implemented
 
 """
 
-from typing import Optional, Dict, cast
+from typing import Dict, Optional, cast
 
 import tensorflow as tf
 from tensorflow.keras.layers import Layer
 
-
 from . import RearrangeMixin, ReduceMixin
 from ._einmix import _EinmixMixin
-
 
 __author__ = "Alex Rogozhnikov"
 
