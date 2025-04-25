@@ -143,7 +143,7 @@ def test_reduce_imperative():
                 if reduction == "mean":
                     assert numpy.allclose(grad, grad.min())
                 if reduction in ["max", "min"]:
-                    assert numpy.all(numpy.in1d(grad, [0, 1]))
+                    assert numpy.all(numpy.isin(grad, [0, 1]))
                     assert numpy.sum(grad) > 0.5
 
 
