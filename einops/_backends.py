@@ -334,8 +334,7 @@ class HashableTuple:
         self.elements = elements
 
     def __iter__(self):
-        for x in self.elements:
-            yield x
+        yield from self.elements
 
     def __len__(self):
         return len(self.elements)
