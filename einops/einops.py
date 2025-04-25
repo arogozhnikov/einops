@@ -399,7 +399,7 @@ def _prepare_transformation_recipe(
 
     input_axes_known_unknown = []
     # some shapes are inferred later - all information is prepared for faster inference
-    for i, composite_axis in enumerate(left_composition):
+    for composite_axis in left_composition:
         known: Set[str] = {axis for axis in composite_axis if axis_name2known_length[axis] != _unknown_axis_length}
         unknown: Set[str] = {axis for axis in composite_axis if axis_name2known_length[axis] == _unknown_axis_length}
         if len(unknown) > 1:
