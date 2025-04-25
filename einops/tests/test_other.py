@@ -11,6 +11,8 @@ from einops.tests import collect_test_backends, is_backend_tested
 
 __author__ = "Alex Rogozhnikov"
 
+rng = np.random.default_rng()
+
 
 def test_doctests_examples():
     # tests docstrings, additionally
@@ -50,12 +52,12 @@ def test_optimize_transformations_numpy():
     for shape in shapes:
         for _attempt in range(5):
             n_dimensions = len(shape)
-            x = np.random.randint(0, 2**12, size=shape).reshape([-1])
+            x = rng.integers(0, 2**12, size=shape).reshape([-1])
             init_shape = shape[:]
-            n_reduced = np.random.randint(0, n_dimensions + 1)
-            reduced_axes = tuple(np.random.permutation(n_dimensions)[:n_reduced])
-            axes_reordering = np.random.permutation(n_dimensions - n_reduced)
-            final_shape = np.random.randint(0, 1024, size=333)  # just random
+            n_reduced = rng.integers(0, n_dimensions + 1)
+            reduced_axes = tuple(rng.permutation(n_dimensions)[:n_reduced])
+            axes_reordering = rng.permutation(n_dimensions - n_reduced)
+            final_shape = rng.integers(0, 1024, size=333)  # just random
 
             init_shape2, reduced_axes2, axes_reordering2, final_shape2 = combination2 = _optimize_transformation(
                 init_shape, reduced_axes, axes_reordering, final_shape

@@ -168,12 +168,13 @@ test_functional_cases = [
 
 def test_layer():
     for backend in collect_test_backends(layers=True, symbolic=False):
+        rng = np.random.default_rng()
         if backend.framework_name in ["tensorflow", "torch", "oneflow", "paddle"]:
             layer_type = backend.layers().EinMix
             for args, in_shape, out_shape in test_layer_cases:
                 layer = args(layer_type)
                 print("Running", layer.einsum_pattern, "for", backend.framework_name)
-                input = np.random.uniform(size=in_shape).astype("float32")
+                input = rng.uniform(size=in_shape).astype("float32")
                 input_framework = backend.from_numpy(input)
                 output_framework = layer(input_framework)
                 output = backend.to_numpy(output_framework)

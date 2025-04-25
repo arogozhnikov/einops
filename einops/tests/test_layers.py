@@ -242,6 +242,7 @@ def test_torch_layers_scripting():
 
 
 def test_keras_layer():
+    rng = np.random.default_rng()
     if not is_backend_tested("tensorflow"):
         pytest.skip()
     else:
@@ -278,7 +279,7 @@ def test_keras_layer():
         model1 = create_keras_model()
         model2 = create_keras_model()
 
-        input = np.random.normal(size=[10, 32, 32, 3]).astype("float32")
+        input = rng.normal(size=[10, 32, 32, 3]).astype("float32")
         # two randomly init models should provide different outputs
         assert not np.allclose(model1.predict_on_batch(input), model2.predict_on_batch(input))
 

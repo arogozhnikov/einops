@@ -7,6 +7,8 @@ import pytest
 from einops import EinopsError, asnumpy, pack, unpack
 from einops.tests import collect_test_backends
 
+rng = np.random.default_rng()
+
 
 def pack_unpack(xs, pattern):
     x, ps = pack(xs, pattern)
@@ -61,7 +63,7 @@ class CaptureException:
 
 def test_numpy_trivial(H=13, W=17):
     def rand(*shape):
-        return np.random.random(shape)
+        return rng.random(shape)
 
     def check(a, b):
         assert a.dtype == b.dtype
@@ -149,7 +151,7 @@ def test_pack_unpack_with_numpy():
         shape = case.shape
         pattern = case.pattern
 
-        x = np.random.random(shape)
+        x = rng.random(shape)
         # all correct, no minus 1
         unpack_and_pack(x, [[2], [1], [2]], pattern)
         # no -1, asking for wrong shapes
@@ -215,7 +217,7 @@ def test_pack_unpack_against_numpy():
             shape = case.shape
             pattern = case.pattern
 
-            x = np.random.random(shape)
+            x = rng.random(shape)
             x = backend.from_numpy(x)
             # all correct, no minus 1
             unpack_and_pack(x, [[2], [1], [2]], pattern)
@@ -280,7 +282,7 @@ def test_pack_unpack_array_api():
     for case in cases:
         shape = case.shape
         pattern = case.pattern
-        x_np = np.random.random(shape)
+        x_np = rng.random(shape)
         x_xp = xp.from_dlpack(x_np)
 
         for ps in [

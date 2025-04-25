@@ -11,6 +11,8 @@ from einops.tests import collect_test_backends, is_backend_tested
 imp_op_backends = collect_test_backends(symbolic=False, layers=False)
 sym_op_backends = collect_test_backends(symbolic=True, layers=False)
 
+rng = np.random.default_rng()
+
 identity_patterns = [
     "...->...",
     "a b c d e-> a b c d e",
@@ -84,7 +86,7 @@ def check_op_against_numpy(backend, numpy_input, pattern, axes_lengths, reductio
     check_equal = np.array_equal
     p_none_dimension = 0.5
     if is_symbolic:
-        symbol_shape = [d if np.random() >= p_none_dimension else None for d in numpy_input.shape]
+        symbol_shape = [d if rng.random() >= p_none_dimension else None for d in numpy_input.shape]
         symbol = backend.create_symbol(shape=symbol_shape)
         result_symbol = operation(symbol)
         backend_result = backend.eval_symbol(result_symbol, [(symbol, numpy_input)])
@@ -185,18 +187,18 @@ def test_rearrange_permutations_numpy():
     # tests random permutation of axes against two independent numpy ways
     for n_axes in range(1, 10):
         input = np.arange(2**n_axes).reshape([2] * n_axes)
-        permutation = np.random.permutation(n_axes)
+        permutation = rng.permutation(n_axes)
         left_expression = " ".join("i" + str(axis) for axis in range(n_axes))
         right_expression = " ".join("i" + str(axis) for axis in permutation)
         expression = left_expression + " -> " + right_expression
         result = rearrange(input, expression)
 
-        for pick in np.random.randint(0, 2, [10, n_axes]):
+        for pick in rng.integers(0, 2, [10, n_axes]):
             assert input[tuple(pick)] == result[tuple(pick[permutation])]
 
     for n_axes in range(1, 10):
         input = np.arange(2**n_axes).reshape([2] * n_axes)
-        permutation = np.random.permutation(n_axes)
+        permutation = rng.permutation(n_axes)
         left_expression = " ".join("i" + str(axis) for axis in range(n_axes)[::-1])
         right_expression = " ".join("i" + str(axis) for axis in permutation[::-1])
         expression = left_expression + " -> " + right_expression
@@ -313,9 +315,9 @@ def test_reduction_stress_imperatives():
             if "paddle" in backend.framework_name:
                 max_dim = 9
             for n_axes in range(max_dim):
-                shape = np.random.randint(2, 4, size=n_axes)
-                permutation = np.random.permutation(n_axes)
-                skipped = 0 if reduction == "rearrange" else np.random.randint(n_axes + 1)
+                shape = rng.integers(2, 4, size=n_axes)
+                permutation = rng.permutation(n_axes)
+                skipped = 0 if reduction == "rearrange" else rng.integers(n_axes + 1)
                 left = " ".join("x" + str(i) for i in range(n_axes))
                 right = " ".join("x" + str(i) for i in permutation[skipped:])
                 pattern = left + "->" + right
