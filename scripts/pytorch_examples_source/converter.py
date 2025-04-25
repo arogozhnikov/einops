@@ -4,12 +4,13 @@ It will convert pytorch.ipynb to html page docs/pytorch-examples.html
 
 """
 
+from pathlib import Path
+
 import markdown
 import nbformat
 from pygments import highlight
 from pygments.formatters import HtmlFormatter
 from pygments.lexers import PythonLexer
-from pathlib import Path
 
 notebook = nbformat.read("Pytorch.ipynb", as_version=nbformat.NO_CONVERT)
 

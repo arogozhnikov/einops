@@ -8,7 +8,7 @@ __version__ = "0.8.1"
 class EinopsError(RuntimeError):
     """Runtime error thrown by einops"""
 
-    pass
+    pass  # noqa: PIE790
 
 
 __all__ = ["EinopsError", "asnumpy", "einsum", "pack", "parse_shape", "rearrange", "reduce", "repeat", "unpack"]

@@ -5,8 +5,9 @@ Github does not count dependent python projects unless you have a setup.py
 
 __author__ = "Alex Rogozhnikov"
 
-from setuptools import setup
 from pathlib import Path
+
+from setuptools import setup
 
 setup(
     name="einops",
