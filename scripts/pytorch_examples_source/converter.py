@@ -18,7 +18,7 @@ cache = ""
 for cell in notebook["cells"]:
     if cell["cell_type"] == "code":
         source = cell["source"]
-        if source.startswith("#left") or source.startswith("#right"):
+        if source.startswith(("#left", "#right")):
             trimmed_source = source[source.index("\n") + 1 :]
             cache += f"<div>{highlight(trimmed_source, PythonLexer(), HtmlFormatter())}</div>"
         if source.startswith("#right"):
