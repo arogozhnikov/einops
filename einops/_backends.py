@@ -29,7 +29,7 @@ def get_backend(tensor) -> "AbstractBackend":
     if _result is not None:
         return _result
 
-    for framework_name, backend in list(_loaded_backends.items()):
+    for _framework_name, backend in list(_loaded_backends.items()):
         if backend.is_appropriate_type(tensor):
             _type2backend[_type] = backend
             return backend
@@ -197,7 +197,7 @@ class JaxBackend(NumpyBackend):
     framework_name = "jax"
 
     def __init__(self):
-        super(JaxBackend, self).__init__()
+        super().__init__()
         self.onp = self.np
 
         import jax.numpy
@@ -248,7 +248,7 @@ class TorchBackend(AbstractBackend):
             return x.mean(dim=reduced_axes)
         elif operation in ("any", "all", "prod"):
             # pytorch supports reducing only one operation at a time
-            for i in list(sorted(reduced_axes))[::-1]:
+            for i in sorted(reduced_axes)[::-1]:
                 x = getattr(x, operation)(dim=i)
             return x
         else:
