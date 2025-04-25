@@ -107,15 +107,44 @@ docstring-code-format = false
 exclude = ["*.ipynb"]
 
 [tool.ruff.lint]
-select = ["E4", "E7", "E9", "F", "W"]
+select = [
+    "E4", "E7", "E9", "F", "W", "B", "I",
+    "RUF",    # ruff rules
+    "Q",      # quotes
+    "TID252", # force abs imports of parents
+    "NPY",    # numpy ruleset
+    "PIE",    # flake8-pie
+    "ISC",    # implicit string concatenation
+    "PTH",    # pathlib
+    "N818",   # error class name ends with error 
+    "UP",     # pyupgrade
+    "C4",     # comprehensions
+    "N804",   # cls
+    "N805",   # self
+    "COM818", # bare comma
+    "PL",     # all pylint rules (error, conventions, warnigns)
+    "FLY",    # static joins -> f-string
+    "NPY201", # numpy 2 deprecations
+    "RET501",  
+    "RET502", 
+    "RET503", 
+]
 # this notebook is not really a notebook,
 # but a set of examples to be compared
+ignore = [
+    "C408",    # rewrite dict as literal
+    "PLW0603", # global args modification
+    "RUF010",  # str(x) -> x:!s
+    "PLR",     # pylint - opinionated recommendations
+]
 exclude = ["*Pytorch.ipynb"]
 
 
 [tool.ruff.lint.per-file-ignores]
 "*.ipynb" = [
+    "I001", # poor formatting of imports
     "E402", # Module level import not at top of cell
     "F811", # redefinition of unused
     "E702", # Multiple statements on one line (semicolon)
+    "NPY002", # force using generators with np.random
 ]
