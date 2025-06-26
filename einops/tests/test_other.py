@@ -292,7 +292,7 @@ def test_torch_compile_for_functions():
             return x1 + addition
 
     original = TorchModuleWithOperations()
-    compiled = torch.compile(original, fullgraph=True, backend="aot_eager")
+    compiled = torch.compile(original, fullgraph=True)
     for size in [10, 20, 40]:
         x = torch.rand([size, size + 1, size + 2])
         for suffix in ["", "suf1", "other_suffix"]:
@@ -320,7 +320,7 @@ def test_torch_compile_for_layers():
         Reduce("qkv b t cout -> b t qkv", "min", cout=8),
     )
 
-    compiled = torch.compile(original, fullgraph=True, backend="aot_eager")
+    compiled = torch.compile(original, fullgraph=True)
 
     for size in [16, 32, 64]:
         x = torch.rand([size, size])

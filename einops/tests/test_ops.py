@@ -609,14 +609,16 @@ def test_torch_compile_with_dynamic_shape():
         return x
 
     # seems can't test static and dynamic in the same test run.
-    # func1_compiled_static = torch.compile(func1, dynamic=False, fullgraph=True, backend='aot_eager')
-    func1_compiled_dynamic = torch.compile(func1, dynamic=True, fullgraph=True, backend="aot_eager")
+    func1_compiled_static = torch.compile(func1, dynamic=False, fullgraph=True)
+    func1_compiled_dynamic = torch.compile(func1, dynamic=True, fullgraph=True)
 
     x = torch.randn(size=[4, 5, 6, 3])
-    assert torch.equal(func1_compiled_dynamic(x), func1(x))
+    assert torch.allclose(func1_compiled_static(x), func1(x), atol=1e-5)
+    assert torch.allclose(func1_compiled_dynamic(x), func1(x), atol=1e-5)
     # check with input of different dimensionality, and with all shape elements changed
     x = torch.randn(size=[6, 3, 4, 2, 3])
-    assert torch.equal(func1_compiled_dynamic(x), func1(x))
+    assert torch.allclose(func1_compiled_static(x), func1(x), atol=1e-5)
+    assert torch.allclose(func1_compiled_dynamic(x), func1(x), atol=1e-5)
 
 
 def bit_count(x):
