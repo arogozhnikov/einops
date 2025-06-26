@@ -251,7 +251,7 @@ def test_is_float_type():
             assert backend.is_float_type(input) == is_float, (dtype, backend, input.dtype)
 
 
-def test_torch_compile():
+def test_torch_compile_for_functions():
     """
     Test ensures that allow_ops_in_compiled_graph allows compiling in a single graph
     Additionally we ensure that after compilation cache works properly
@@ -299,3 +299,31 @@ def test_torch_compile():
             result1 = compiled(x, suffix)
             result2 = original(x, suffix)
             assert torch.allclose(result1, result2)
+
+
+def test_torch_compile_for_layers():
+    """
+    Einops layers are in general very friendly towards tracing/compiling,
+    but we still want to make sure we can compile them.
+    """
+    if not is_backend_tested("torch"):
+        pytest.skip()
+
+    import torch
+    from torch import nn
+
+    from einops.layers.torch import EinMix, Rearrange, Reduce
+
+    original = nn.Sequential(
+        Rearrange("b (t c) -> b t c", c=16),
+        EinMix("b t c -> qkv b t cout", weight_shape="qkv c cout", bias_shape="qkv cout", qkv=3, c=16, cout=8),
+        Reduce("qkv b t cout -> b t qkv", "min", cout=8),
+    )
+
+    compiled = torch.compile(original, fullgraph=True, backend="aot_eager")
+
+    for size in [16, 32, 64]:
+        x = torch.rand([size, size])
+        result1 = original(x)
+        result2 = compiled(x)
+        assert torch.allclose(result1, result2)
