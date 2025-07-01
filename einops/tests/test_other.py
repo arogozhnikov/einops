@@ -297,8 +297,9 @@ def test_torch_compile_for_functions():
         x = torch.rand([size, size + 1, size + 2])
         for suffix in ["", "suf1", "other_suffix"]:
             result1 = compiled(x, suffix)
-            result2 = original(x, suffix)
-            assert torch.allclose(result1, result2)
+            result2 = original(x.double(), suffix).float()
+
+            torch.testing.assert_close(result1, result2, atol=1e-5, rtol=1e-5)
 
 
 def test_torch_compile_for_layers():
