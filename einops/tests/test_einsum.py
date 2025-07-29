@@ -169,7 +169,7 @@ test_functional_cases = [
 def test_layer():
     for backend in collect_test_backends(layers=True, symbolic=False):
         rng = np.random.default_rng()
-        if backend.framework_name in ["tensorflow", "torch", "oneflow", "paddle"]:
+        if backend.framework_name in ["tensorflow", "torch", "oneflow", "paddle", "mindspore"]:
             layer_type = backend.layers().EinMix
             for args, in_shape, out_shape in test_layer_cases:
                 layer = args(layer_type)
@@ -191,6 +191,7 @@ valid_backends_functional = [
     "tensorflow.keras",
     "paddle",
     "pytensor",
+    "mindspore",
 ]
 
 

@@ -60,10 +60,16 @@ def test_rearrange_imperative():
             just_sum = backend.layers().Reduce("...->", reduction="sum")
 
             variable = backend.from_numpy(x)
-            result = just_sum(layer(variable))
 
-            result.backward()
-            assert np.allclose(backend.to_numpy(variable.grad), 1)
+            if backend.framework_name != "mindspore":
+                result = just_sum(layer(variable))
+                result.backward()
+                grad = variable.grad
+            else:
+                grad_fn = backend.ms.grad(just_sum, grad_position=0)
+                grad = grad_fn(layer(variable))
+
+            assert np.allclose(backend.to_numpy(grad), 1)
 
 
 def test_rearrange_symbolic():
@@ -135,10 +141,16 @@ def test_reduce_imperative():
                 just_sum = backend.layers().Reduce("...->", reduction="sum")
 
                 variable = backend.from_numpy(x)
-                result = just_sum(layer(variable))
 
-                result.backward()
-                grad = backend.to_numpy(variable.grad)
+                if backend.framework_name != "mindspore":
+                    result = just_sum(layer(variable))
+                    result.backward()
+                    grad = backend.to_numpy(variable.grad)
+                else:
+                    grad_fn = backend.ms.grad(just_sum, grad_position=0)
+                    grad = grad_fn(layer(variable))
+                    grad = backend.to_numpy(grad)
+
                 if reduction == "sum":
                     assert np.allclose(grad, 1)
                 if reduction == "mean":

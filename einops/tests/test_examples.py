@@ -143,7 +143,7 @@ def test_rearrange_examples():
             # now with strides
             x = np.arange(10 * 2 * 20 * 3 * 30 * 1 * 40).reshape([10 * 2, 20 * 3, 30 * 1, 40 * 1])
             # known torch bug - torch doesn't support negative steps
-            last_step = -1 if (backend.framework_name != "torch" and backend.framework_name != "oneflow") else 1
+            last_step = -1 if backend.framework_name not in ("torch", "oneflow", "mindspore") else 1
             indexing_expression = np.index_exp[::2, ::3, ::1, ::last_step]
             result1 = test(x[indexing_expression])
             result2 = backend.to_numpy(test(backend.from_numpy(x)[indexing_expression]))

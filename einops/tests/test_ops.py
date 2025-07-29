@@ -312,7 +312,9 @@ def test_reduction_stress_imperatives():
             max_dim = 11
             if "oneflow" in backend.framework_name:
                 max_dim = 7
-            if "paddle" in backend.framework_name:
+            elif "mindspore" in backend.framework_name:
+                max_dim = 8
+            elif "paddle" in backend.framework_name:
                 max_dim = 9
             for n_axes in range(max_dim):
                 shape = rng.integers(2, 4, size=n_axes)

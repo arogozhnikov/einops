@@ -716,3 +716,66 @@ class PyTensorBackend(AbstractBackend):
 
     def einsum(self, pattern, *x):
         return self.pt.einsum(pattern, *x)
+
+
+class MindSporeBackend(AbstractBackend):
+    framework_name = "mindspore"
+
+    def __init__(self):
+        import mindspore
+
+        self.ms = mindspore
+        self.mint = mindspore.mint
+
+    def is_appropriate_type(self, tensor):
+        return isinstance(tensor, self.ms.Tensor)
+
+    def from_numpy(self, x):
+        return self.ms.from_numpy(x)
+
+    def to_numpy(self, x):
+        return x.asnumpy()
+
+    def arange(self, start, stop):
+        return self.mint.arange(start, stop, dtype=self.ms.int64)
+
+    def reduce(self, x, operation, reduced_axes):
+        if operation == "min":
+            return self.mint.amin(x, dim=reduced_axes)
+        elif operation == "max":
+            return self.mint.amax(x, dim=reduced_axes)
+        elif operation == "prod":
+            return self.ms.ops.prod(x, axis=reduced_axes)
+        elif operation in ("sum", "mean", "any", "all"):
+            return getattr(self.mint, operation)(x, dim=reduced_axes)
+        else:
+            raise NotImplementedError("Unknown reduction ", operation)
+
+    def reshape(self, x, shape):
+        return self.mint.reshape(x, shape)
+
+    def transpose(self, x, axes: list[int]):
+        return self.mint.permute(x, dims=tuple(axes))  # `dims` must be a tuple
+
+    def stack_on_zeroth_dimension(self, tensors: list):
+        return self.mint.stack(tensors)
+
+    def tile(self, x, repeats):
+        return self.mint.tile(x, repeats)
+
+    def concat(self, tensors, axis: int):
+        return self.mint.cat(tensors, dim=axis)
+
+    def add_axis(self, x, new_position):
+        return self.mint.unsqueeze(x, new_position)
+
+    def is_float_type(self, x):
+        return self.ms.ops.is_floating_point(x)
+
+    def layers(self):
+        from .layers import mindspore
+
+        return mindspore
+
+    def einsum(self, pattern, *x):
+        return self.mint.einsum(pattern, *x)

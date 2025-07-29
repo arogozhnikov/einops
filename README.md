@@ -308,6 +308,7 @@ Einops works with ...
 - [oneflow](https://github.com/Oneflow-Inc/oneflow) (community)
 - [tinygrad](https://github.com/tinygrad/tinygrad) (community)
 - [pytensor](https://github.com/pymc-devs/pytensor) (community)
+- [MindSpore](https://www.mindspore.cn/en) (community)
 
 Additionally, einops can be used with any framework that supports
 [Python array API standard](https://data-apis.org/array-api/latest/API_specification/index.html),

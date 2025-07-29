@@ -34,6 +34,7 @@ def main():
         "paddle": ["paddlepaddle"],
         "oneflow": ["oneflow==0.9.0"],
         "pytensor": ["pytensor"],
+        "mindspore": ["mindspore>=2.6.0"],
     }
 
     usage = f"""
