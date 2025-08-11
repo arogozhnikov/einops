@@ -57,8 +57,10 @@ contains an introduction into einops in chapter 10.
 ## Related projects:
 
 - [numpy.einsum](https://numpy.org/doc/stable/reference/generated/numpy.einsum.html) &mdash; grand-dad of einops, this operation is now available in all mainstream DL frameworks 
-- einops in Rust language <https://docs.rs/einops/0.1.0/einops>
+- einops in Rust language: <https://docs.rs/einops/0.1.0/einops>
 - einops in C++ for torch: <https://github.com/dorpxam/einops-cpp>
-- tensorcast in Julia language <https://juliahub.com/ui/Packages/TensorCast>
+- tensorcast in Julia language: <https://juliahub.com/ui/Packages/TensorCast>
+- one-to-one einops implementation in Julia language: <https://murrellgroup.github.io/Einops.jl/stable/>
+- einops in R language: <https://qile0317.github.io/einops/>
 - for those chasing an extreme compactness of API, <https://github.com/cgarciae/einop> provides 'one op', as the name suggests
 - <https://github.com/fferflo/einx> goes in opposite direction and creates einops-style operation for anything
