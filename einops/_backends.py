@@ -16,7 +16,7 @@ __author__ = "Alex Rogozhnikov"
 
 _loaded_backends: dict = {}
 _type2backend: dict = {}
-_debug_importing = False
+_debug_importing = True
 
 
 def get_backend(tensor) -> "AbstractBackend":
@@ -29,7 +29,8 @@ def get_backend(tensor) -> "AbstractBackend":
     if _result is not None:
         return _result
 
-    for _framework_name, backend in list(_loaded_backends.items()):
+    previously_loaded_backends = list(_loaded_backends.items())
+    for _framework_name, backend in previously_loaded_backends:
         if backend.is_appropriate_type(tensor):
             _type2backend[_type] = backend
             return backend
@@ -42,10 +43,12 @@ def get_backend(tensor) -> "AbstractBackend":
         backends += backend.__subclasses__()
         backend_subclasses.append(backend)
 
+    # handles modification of _loaded_backends from other thread, see #391
+    prev_backend_names = [x for x, _ in previously_loaded_backends]
     for BackendSubclass in backend_subclasses:
         if _debug_importing:
             print("Testing for subclass of ", BackendSubclass)
-        if BackendSubclass.framework_name not in _loaded_backends:
+        if BackendSubclass.framework_name not in prev_backend_names:
             # check that module was already imported. Otherwise it can't be imported
             if BackendSubclass.framework_name in sys.modules:
                 if _debug_importing:

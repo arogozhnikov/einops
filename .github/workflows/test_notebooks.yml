@@ -11,15 +11,16 @@ jobs:
         python-version: ['3.9', '3.12']
 
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: pip
+      - uses: actions/checkout@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - run: uv venv --python ${{ matrix.python-version }}
+
       - name: Install dependencies to run/test notebooks
         run: |
-          pip install nbformat nbconvert jupyter pillow pytest numpy torch tensorflow
+          uv pip install nbformat nbconvert jupyter pillow pytest numpy tensorflow
+          uv pip install torch --index-url https://download.pytorch.org/whl/cpu
       - name: Testing notebooks
         run: |
-          pip install -e . && pytest scripts/test_notebooks.py
+          uv pip install -e . && uv run pytest scripts/test_notebooks.py

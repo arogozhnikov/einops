@@ -11,7 +11,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Configure Git Credentials
         # credentials of GitHub's public bot, so that commits 'belonged' to bot
         run: |
