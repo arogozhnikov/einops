@@ -16,7 +16,7 @@ __author__ = "Alex Rogozhnikov"
 
 _loaded_backends: dict = {}
 _type2backend: dict = {}
-_debug_importing = True
+_debug_importing = False
 
 
 def get_backend(tensor) -> "AbstractBackend":
