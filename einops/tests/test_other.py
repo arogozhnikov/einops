@@ -1,4 +1,7 @@
+import subprocess
+import tempfile
 from doctest import testmod
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -328,3 +331,33 @@ def test_torch_compile_for_layers():
         result1 = original(x)
         result2 = compiled(x)
         assert torch.allclose(result1, result2)
+
+
+src = """
+import einops
+import numpy as np
+from concurrent.futures import ThreadPoolExecutor
+import torch
+
+def f():
+    return einops.rearrange(np.ndarray((20, 150, 150)), "... i j -> ... j i")
+with ThreadPoolExecutor(max_workers=2) as ex:
+    fs = []
+    for i in range(20):
+        fs.append(ex.submit(f))
+    for fut in fs:
+        fut.result()
+"""
+
+
+def test_einops_threading():
+    # requires both. Reproduces problem from https://github.com/arogozhnikov/einops/issues/391
+    if not is_backend_tested("torch"):
+        pytest.skip()
+    if not is_backend_tested("numpy"):
+        pytest.skip()
+
+    with tempfile.TemporaryDirectory() as d:
+        testfile = Path(d).joinpath("test.py")
+        testfile.write_text(src)
+        subprocess.run(["python", testfile.absolute().as_posix()], check=True)

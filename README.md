@@ -85,6 +85,8 @@ Plain and simple:
 pip install einops
 ```
 
+(`uv pip install einops` works as well)
+
 ## Tutorials <a name="Tutorials"></a>
 
 Tutorials are the most convenient way to see `einops` in action
