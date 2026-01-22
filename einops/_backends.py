@@ -719,3 +719,46 @@ class PyTensorBackend(AbstractBackend):
 
     def einsum(self, pattern, *x):
         return self.pt.einsum(pattern, *x)
+
+
+class MLXBackend(AbstractBackend):
+    framework_name = "mlx"
+
+    def __init__(self):
+        import mlx.core as mx
+        import numpy as np
+
+        self.mx = mx
+        self.np = np
+
+    def is_appropriate_type(self, tensor):
+        return isinstance(tensor, self.mx.array)
+
+    def from_numpy(self, x):
+        return self.mx.array(x)
+
+    def to_numpy(self, x):
+        if x.dtype == self.mx.bfloat16:
+            x = x.astype(self.mx.float32)
+        return self.np.array(x)
+
+    def arange(self, start, stop):
+        return self.mx.arange(start, stop)
+
+    def stack_on_zeroth_dimension(self, tensors: list):
+        return self.mx.stack(tensors)
+
+    def add_axes(self, x, new_position):
+        return self.mx.expand_dims(x, new_position)
+
+    def tile(self, x, repeats):
+        return self.mx.tile(x, repeats)
+
+    def concat(self, tensors, axis: int):
+        return self.mx.concatenate(tensors, axis=axis)
+
+    def is_float_type(self, x):
+        return self.mx.issubdtype(x.dtype, self.mx.floating)
+
+    def einsum(self, pattern, *x):
+        return self.mx.einsum(pattern, *x)

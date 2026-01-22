@@ -191,6 +191,7 @@ valid_backends_functional = [
     "tensorflow.keras",
     "paddle",
     "pytensor",
+    "mlx",
 ]
 
 
