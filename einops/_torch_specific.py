@@ -104,6 +104,11 @@ def allow_ops_in_compiled_graph():
     if hasattr(torch, "__version__") and torch.__version__[0] < "2":
         # torch._dynamo and torch.compile appear in pytorch 2.0
         return
+
+    if hasattr(torch, "__version__") and torch.__version__ >= "2.8":
+        # einops don't need to use allow_in graph for torch 2.8 and above
+        return
+
     try:
         from torch._dynamo import allow_in_graph
     except ImportError:
