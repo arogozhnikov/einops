@@ -34,8 +34,11 @@ def main():
         "paddle": ["paddlepaddle"],
         "oneflow": ["oneflow==0.9.0"],
         "pytensor": ["pytensor"],
-        "mlx": ["mlx"],
     }
+    if sys.platform == "darwin":
+        framework_name2installation["mlx"] = ["mlx"]
+    if sys.platform.startswith("linux"):
+        framework_name2installation["mlx"] = ["mlx[cpu]"]
 
     usage = f"""
     Usage:   python -m einops.tests.run_tests <frameworks> [--pip-install]

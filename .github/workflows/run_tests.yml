@@ -8,13 +8,12 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # TF didn't support 3.13, add when supported
-        python-version: ['3.9', '3.11', '3.12']
-        # currently there is conflict between tf, oneflow and paddle in protobuf versions.
+        python-version: ['3.10', '3.11', '3.13']
+        # there was (and likely still is) conflict between tf, oneflow and paddle in protobuf versions.
         # cupy is not tested because it demands gpu
         # oneflow testing is dropped, see details at https://github.com/Oneflow-Inc/oneflow/issues/10340
-        # paddle was switched off because of divergence with numpy in py3.10, paddle==2.6.1
-        frameworks: ['numpy pytorch tensorflow jax']
+        # paddle  testing is dropped because of divergence with numpy in py3.10, paddle==2.6.1
+        frameworks: ['numpy pytorch tensorflow jax mlx']
         # The last pytensor release for 3.9 does not have a pin to numpy < 2, but not compatible with numpy 2,
         # so we skip it in testing
         include:
