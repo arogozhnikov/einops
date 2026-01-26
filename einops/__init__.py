@@ -2,7 +2,7 @@
 # ruff: noqa: E402
 
 __author__ = "Alex Rogozhnikov"
-__version__ = "0.8.2"
+__version__ = "0.9.0dev"
 
 
 class EinopsError(RuntimeError):
