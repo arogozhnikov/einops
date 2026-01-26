@@ -1,6 +1,6 @@
 import string
 import warnings
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from einops import EinopsError
 from einops.einops import _product
@@ -89,7 +89,7 @@ class _EinmixMixin:
         pre_reshape_lengths = None
         post_reshape_pattern = None
         if any(len(group) != 1 for group in left.composition):
-            names: List[str] = []
+            names: list[str] = []
             for group in left.composition:
                 names += group
             names = [name if name != _ellipsis else "..." for name in names]
@@ -187,9 +187,9 @@ class _EinmixMixin:
     def _create_rearrange_layers(
         self,
         pre_reshape_pattern: Optional[str],
-        pre_reshape_lengths: Optional[Dict],
+        pre_reshape_lengths: Optional[dict],
         post_reshape_pattern: Optional[str],
-        post_reshape_lengths: Optional[Dict],
+        post_reshape_lengths: Optional[dict],
     ):
         raise NotImplementedError("Should be defined in framework implementations")
 
@@ -213,9 +213,9 @@ class _EinmixDebugger(_EinmixMixin):
     def _create_rearrange_layers(
         self,
         pre_reshape_pattern: Optional[str],
-        pre_reshape_lengths: Optional[Dict],
+        pre_reshape_lengths: Optional[dict],
         post_reshape_pattern: Optional[str],
-        post_reshape_lengths: Optional[Dict],
+        post_reshape_lengths: Optional[dict],
     ):
         self.pre_reshape_pattern = pre_reshape_pattern
         self.pre_reshape_lengths = pre_reshape_lengths

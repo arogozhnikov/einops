@@ -1,5 +1,4 @@
 import dataclasses
-import typing
 
 import numpy as np
 import pytest
@@ -122,7 +121,7 @@ def test_numpy_trivial(H=13, W=17):
 
 @dataclasses.dataclass
 class UnpackTestCase:
-    shape: typing.Tuple[int, ...]
+    shape: tuple[int, ...]
     pattern: str
 
     def dim(self):

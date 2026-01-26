@@ -9,7 +9,6 @@ Also needs:
 """
 
 from io import StringIO
-from typing import Dict
 
 __author__ = "Alex Rogozhnikov"
 
@@ -19,7 +18,7 @@ import nbformat
 from nbconvert.preprocessors import ExecutePreprocessor
 
 
-def render_notebook(filename: Path, replacements: Dict[str, str]) -> str:
+def render_notebook(filename: Path, replacements: dict[str, str]) -> str:
     """Takes path to the notebook, returns executed and rendered version
     :param filename: notebook
     :param replacements: dictionary with text replacements done before executing

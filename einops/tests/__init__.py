@@ -7,7 +7,6 @@ import logging
 import os
 import warnings
 from functools import lru_cache
-from typing import List, Tuple
 
 from einops import _backends
 
@@ -21,7 +20,7 @@ logging.getLogger("matplotlib").disabled = True
 FLOAT_REDUCTIONS = ("min", "max", "sum", "mean", "prod")  # not includes any/all
 
 
-def find_names_of_all_frameworks() -> List[str]:
+def find_names_of_all_frameworks() -> list[str]:
     backend_subclasses = []
     backends = _backends.AbstractBackend.__subclasses__()
     while backends:
@@ -34,7 +33,7 @@ def find_names_of_all_frameworks() -> List[str]:
 ENVVAR_NAME = "EINOPS_TEST_BACKENDS"
 
 
-def unparse_backends(backend_names: List[str]) -> Tuple[str, str]:
+def unparse_backends(backend_names: list[str]) -> tuple[str, str]:
     _known_backends = find_names_of_all_frameworks()
     for backend_name in backend_names:
         if backend_name not in _known_backends:
@@ -43,7 +42,7 @@ def unparse_backends(backend_names: List[str]) -> Tuple[str, str]:
 
 
 @lru_cache(maxsize=1)
-def parse_backends_to_test() -> List[str]:
+def parse_backends_to_test() -> list[str]:
     if ENVVAR_NAME not in os.environ:
         raise RuntimeError(f"Testing frameworks were not specified, env var {ENVVAR_NAME} not set")
     parsed_backends = os.environ[ENVVAR_NAME].split(",")
@@ -62,7 +61,7 @@ def is_backend_tested(backend: str) -> bool:
     return backend in parse_backends_to_test()
 
 
-def collect_test_backends(symbolic=False, layers=False) -> List[_backends.AbstractBackend]:
+def collect_test_backends(symbolic=False, layers=False) -> list[_backends.AbstractBackend]:
     """
     :param symbolic: symbolic or imperative frameworks?
     :param layers: layers or operations?
