@@ -3,7 +3,7 @@ import itertools
 import string
 import typing
 from collections import OrderedDict
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, TypeVar, Union, cast, overload
+from typing import Any, Callable, Optional, TypeVar, Union, cast, overload
 
 if typing.TYPE_CHECKING:
     # for docstrings in pycharm
@@ -14,7 +14,7 @@ from ._backends import get_backend
 from .parsing import AnonymousAxis, ParsedExpression, _ellipsis
 
 Tensor = TypeVar("Tensor")
-ReductionCallable = Callable[[Tensor, Tuple[int, ...]], Tensor]
+ReductionCallable = Callable[[Tensor, tuple[int, ...]], Tensor]
 Reduction = Union[str, ReductionCallable]
 Size = typing.Any
 
@@ -26,7 +26,7 @@ _unknown_axis_length = -999999
 _expected_axis_length = -99999
 
 
-def _product(sequence: List[int]) -> int:
+def _product(sequence: list[int]) -> int:
     """minimalistic product that works both with numbers and symbols. Supports empty lists"""
     result = 1
     for element in sequence:
@@ -34,7 +34,7 @@ def _product(sequence: List[int]) -> int:
     return result
 
 
-def _reduce_axes(tensor, reduction_type: Reduction, reduced_axes: List[int], backend):
+def _reduce_axes(tensor, reduction_type: Reduction, reduced_axes: list[int], backend):
     if callable(reduction_type):
         # custom callable
         return reduction_type(tensor, tuple(reduced_axes))
@@ -102,13 +102,13 @@ def _optimize_transformation(init_shapes, reduced_axes, axes_reordering, final_s
     return init_shapes, reduced_axes, axes_reordering, final_shapes
 
 
-CookedRecipe = Tuple[Optional[List[int]], Optional[List[int]], List[int], Dict[int, int], Optional[List[int]], int]
+CookedRecipe = tuple[Optional[list[int]], Optional[list[int]], list[int], dict[int, int], Optional[list[int]], int]
 
 # Actual type is tuple[tuple[str, int], ...]
 # However torch.jit.script does not "understand" the correct type,
 # and torch_specific will use list version.
-HashableAxesLengths = Tuple[Tuple[str, int], ...]
-FakeHashableAxesLengths = List[Tuple[str, int]]
+HashableAxesLengths = tuple[tuple[str, int], ...]
+FakeHashableAxesLengths = list[tuple[str, int]]
 
 
 class TransformRecipe:
@@ -125,35 +125,35 @@ class TransformRecipe:
         # list of sizes (or just sizes) for elementary axes as they appear in left expression.
         # this is what (after computing unknown parts) will be a shape after first transposition.
         # This does not include any ellipsis dimensions.
-        elementary_axes_lengths: List[int],
+        elementary_axes_lengths: list[int],
         # if additional axes are provided, they should be set in prev array
         # This shows mapping from name to position
-        axis_name2elementary_axis: Dict[str, int],
+        axis_name2elementary_axis: dict[str, int],
         # each dimension in input can help to reconstruct length of one elementary axis
         # or verify one of dimensions. Each element points to element of elementary_axes_lengths.
-        input_composition_known_unknown: List[Tuple[List[int], List[int]]],
+        input_composition_known_unknown: list[tuple[list[int], list[int]]],
         # permutation applied to elementary axes, if ellipsis is absent
-        axes_permutation: List[int],
+        axes_permutation: list[int],
         # permutation puts reduced axes in the end, we only need to know the first position.
         first_reduced_axis: int,
         # at which positions which of elementary axes should appear. Axis position -> axis index.
-        added_axes: Dict[int, int],
+        added_axes: dict[int, int],
         # ids of axes as they appear in result, again pointers to elementary_axes_lengths,
         # only used to infer result dimensions
-        output_composite_axes: List[List[int]],
+        output_composite_axes: list[list[int]],
     ):
-        self.elementary_axes_lengths: List[int] = elementary_axes_lengths
-        self.axis_name2elementary_axis: Dict[str, int] = axis_name2elementary_axis
-        self.input_composition_known_unknown: List[Tuple[List[int], List[int]]] = input_composition_known_unknown
-        self.axes_permutation: List[int] = axes_permutation
+        self.elementary_axes_lengths: list[int] = elementary_axes_lengths
+        self.axis_name2elementary_axis: dict[str, int] = axis_name2elementary_axis
+        self.input_composition_known_unknown: list[tuple[list[int], list[int]]] = input_composition_known_unknown
+        self.axes_permutation: list[int] = axes_permutation
 
         self.first_reduced_axis: int = first_reduced_axis
-        self.added_axes: Dict[int, int] = added_axes
-        self.output_composite_axes: List[List[int]] = output_composite_axes
+        self.added_axes: dict[int, int] = added_axes
+        self.output_composite_axes: list[list[int]] = output_composite_axes
 
 
 def _reconstruct_from_shape_uncached(
-    self: TransformRecipe, shape: List[int], axes_dims: FakeHashableAxesLengths
+    self: TransformRecipe, shape: list[int], axes_dims: FakeHashableAxesLengths
 ) -> CookedRecipe:
     """
     Reconstruct all actual parameters using shape.
@@ -164,7 +164,7 @@ def _reconstruct_from_shape_uncached(
     need_init_reshape = False
 
     # last axis is allocated for collapsed ellipsis
-    axes_lengths: List[int] = list(self.elementary_axes_lengths)
+    axes_lengths: list[int] = list(self.elementary_axes_lengths)
     for axis, dim in axes_dims:
         axes_lengths[self.axis_name2elementary_axis[axis]] = dim
 
@@ -197,17 +197,17 @@ def _reconstruct_from_shape_uncached(
     # at this point all axes_lengths are computed (either have values or variables, but not Nones)
 
     # elementary axes are ordered as they appear in input, then all added axes
-    init_shapes: Optional[List[int]] = axes_lengths[: len(self.axes_permutation)] if need_init_reshape else None
+    init_shapes: Optional[list[int]] = axes_lengths[: len(self.axes_permutation)] if need_init_reshape else None
 
     need_final_reshape = False
-    final_shapes: List[int] = []
+    final_shapes: list[int] = []
     for grouping in self.output_composite_axes:
         lengths = [axes_lengths[elementary_axis] for elementary_axis in grouping]
         final_shapes.append(_product(lengths))
         if len(lengths) != 1:
             need_final_reshape = True
 
-    added_axes: Dict[int, int] = {
+    added_axes: dict[int, int] = {
         pos: axes_lengths[pos_in_elementary] for pos, pos_in_elementary in self.added_axes.items()
     }
 
@@ -216,7 +216,7 @@ def _reconstruct_from_shape_uncached(
 
     n_axes_after_adding_axes = len(added_axes) + len(self.axes_permutation)
 
-    axes_reordering: Optional[List[int]] = self.axes_permutation
+    axes_reordering: Optional[list[int]] = self.axes_permutation
     if self.axes_permutation == list(range(len(self.axes_permutation))):
         axes_reordering = None
 
@@ -290,7 +290,7 @@ def _apply_recipe_array_api(
 def _prepare_transformation_recipe(
     pattern: str,
     operation: Reduction,
-    axes_names: Tuple[str, ...],
+    axes_names: tuple[str, ...],
     ndim: int,
 ) -> TransformRecipe:
     """Perform initial parsing of pattern and provided supplementary info
@@ -368,7 +368,7 @@ def _prepare_transformation_recipe(
         rght_composition = rght.composition
 
     # parsing all dimensions to find out lengths
-    axis_name2known_length: Dict[Union[str, AnonymousAxis], int] = OrderedDict()
+    axis_name2known_length: dict[Union[str, AnonymousAxis], int] = OrderedDict()
     for composite_axis in left_composition:
         for axis_name in composite_axis:
             if isinstance(axis_name, AnonymousAxis):
@@ -400,8 +400,8 @@ def _prepare_transformation_recipe(
     input_axes_known_unknown = []
     # some shapes are inferred later - all information is prepared for faster inference
     for composite_axis in left_composition:
-        known: Set[str] = {axis for axis in composite_axis if axis_name2known_length[axis] != _unknown_axis_length}
-        unknown: Set[str] = {axis for axis in composite_axis if axis_name2known_length[axis] == _unknown_axis_length}
+        known: set[str] = {axis for axis in composite_axis if axis_name2known_length[axis] != _unknown_axis_length}
+        unknown: set[str] = {axis for axis in composite_axis if axis_name2known_length[axis] == _unknown_axis_length}
         if len(unknown) > 1:
             raise EinopsError(f"Could not infer sizes for {unknown}")
         assert len(unknown) + len(known) == len(composite_axis)
@@ -409,12 +409,12 @@ def _prepare_transformation_recipe(
             ([axis_name2position[axis] for axis in known], [axis_name2position[axis] for axis in unknown])
         )
 
-    axis_position_after_reduction: Dict[str, int] = {}
+    axis_position_after_reduction: dict[str, int] = {}
     for axis_name in itertools.chain(*left_composition):
         if axis_name in rght.identifiers:
             axis_position_after_reduction[axis_name] = len(axis_position_after_reduction)
 
-    result_axes_grouping: List[List[int]] = [
+    result_axes_grouping: list[list[int]] = [
         [axis_name2position[axis] for axis in composite_axis] for i, composite_axis in enumerate(rght_composition)
     ]
 
@@ -443,8 +443,8 @@ def _prepare_transformation_recipe(
 
 
 def _prepare_recipes_for_all_dims(
-    pattern: str, operation: Reduction, axes_names: Tuple[str, ...]
-) -> Dict[int, TransformRecipe]:
+    pattern: str, operation: Reduction, axes_names: tuple[str, ...]
+) -> dict[int, TransformRecipe]:
     """
     Internal function, used in layers.
     Layer makes all recipe creation when it is initialized, thus to keep recipes simple we pre-compute for all dims
@@ -458,14 +458,14 @@ def _prepare_recipes_for_all_dims(
 
 
 @overload
-def reduce(tensor: List[Tensor], pattern: str, reduction: Reduction, **axes_lengths: Size) -> Tensor: ...
+def reduce(tensor: list[Tensor], pattern: str, reduction: Reduction, **axes_lengths: Size) -> Tensor: ...
 
 
 @overload
 def reduce(tensor: Tensor, pattern: str, reduction: Reduction, **axes_lengths: Size) -> Tensor: ...
 
 
-def reduce(tensor: Union[Tensor, List[Tensor]], pattern: str, reduction: Reduction, **axes_lengths: Size) -> Tensor:
+def reduce(tensor: Union[Tensor, list[Tensor]], pattern: str, reduction: Reduction, **axes_lengths: Size) -> Tensor:
     """
     einops.reduce combines rearrangement and reduction using reader-friendly notation.
 
@@ -551,14 +551,14 @@ def reduce(tensor: Union[Tensor, List[Tensor]], pattern: str, reduction: Reducti
 
 
 @overload
-def rearrange(tensor: List[Tensor], pattern: str, **axes_lengths: Size) -> Tensor: ...
+def rearrange(tensor: list[Tensor], pattern: str, **axes_lengths: Size) -> Tensor: ...
 
 
 @overload
 def rearrange(tensor: Tensor, pattern: str, **axes_lengths: Size) -> Tensor: ...
 
 
-def rearrange(tensor: Union[Tensor, List[Tensor]], pattern: str, **axes_lengths: Size) -> Tensor:
+def rearrange(tensor: Union[Tensor, list[Tensor]], pattern: str, **axes_lengths: Size) -> Tensor:
     """
     einops.rearrange is a reader-friendly smart element reordering for multidimensional tensors.
     This operation includes functionality of transpose (axes permutation), reshape (view), squeeze, unsqueeze,
@@ -617,14 +617,14 @@ def rearrange(tensor: Union[Tensor, List[Tensor]], pattern: str, **axes_lengths:
 
 
 @overload
-def repeat(tensor: List[Tensor], pattern: str, **axes_lengths: Size) -> Tensor: ...
+def repeat(tensor: list[Tensor], pattern: str, **axes_lengths: Size) -> Tensor: ...
 
 
 @overload
 def repeat(tensor: Tensor, pattern: str, **axes_lengths: Size) -> Tensor: ...
 
 
-def repeat(tensor: Union[Tensor, List[Tensor]], pattern: str, **axes_lengths: Size) -> Tensor:
+def repeat(tensor: Union[Tensor, list[Tensor]], pattern: str, **axes_lengths: Size) -> Tensor:
     """
     einops.repeat allows reordering elements and repeating them in arbitrary combinations.
     This operation includes functionality of repeat, tile, and broadcast functions.

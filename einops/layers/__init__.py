@@ -1,6 +1,6 @@
 __author__ = "Alex Rogozhnikov"
 
-from typing import Any, Dict
+from typing import Any
 
 from einops import EinopsError
 from einops.einops import TransformRecipe, _apply_recipe, _prepare_recipes_for_all_dims, get_backend
@@ -30,7 +30,7 @@ class RearrangeMixin:
             params += f", {axis}={length}"
         return f"{self.__class__.__name__}({params})"
 
-    def multirecipe(self) -> Dict[int, TransformRecipe]:
+    def multirecipe(self) -> dict[int, TransformRecipe]:
         try:
             return _prepare_recipes_for_all_dims(
                 self.pattern, operation="rearrange", axes_names=tuple(self.axes_lengths)
@@ -80,7 +80,7 @@ class ReduceMixin:
             params += f", {axis}={length}"
         return f"{self.__class__.__name__}({params})"
 
-    def multirecipe(self) -> Dict[int, TransformRecipe]:
+    def multirecipe(self) -> dict[int, TransformRecipe]:
         try:
             return _prepare_recipes_for_all_dims(
                 self.pattern, operation=self.reduction, axes_names=tuple(self.axes_lengths)

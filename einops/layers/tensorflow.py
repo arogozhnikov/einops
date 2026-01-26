@@ -11,7 +11,7 @@ Layers in einops==0.8.0 were re-implemented
 
 """
 
-from typing import Dict, Optional, cast
+from typing import Optional, cast
 
 import tensorflow as tf
 from tensorflow.keras.layers import Layer
@@ -53,9 +53,9 @@ class EinMix(_EinmixMixin, Layer):
     def _create_rearrange_layers(
         self,
         pre_reshape_pattern: Optional[str],
-        pre_reshape_lengths: Optional[Dict],
+        pre_reshape_lengths: Optional[dict],
         post_reshape_pattern: Optional[str],
-        post_reshape_lengths: Optional[Dict],
+        post_reshape_lengths: Optional[dict],
     ):
         self.pre_rearrange = None
         if pre_reshape_pattern is not None:

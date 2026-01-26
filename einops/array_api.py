@@ -1,4 +1,4 @@
-from typing import List, Sequence, Tuple
+from typing import Sequence
 
 from .einops import EinopsError, Reduction, Tensor, _apply_recipe_array_api, _prepare_transformation_recipe
 from .packing import analyze_pattern, prod
@@ -46,15 +46,15 @@ def asnumpy(tensor: Tensor):
     return np.from_dlpack(tensor)
 
 
-Shape = Tuple
+Shape = tuple
 
 
-def pack(tensors: Sequence[Tensor], pattern: str) -> Tuple[Tensor, List[Shape]]:
+def pack(tensors: Sequence[Tensor], pattern: str) -> tuple[Tensor, list[Shape]]:
     n_axes_before, n_axes_after, min_axes = analyze_pattern(pattern, "pack")
     xp = tensors[0].__array_namespace__()
 
-    reshaped_tensors: List[Tensor] = []
-    packed_shapes: List[Shape] = []
+    reshaped_tensors: list[Tensor] = []
+    packed_shapes: list[Shape] = []
     for i, tensor in enumerate(tensors):
         shape = tensor.shape
         if len(shape) < min_axes:
@@ -69,7 +69,7 @@ def pack(tensors: Sequence[Tensor], pattern: str) -> Tuple[Tensor, List[Shape]]:
     return xp.concat(reshaped_tensors, axis=n_axes_before), packed_shapes
 
 
-def unpack(tensor: Tensor, packed_shapes: List[Shape], pattern: str) -> List[Tensor]:
+def unpack(tensor: Tensor, packed_shapes: list[Shape], pattern: str) -> list[Tensor]:
     xp = tensor.__array_namespace__()
     n_axes_before, n_axes_after, min_axes = analyze_pattern(pattern, opname="unpack")
 
@@ -80,7 +80,7 @@ def unpack(tensor: Tensor, packed_shapes: List[Shape], pattern: str) -> List[Ten
 
     unpacked_axis: int = n_axes_before
 
-    lengths_of_composed_axes: List[int] = [-1 if -1 in p_shape else prod(p_shape) for p_shape in packed_shapes]
+    lengths_of_composed_axes: list[int] = [-1 if -1 in p_shape else prod(p_shape) for p_shape in packed_shapes]
 
     n_unknown_composed_axes = sum(x == -1 for x in lengths_of_composed_axes)
     if n_unknown_composed_axes > 1:

@@ -1,6 +1,6 @@
 import keyword
 import warnings
-from typing import List, Optional, Set, Tuple, Union
+from typing import Optional, Union
 
 from einops import EinopsError
 
@@ -31,11 +31,11 @@ class ParsedExpression:
     def __init__(self, expression: str, *, allow_underscore: bool = False, allow_duplicates: bool = False):
         self.has_ellipsis: bool = False
         self.has_ellipsis_parenthesized: Optional[bool] = None
-        self.identifiers: Set[str] = set()
+        self.identifiers: set[str] = set()
         # that's axes like 2, 3, 4 or 5. Axes with size 1 are exceptional and replaced with empty composition
         self.has_non_unitary_anonymous_axes: bool = False
         # composition keeps structure of composite axes, see how different corner cases are handled in tests
-        self.composition: List[Union[List[str], str]] = []
+        self.composition: list[Union[list[str], str]] = []
         if "." in expression:
             if "..." not in expression:
                 raise EinopsError("Expression may contain dots only inside ellipsis (...)")
@@ -46,7 +46,7 @@ class ParsedExpression:
             expression = expression.replace("...", _ellipsis)
             self.has_ellipsis = True
 
-        bracket_group: Optional[List[str]] = None
+        bracket_group: Optional[list[str]] = None
 
         def add_axis_name(x):
             if x in self.identifiers:
@@ -110,7 +110,7 @@ class ParsedExpression:
         if current_identifier is not None:
             add_axis_name(current_identifier)
 
-    def flat_axes_order(self) -> List:
+    def flat_axes_order(self) -> list:
         result = []
         for composed_axis in self.composition:
             assert isinstance(composed_axis, list), "does not work with ellipsis"
@@ -126,7 +126,7 @@ class ParsedExpression:
         return False
 
     @staticmethod
-    def check_axis_name_return_reason(name: str, allow_underscore: bool = False) -> Tuple[bool, str]:
+    def check_axis_name_return_reason(name: str, allow_underscore: bool = False) -> tuple[bool, str]:
         if not str.isidentifier(name):
             return False, "not a valid python identifier"
         elif name[0] == "_" or name[-1] == "_":

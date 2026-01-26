@@ -1,5 +1,5 @@
 from functools import lru_cache
-from typing import List, Sequence, Tuple, TypeVar, Union
+from typing import Sequence, TypeVar, Union
 
 from einops import EinopsError
 from einops._backends import get_backend
@@ -7,11 +7,11 @@ from einops.parsing import ParsedExpression
 
 Tensor = TypeVar("Tensor")
 
-Shape = Union[Tuple[int, ...], List[int]]
+Shape = Union[tuple[int, ...], list[int]]
 
 
 @lru_cache(maxsize=128)
-def analyze_pattern(pattern: str, opname: str) -> Tuple[int, int, int]:
+def analyze_pattern(pattern: str, opname: str) -> tuple[int, int, int]:
     # Maybe some validation of identifiers?
     axes = pattern.split()
     axes_set = set(axes)
@@ -30,7 +30,7 @@ def analyze_pattern(pattern: str, opname: str) -> Tuple[int, int, int]:
     return n_axes_before, n_axes_after, min_axes
 
 
-def pack(tensors: Sequence[Tensor], pattern: str) -> Tuple[Tensor, List[Shape]]:
+def pack(tensors: Sequence[Tensor], pattern: str) -> tuple[Tensor, list[Shape]]:
     """
     Packs several tensors into one.
     See einops tutorial for introduction into packing (and how it replaces stack and concatenation).
@@ -71,8 +71,8 @@ def pack(tensors: Sequence[Tensor], pattern: str) -> Tuple[Tensor, List[Shape]]:
     # packing zero tensors is illegal
     backend = get_backend(tensors[0])
 
-    reshaped_tensors: List[Tensor] = []
-    packed_shapes: List[Shape] = []
+    reshaped_tensors: list[Tensor] = []
+    packed_shapes: list[Shape] = []
     for i, tensor in enumerate(tensors):
         shape = backend.shape(tensor)
         if len(shape) < min_axes:
@@ -94,7 +94,7 @@ def prod(x: Shape) -> int:
     return result
 
 
-def unpack(tensor: Tensor, packed_shapes: List[Shape], pattern: str) -> List[Tensor]:
+def unpack(tensor: Tensor, packed_shapes: list[Shape], pattern: str) -> list[Tensor]:
     """
     Unpacks a single tensor into several by splitting over a selected axes.
     See einops tutorial for introduction into packing (and how it replaces stack and concatenation).
@@ -144,7 +144,7 @@ def unpack(tensor: Tensor, packed_shapes: List[Shape], pattern: str) -> List[Ten
 
     unpacked_axis: int = n_axes_before
 
-    lengths_of_composed_axes: List[int] = [-1 if -1 in p_shape else prod(p_shape) for p_shape in packed_shapes]
+    lengths_of_composed_axes: list[int] = [-1 if -1 in p_shape else prod(p_shape) for p_shape in packed_shapes]
 
     n_unknown_composed_axes = sum(int(x == -1) for x in lengths_of_composed_axes)
     if n_unknown_composed_axes > 1:

@@ -1,5 +1,5 @@
 from dataclasses import field
-from typing import Dict, Optional, cast
+from typing import Optional, cast
 
 import flax.linen as nn
 import jax
@@ -59,9 +59,9 @@ class EinMix(nn.Module, _EinmixMixin):
     def _create_rearrange_layers(
         self,
         pre_reshape_pattern: Optional[str],
-        pre_reshape_lengths: Optional[Dict],
+        pre_reshape_lengths: Optional[dict],
         post_reshape_pattern: Optional[str],
-        post_reshape_lengths: Optional[Dict],
+        post_reshape_lengths: Optional[dict],
     ):
         self.pre_rearrange = None
         if pre_reshape_pattern is not None:

@@ -11,7 +11,6 @@ but torch.compile seems to work with operations just fine.
 """
 
 import warnings
-from typing import Dict, List, Tuple
 
 import torch
 
@@ -25,7 +24,7 @@ class TorchJitBackend:
     """
 
     @staticmethod
-    def reduce(x: torch.Tensor, operation: str, reduced_axes: List[int]):
+    def reduce(x: torch.Tensor, operation: str, reduced_axes: list[int]):
         if operation == "min":
             return x.amin(dim=reduced_axes)
         elif operation == "max":
@@ -42,19 +41,19 @@ class TorchJitBackend:
             raise NotImplementedError("Unknown reduction ", operation)
 
     @staticmethod
-    def transpose(x, axes: List[int]):
+    def transpose(x, axes: list[int]):
         return x.permute(axes)
 
     @staticmethod
-    def stack_on_zeroth_dimension(tensors: List[torch.Tensor]):
+    def stack_on_zeroth_dimension(tensors: list[torch.Tensor]):
         return torch.stack(tensors)
 
     @staticmethod
-    def tile(x, repeats: List[int]):
+    def tile(x, repeats: list[int]):
         return x.repeat(repeats)
 
     @staticmethod
-    def add_axes(x, n_axes: int, pos2len: Dict[int, int]):
+    def add_axes(x, n_axes: int, pos2len: dict[int, int]):
         repeats = [-1] * n_axes
         for axis_position, axis_length in pos2len.items():
             x = torch.unsqueeze(x, axis_position)
@@ -70,13 +69,13 @@ class TorchJitBackend:
         return x.shape
 
     @staticmethod
-    def reshape(x, shape: List[int]):
+    def reshape(x, shape: list[int]):
         return x.reshape(shape)
 
 
 # mirrors einops.einops._apply_recipe
 def apply_for_scriptable_torch(
-    recipe: TransformRecipe, tensor: torch.Tensor, reduction_type: str, axes_dims: List[Tuple[str, int]]
+    recipe: TransformRecipe, tensor: torch.Tensor, reduction_type: str, axes_dims: list[tuple[str, int]]
 ) -> torch.Tensor:
     backend = TorchJitBackend
     (
