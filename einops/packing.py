@@ -1,5 +1,6 @@
+from collections.abc import Sequence
 from functools import lru_cache
-from typing import Sequence, TypeVar, Union
+from typing import TypeVar, Union
 
 from einops import EinopsError
 from einops._backends import get_backend

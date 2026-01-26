@@ -14,6 +14,9 @@ class AnonymousAxisPlaceholder:
     def __eq__(self, other):
         return isinstance(other, AnonymousAxis) and self.value == other.value
 
+    def __hash__(self):
+        raise RuntimeError("<explicitly not supported>")
+
 
 def test_anonymous_axes():
     a, b = AnonymousAxis("2"), AnonymousAxis("2")
