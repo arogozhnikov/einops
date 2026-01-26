@@ -124,7 +124,8 @@ ignore = [
     "PLW0603", # global args modification
     "RUF010",  # str(x) -> x:!s
     "PLR",     # pylint - opinionated recommendations
-    "UP035",   # TODO include in 2026
+    "PLC0415", # only top-level imports
+    "RUF059",  # unpacked var never used. Likely worth returning.
 ]
 exclude = ["*Pytorch.ipynb"]
 
