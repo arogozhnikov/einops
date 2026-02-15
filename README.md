@@ -25,10 +25,12 @@ https://user-images.githubusercontent.com/6318811/177030658-66f0eb5d-e136-44d8-9
 
 
 Flexible and powerful tensor operations for readable and reliable code. <br />
-Supports numpy, pytorch, tensorflow, jax, and [others](#supported-frameworks).
+Supports numpy, pytorch, jax, mlx and [others](#supported-frameworks).
 
 ## Recent updates:
 
+- [einops playground](https://arogozhnikov.github.io/jupyterlite/lab/index.html?download_github_folder=arogozhnikov/einops/docs) can run 2 of 4 example notebooks right in your browser
+- 0.8.2: MLX backend added
 - 0.8.0: tinygrad backend added, small fixes
 - 0.7.0: no-hassle `torch.compile`, support of [array api standard](https://data-apis.org/array-api/latest/API_specification/index.html) and more
 - 10'000🎉: github reports that more than 10k project use einops
