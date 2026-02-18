@@ -722,7 +722,9 @@ class PyTensorBackend(AbstractBackend):
 
 
 class MLXBackend(AbstractBackend):
-    framework_name = "mlx"
+    framework_name = "mlx.core"
+    # we should check for mlx.core, because
+    # there are other mlx.<submodules> that don't need mlx.core
 
     def __init__(self):
         import mlx.core as mx
