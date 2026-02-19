@@ -748,7 +748,7 @@ class MLXBackend(AbstractBackend):
     def stack_on_zeroth_dimension(self, tensors: list):
         return self.mx.stack(tensors)
 
-    def add_axes(self, x, new_position):
+    def add_axis(self, x, new_position):
         return self.mx.expand_dims(x, new_position)
 
     def tile(self, x, repeats):
