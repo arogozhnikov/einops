@@ -1,0 +1,33 @@
+div.highlight>pre {
+    padding: 3px;
+}
+
+.md-typeset ul li,
+.md-typeset ol li {
+    /*original padding makes lists huge*/
+    margin-bottom: 0.2em;
+}
+
+html {
+    /* override 125% default, which looks terrible on smaller screens */
+    font-size: 100% !important;
+
+}
+
+.jupyter-wrapper {
+    /* set css var used by markdown */
+    --jp-code-font-size: 90% !important;
+}
+
+.md-grid {
+    /* change max width of page, looks much better on bigger screens */
+    max-width: 72rem !important;
+}
+
+div.highlight {
+    /* this was introduced to fix size of documentation script.
+       This applies to multiline code fragments in markdown
+     */
+    font-size: 13px;
+    background-color: #f2f2f2;
+}
