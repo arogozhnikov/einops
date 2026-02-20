@@ -514,7 +514,7 @@ def reduce(tensor: Union[Tensor, list[Tensor]], pattern: str, reduction: Reducti
     ```
 
     Parameters:
-        tensor: tensor: tensor of any supported library (e.g. numpy.ndarray, tensorflow, pytorch).
+        tensor: tensor of any supported library (e.g. numpy.ndarray, tensorflow, pytorch).
             list of tensors is also accepted, those should be of the same type and shape
         pattern: string, reduction pattern
         reduction: one of available reductions ('min', 'max', 'sum', 'mean', 'prod', 'any', 'all').
