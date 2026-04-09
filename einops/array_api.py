@@ -32,11 +32,11 @@ def reduce(tensor: list[Tensor] | Tensor, pattern: str, reduction: Reduction, **
         raise EinopsError(message + f"\n {e}") from None
 
 
-def repeat(tensor: Tensor, pattern: str, **axes_lengths) -> Tensor:
+def repeat(tensor: list[Tensor] | Tensor, pattern: str, **axes_lengths) -> Tensor:
     return reduce(tensor, pattern, reduction="repeat", **axes_lengths)
 
 
-def rearrange(tensor: Tensor, pattern: str, **axes_lengths) -> Tensor:
+def rearrange(tensor: list[Tensor] | Tensor, pattern: str, **axes_lengths) -> Tensor:
     return reduce(tensor, pattern, reduction="rearrange", **axes_lengths)
 
 
