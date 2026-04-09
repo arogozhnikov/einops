@@ -4,7 +4,7 @@ from .einops import EinopsError, Reduction, Tensor, _apply_recipe_array_api, _pr
 from .packing import analyze_pattern, prod
 
 
-def reduce(tensor: Tensor, pattern: str, reduction: Reduction, **axes_lengths: int) -> Tensor:
+def reduce(tensor: list[Tensor] | Tensor, pattern: str, reduction: Reduction, **axes_lengths: int) -> Tensor:
     if isinstance(tensor, list):
         if len(tensor) == 0:
             raise TypeError("Einops can't be applied to an empty list")
