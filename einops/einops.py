@@ -3,6 +3,7 @@ import itertools
 import string
 import typing
 from collections import OrderedDict
+from types import ModuleType
 from typing import Any, Optional, Protocol, TypeVar, Union, cast, overload
 
 if typing.TYPE_CHECKING:
@@ -13,7 +14,12 @@ from . import EinopsError
 from ._backends import get_backend
 from .parsing import AnonymousAxis, ParsedExpression, _ellipsis
 
-Tensor = TypeVar("Tensor")
+
+class _SupportsArrayNamespace(Protocol):
+    def __array_namespace__(self, /) -> ModuleType: ...
+
+
+Tensor = TypeVar("Tensor", bound=_SupportsArrayNamespace)
 
 
 class ReductionCallable(Protocol):
