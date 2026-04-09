@@ -3,7 +3,7 @@ import itertools
 import string
 import typing
 from collections import OrderedDict
-from typing import Any, Optional, Protocol, TypeVar, Union, cast, overload
+from typing import Any, Optional, Protocol, TypeAlias, TypeVar, Union, cast, overload
 
 if typing.TYPE_CHECKING:
     # for docstrings in pycharm
@@ -20,8 +20,8 @@ class ReductionCallable(Protocol):
     def __call__(self, tensor: Tensor, axes: tuple[int, ...], /) -> Tensor: ...
 
 
-Reduction = Union[str, ReductionCallable]
-Size = typing.Any
+Reduction: TypeAlias = Union[str, ReductionCallable]
+Size: TypeAlias = typing.Any
 
 _reductions = ("min", "max", "sum", "mean", "prod", "any", "all")
 
@@ -107,13 +107,15 @@ def _optimize_transformation(init_shapes, reduced_axes, axes_reordering, final_s
     return init_shapes, reduced_axes, axes_reordering, final_shapes
 
 
-CookedRecipe = tuple[Optional[list[int]], Optional[list[int]], list[int], dict[int, int], Optional[list[int]], int]
+CookedRecipe: TypeAlias = tuple[
+    Optional[list[int]], Optional[list[int]], list[int], dict[int, int], Optional[list[int]], int
+]
 
 # Actual type is tuple[tuple[str, int], ...]
 # However torch.jit.script does not "understand" the correct type,
 # and torch_specific will use list version.
-HashableAxesLengths = tuple[tuple[str, int], ...]
-FakeHashableAxesLengths = list[tuple[str, int]]
+HashableAxesLengths: TypeAlias = tuple[tuple[str, int], ...]
+FakeHashableAxesLengths: TypeAlias = list[tuple[str, int]]
 
 
 class TransformRecipe:

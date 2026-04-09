@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 from functools import lru_cache
-from typing import TypeVar, Union
+from typing import TypeAlias, TypeVar, Union
 
 from einops import EinopsError
 from einops._backends import get_backend
@@ -8,7 +8,7 @@ from einops.parsing import ParsedExpression
 
 Tensor = TypeVar("Tensor")
 
-Shape = Union[tuple[int, ...], list[int]]
+Shape: TypeAlias = Union[tuple[int, ...], list[int]]
 
 
 @lru_cache(maxsize=128)
