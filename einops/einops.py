@@ -3,7 +3,7 @@ import itertools
 import string
 import typing
 from collections import OrderedDict
-from typing import Any, Optional, Protocol, TypeVar, Union, cast, overload
+from typing import Any, Protocol, TypeVar, cast, overload
 
 if typing.TYPE_CHECKING:
     # for docstrings in pycharm
@@ -20,7 +20,7 @@ class ReductionCallable(Protocol):
     def __call__(self, tensor: Tensor, axes: tuple[int, ...], /) -> Tensor: ...
 
 
-Reduction = Union[str, ReductionCallable]
+Reduction = str | ReductionCallable
 Size = typing.Any
 
 _reductions = ("min", "max", "sum", "mean", "prod", "any", "all")
@@ -107,7 +107,7 @@ def _optimize_transformation(init_shapes, reduced_axes, axes_reordering, final_s
     return init_shapes, reduced_axes, axes_reordering, final_shapes
 
 
-CookedRecipe = tuple[Optional[list[int]], Optional[list[int]], list[int], dict[int, int], Optional[list[int]], int]
+CookedRecipe = tuple[list[int] | None, list[int] | None, list[int], dict[int, int], list[int] | None, int]
 
 # Actual type is tuple[tuple[str, int], ...]
 # However torch.jit.script does not "understand" the correct type,
@@ -202,7 +202,7 @@ def _reconstruct_from_shape_uncached(
     # at this point all axes_lengths are computed (either have values or variables, but not Nones)
 
     # elementary axes are ordered as they appear in input, then all added axes
-    init_shapes: Optional[list[int]] = axes_lengths[: len(self.axes_permutation)] if need_init_reshape else None
+    init_shapes: list[int] | None = axes_lengths[: len(self.axes_permutation)] if need_init_reshape else None
 
     need_final_reshape = False
     final_shapes: list[int] = []
@@ -221,7 +221,7 @@ def _reconstruct_from_shape_uncached(
 
     n_axes_after_adding_axes = len(added_axes) + len(self.axes_permutation)
 
-    axes_reordering: Optional[list[int]] = self.axes_permutation
+    axes_reordering: list[int] | None = self.axes_permutation
     if self.axes_permutation == list(range(len(self.axes_permutation))):
         axes_reordering = None
 
@@ -373,7 +373,7 @@ def _prepare_transformation_recipe(
         rght_composition = rght.composition
 
     # parsing all dimensions to find out lengths
-    axis_name2known_length: dict[Union[str, AnonymousAxis], int] = OrderedDict()
+    axis_name2known_length: OrderedDict[str | AnonymousAxis, int] = OrderedDict()
     for composite_axis in left_composition:
         for axis_name in composite_axis:
             if isinstance(axis_name, AnonymousAxis):
@@ -470,7 +470,7 @@ def reduce(tensor: list[Tensor], pattern: str, reduction: Reduction, **axes_leng
 def reduce(tensor: Tensor, pattern: str, reduction: Reduction, **axes_lengths: Size) -> Tensor: ...
 
 
-def reduce(tensor: Union[Tensor, list[Tensor]], pattern: str, reduction: Reduction, **axes_lengths: Size) -> Tensor:
+def reduce(tensor: Tensor | list[Tensor], pattern: str, reduction: Reduction, **axes_lengths: Size) -> Tensor:
     """
     einops.reduce combines rearrangement and reduction using reader-friendly notation.
 
@@ -563,7 +563,7 @@ def rearrange(tensor: list[Tensor], pattern: str, **axes_lengths: Size) -> Tenso
 def rearrange(tensor: Tensor, pattern: str, **axes_lengths: Size) -> Tensor: ...
 
 
-def rearrange(tensor: Union[Tensor, list[Tensor]], pattern: str, **axes_lengths: Size) -> Tensor:
+def rearrange(tensor: Tensor | list[Tensor], pattern: str, **axes_lengths: Size) -> Tensor:
     """
     einops.rearrange is a reader-friendly smart element reordering for multidimensional tensors.
     This operation includes functionality of transpose (axes permutation), reshape (view), squeeze, unsqueeze,
@@ -629,7 +629,7 @@ def repeat(tensor: list[Tensor], pattern: str, **axes_lengths: Size) -> Tensor: 
 def repeat(tensor: Tensor, pattern: str, **axes_lengths: Size) -> Tensor: ...
 
 
-def repeat(tensor: Union[Tensor, list[Tensor]], pattern: str, **axes_lengths: Size) -> Tensor:
+def repeat(tensor: Tensor | list[Tensor], pattern: str, **axes_lengths: Size) -> Tensor:
     """
     einops.repeat allows reordering elements and repeating them in arbitrary combinations.
     This operation includes functionality of repeat, tile, and broadcast functions.
@@ -867,7 +867,7 @@ def einsum(tensor1: Tensor, tensor2: Tensor, tensor3: Tensor, pattern: str, /) -
 def einsum(tensor1: Tensor, tensor2: Tensor, tensor3: Tensor, tensor4: Tensor, pattern: str, /) -> Tensor: ...
 
 
-def einsum(*tensors_and_pattern: Union[Tensor, str]) -> Tensor:
+def einsum(*tensors_and_pattern: Tensor | str) -> Tensor:
     r"""
     einops.einsum calls einsum operations with einops-style named
     axes indexing, computing tensor products with an arbitrary
