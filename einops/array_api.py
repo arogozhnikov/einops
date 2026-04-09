@@ -1,7 +1,18 @@
 from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 from .einops import EinopsError, Reduction, Tensor, _apply_recipe_array_api, _prepare_transformation_recipe
 from .packing import analyze_pattern, prod
+
+if TYPE_CHECKING:
+    from typing import Protocol, type_check_only
+
+    import numpy as np
+    from typing_extensions import CapsuleType
+
+    @type_check_only
+    class _SupportsDLPack(Protocol):
+        def __dlpack__(self, /, *, stream: None = ...) -> CapsuleType: ...
 
 
 def reduce(tensor: Tensor, pattern: str, reduction: Reduction, **axes_lengths: int) -> Tensor:
@@ -40,7 +51,7 @@ def rearrange(tensor: Tensor, pattern: str, **axes_lengths) -> Tensor:
     return reduce(tensor, pattern, reduction="rearrange", **axes_lengths)
 
 
-def asnumpy(tensor: Tensor):
+def asnumpy(tensor: "_SupportsDLPack") -> "np.ndarray":
     import numpy as np
 
     return np.from_dlpack(tensor)
