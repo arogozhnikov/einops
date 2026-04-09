@@ -3,7 +3,7 @@ import itertools
 import string
 import typing
 from collections import OrderedDict
-from typing import Any, Callable, Optional, TypeVar, Union, cast, overload
+from typing import Any, Optional, Protocol, TypeVar, Union, cast, overload
 
 if typing.TYPE_CHECKING:
     # for docstrings in pycharm
@@ -14,7 +14,12 @@ from ._backends import get_backend
 from .parsing import AnonymousAxis, ParsedExpression, _ellipsis
 
 Tensor = TypeVar("Tensor")
-ReductionCallable = Callable[[Tensor, tuple[int, ...]], Tensor]
+
+
+class ReductionCallable(Protocol):
+    def __call__(self, tensor: Tensor, axes: tuple[int, ...], /) -> Tensor: ...
+
+
 Reduction = Union[str, ReductionCallable]
 Size = typing.Any
 
