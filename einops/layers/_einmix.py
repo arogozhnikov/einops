@@ -1,6 +1,6 @@
 import string
 import warnings
-from typing import Any, Optional
+from typing import Any
 
 from einops import EinopsError
 from einops.einops import _product
@@ -13,7 +13,7 @@ def _report_axes(axes: set, report_message: str):
 
 
 class _EinmixMixin:
-    def __init__(self, pattern: str, weight_shape: str, bias_shape: Optional[str] = None, **axes_lengths: Any):
+    def __init__(self, pattern: str, weight_shape: str, bias_shape: str | None = None, **axes_lengths: Any):
         """
         EinMix - Einstein summation with automated tensor management and axis packing/unpacking.
 
@@ -64,7 +64,7 @@ class _EinmixMixin:
             pattern=pattern, weight_shape=weight_shape, bias_shape=bias_shape, axes_lengths=axes_lengths
         )
 
-    def initialize_einmix(self, pattern: str, weight_shape: str, bias_shape: Optional[str], axes_lengths: dict):
+    def initialize_einmix(self, pattern: str, weight_shape: str, bias_shape: str | None, axes_lengths: dict):
         left_pattern, right_pattern = pattern.split("->")
         left = ParsedExpression(left_pattern)
         right = ParsedExpression(right_pattern)
@@ -186,10 +186,10 @@ class _EinmixMixin:
 
     def _create_rearrange_layers(
         self,
-        pre_reshape_pattern: Optional[str],
-        pre_reshape_lengths: Optional[dict],
-        post_reshape_pattern: Optional[str],
-        post_reshape_lengths: Optional[dict],
+        pre_reshape_pattern: str | None,
+        pre_reshape_lengths: dict | None,
+        post_reshape_pattern: str | None,
+        post_reshape_lengths: dict | None,
     ):
         raise NotImplementedError("Should be defined in framework implementations")
 
@@ -212,10 +212,10 @@ class _EinmixDebugger(_EinmixMixin):
 
     def _create_rearrange_layers(
         self,
-        pre_reshape_pattern: Optional[str],
-        pre_reshape_lengths: Optional[dict],
-        post_reshape_pattern: Optional[str],
-        post_reshape_lengths: Optional[dict],
+        pre_reshape_pattern: str | None,
+        pre_reshape_lengths: dict | None,
+        post_reshape_pattern: str | None,
+        post_reshape_lengths: dict | None,
     ):
         self.pre_reshape_pattern = pre_reshape_pattern
         self.pre_reshape_lengths = pre_reshape_lengths

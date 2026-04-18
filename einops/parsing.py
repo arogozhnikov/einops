@@ -1,6 +1,5 @@
 import keyword
 import warnings
-from typing import Optional, Union
 
 from einops import EinopsError
 
@@ -30,12 +29,12 @@ class ParsedExpression:
 
     def __init__(self, expression: str, *, allow_underscore: bool = False, allow_duplicates: bool = False):
         self.has_ellipsis: bool = False
-        self.has_ellipsis_parenthesized: Optional[bool] = None
+        self.has_ellipsis_parenthesized: bool | None = None
         self.identifiers: set[str] = set()
         # that's axes like 2, 3, 4 or 5. Axes with size 1 are exceptional and replaced with empty composition
         self.has_non_unitary_anonymous_axes: bool = False
         # composition keeps structure of composite axes, see how different corner cases are handled in tests
-        self.composition: list[Union[list[str], str]] = []
+        self.composition: list[list[str] | str] = []
         if "." in expression:
             if "..." not in expression:
                 raise EinopsError("Expression may contain dots only inside ellipsis (...)")
@@ -46,7 +45,7 @@ class ParsedExpression:
             expression = expression.replace("...", _ellipsis)
             self.has_ellipsis = True
 
-        bracket_group: Optional[list[str]] = None
+        bracket_group: list[str] | None = None
 
         def add_axis_name(x):
             if x in self.identifiers:
