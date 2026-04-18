@@ -727,7 +727,7 @@ def parse_shape(x: Tensor, pattern: str) -> dict:
     else:
         composition = exp.composition
     result = {}
-    for axes, axis_length in zip(composition, shape):  # type: ignore
+    for axes, axis_length in zip(composition, shape, strict=True):  # type: ignore
         # axes either [], or [AnonymousAxis] or ['axis_name']
         if len(axes) == 0:
             if axis_length != 1:

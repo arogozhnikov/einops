@@ -81,7 +81,7 @@ def test_optimize_transformations_numpy():
 
             # testing we can't optimize this formula again
             combination3 = _optimize_transformation(*combination2)
-            for a, b in zip(combination2, combination3):
+            for a, b in zip(combination2, combination3, strict=True):
                 assert np.array_equal(a, b)
 
 

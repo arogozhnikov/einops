@@ -13,7 +13,7 @@ def pack_unpack(xs, pattern):
     x, ps = pack(xs, pattern)
     unpacked = unpack(xs, ps, pattern)
     assert len(unpacked) == len(xs)
-    for a, b in zip(unpacked, xs):
+    for a, b in zip(unpacked, xs, strict=True):
         assert np.allclose(asnumpy(a), asnumpy(b))
 
 
@@ -47,7 +47,7 @@ def unpack_and_pack_against_numpy(x, ps, pattern: str):
         assert np.allclose(asnumpy(packed), asnumpy(x))
         assert np.allclose(asnumpy(packed_np), asnumpy(x))
         assert len(unpacked) == len(unpacked_np)
-        for a, b in zip(unpacked, unpacked_np):
+        for a, b in zip(unpacked, unpacked_np, strict=True):
             assert np.allclose(asnumpy(a), b)
 
 
@@ -292,7 +292,7 @@ def test_pack_unpack_array_api():
         ]:
             x_np_split = unpack(x_np, ps, pattern)
             x_xp_split = AA.unpack(x_xp, ps, pattern)
-            for a, b in zip(x_np_split, x_xp_split):
+            for a, b in zip(x_np_split, x_xp_split, strict=True):
                 assert np.allclose(a, AA.asnumpy(b + 0))
 
             x_agg_np, ps1 = pack(x_np_split, pattern)

@@ -1,5 +1,6 @@
 import string
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 import numpy as np
 import pytest
@@ -255,7 +256,7 @@ def test_functional_symbolic():
 
                 predicted_out_data = backend.eval_symbol(
                     predicted_out_symbol,
-                    list(zip(in_syms, in_data)),
+                    list(zip(in_syms, in_data, strict=True)),
                 )
                 if predicted_out_data.shape != out_shape:
                     raise ValueError(f"Expected output shape {out_shape} but got {predicted_out_data.shape}")
