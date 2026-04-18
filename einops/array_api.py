@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from typing import TypeAlias
 
 from .einops import EinopsError, Reduction, Tensor, _apply_recipe_array_api, _prepare_transformation_recipe
 from .packing import analyze_pattern, prod
@@ -46,7 +47,7 @@ def asnumpy(tensor: Tensor):
     return np.from_dlpack(tensor)
 
 
-Shape = tuple
+Shape: TypeAlias = tuple
 
 
 def pack(tensors: Sequence[Tensor], pattern: str) -> tuple[Tensor, list[Shape]]:

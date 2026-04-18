@@ -1,12 +1,13 @@
 from collections.abc import Sequence
 from functools import lru_cache
+from typing import TypeAlias
 
 from einops import EinopsError
 from einops._backends import get_backend
 from einops.einops import Tensor
 from einops.parsing import ParsedExpression
 
-Shape = tuple[int, ...] | list[int]
+Shape: TypeAlias = tuple[int, ...] | list[int]
 
 
 @lru_cache(maxsize=128)
