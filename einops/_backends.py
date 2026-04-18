@@ -702,7 +702,7 @@ class PyTensorBackend(AbstractBackend):
         # use the static shape dimensions where known
         return tuple(
             static_dim if static_dim is not None else symbolic_dim
-            for static_dim, symbolic_dim in zip(x.type.shape, x.shape)
+            for static_dim, symbolic_dim in zip(x.type.shape, x.shape, strict=True)
         )
 
     def stack_on_zeroth_dimension(self, tensors: list):

@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "einops"
 description = "A new flavour of deep learning operations"
 readme = "README.md"
-requires-python = ">=3.10" # in sync with target_version
+requires-python = ">=3.10" # in sync with target-version
 
 keywords = [
     'deep learning',
@@ -85,7 +85,7 @@ deploy = "hatch build --clean && hatch publish"
 
 [tool.ruff]
 line-length = 120
-target-version = 'py39'
+target-version = 'py310'
 
 cache-dir = "/tmp/ruff_cache" # move cache out of workdir
 
@@ -110,6 +110,7 @@ select = [
     "N804",   # cls
     "N805",   # self
     "COM818", # bare comma
+    "PYI026", # upgrade to type alias
     "PL",     # all pylint rules (error, conventions, warnigns)
     "FLY",    # static joins -> f-string
     "NPY201", # numpy 2 deprecations
@@ -132,6 +133,7 @@ exclude = ["*Pytorch.ipynb"]
 
 [tool.ruff.lint.per-file-ignores]
 "*.ipynb" = [
+    "B905", # zip-strict
     "I001", # poor formatting of imports
     "E402", # Module level import not at top of cell
     "F811", # redefinition of unused

@@ -172,7 +172,7 @@ def test_rearrange_consistency_numpy():
     result = rearrange(rearrange(x, "a b c d e f -> (f d) c (e b) a"), "(f d) c (e b) a -> a b c d e f", b=2, d=5)
     assert np.array_equal(x, result)
 
-    sizes = dict(zip("abcdef", shape))
+    sizes = dict(zip("abcdef", shape, strict=True))
     temp = rearrange(x, "a b c d e f -> (f d) c (e b) a", **sizes)
     result = rearrange(temp, "(f d) c (e b) a -> a b c d e f", **sizes)
     assert np.array_equal(x, result)
@@ -287,7 +287,7 @@ def test_reduction_symbolic():
                 if True:
                     shape = []
                     _axes_lengths = {**axes_lengths}
-                    for axis, length in zip("abcde", input.shape):
+                    for axis, length in zip("abcde", input.shape, strict=True):
                         # filling as much as possible with Nones
                         if axis in pattern:
                             shape.append(None)
@@ -392,7 +392,7 @@ def test_enumerating_directions():
             axes2 = _enumerate_directions(backend.from_numpy(x))
             assert len(axes1) == len(axes2) == len(shape)
             axes2 = [backend.to_numpy(ax) for ax in axes2]
-            for ax1, ax2 in zip(axes1, axes2):
+            for ax1, ax2 in zip(axes1, axes2, strict=True):
                 assert ax1.shape == ax2.shape
                 assert np.allclose(ax1, ax2)
 
