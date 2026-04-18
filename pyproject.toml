@@ -140,3 +140,17 @@ exclude = ["*Pytorch.ipynb"]
     "E702", # Multiple statements on one line (semicolon)
     "NPY002", # force using generators with np.random
 ]
+
+[tool.mypy]
+# mypy can't tolerate two 'utils' module, so we exclude one
+exclude = "./docs/utils/"
+check_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = [
+    "tensorflow.*",
+    "paddle.*",
+    "oneflow.*",
+    "cupy.*",
+]
+ignore_missing_imports = true

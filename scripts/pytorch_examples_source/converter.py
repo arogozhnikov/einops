@@ -1,3 +1,4 @@
+# type: ignore
 """
 just run this script with python converter.py .
 It will convert pytorch.ipynb to html page docs/pytorch-examples.html

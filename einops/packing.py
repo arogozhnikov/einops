@@ -7,7 +7,7 @@ from einops._backends import get_backend
 from einops.einops import Tensor
 from einops.parsing import ParsedExpression
 
-Shape: TypeAlias = tuple[int, ...] | list[int]
+Shape: TypeAlias = Sequence[int]
 
 
 @lru_cache(maxsize=128)
@@ -94,7 +94,7 @@ def prod(x: Shape) -> int:
     return result
 
 
-def unpack(tensor: Tensor, packed_shapes: list[Shape], pattern: str) -> list[Tensor]:
+def unpack(tensor: Tensor, packed_shapes: Sequence[Shape], pattern: str) -> list[Tensor]:
     """
     Unpacks a single tensor into several by splitting over a selected axes.
     See einops tutorial for introduction into packing (and how it replaces stack and concatenation).
