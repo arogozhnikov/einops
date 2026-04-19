@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 from types import ModuleType
-from typing import TYPE_CHECKING, Protocol, TypeAlias, TypeVar
+from typing import TYPE_CHECKING, Protocol, TypeAlias, TypeVar, overload
 
 from .einops import EinopsError, Reduction, _apply_recipe_array_api, _prepare_transformation_recipe
 from .packing import analyze_pattern, prod
@@ -31,6 +31,14 @@ else:
 Tensor = TypeVar("Tensor", bound=ArrayAPITensor)
 
 
+@overload
+def reduce(tensor: list[Tensor], pattern: str, reduction: Reduction, **axes_lengths: int) -> Tensor: ...
+
+
+@overload
+def reduce(tensor: Tensor, pattern: str, reduction: Reduction, **axes_lengths: int) -> Tensor: ...
+
+
 def reduce(tensor: Tensor, pattern: str, reduction: Reduction, **axes_lengths: int) -> Tensor:
     if isinstance(tensor, list):
         if len(tensor) == 0:
@@ -59,11 +67,27 @@ def reduce(tensor: Tensor, pattern: str, reduction: Reduction, **axes_lengths: i
         raise EinopsError(message + f"\n {e}") from None
 
 
-def repeat(tensor: Tensor, pattern: str, **axes_lengths) -> Tensor:
+@overload
+def repeat(tensor: list[Tensor], pattern: str, **axes_lengths: int) -> Tensor: ...
+
+
+@overload
+def repeat(tensor: Tensor, pattern: str, **axes_lengths: int) -> Tensor: ...
+
+
+def repeat(tensor: Tensor, pattern: str, **axes_lengths: int) -> Tensor:
     return reduce(tensor, pattern, reduction="repeat", **axes_lengths)
 
 
-def rearrange(tensor: Tensor, pattern: str, **axes_lengths) -> Tensor:
+@overload
+def rearrange(tensor: list[Tensor], pattern: str, **axes_lengths: int) -> Tensor: ...
+
+
+@overload
+def rearrange(tensor: Tensor, pattern: str, **axes_lengths: int) -> Tensor: ...
+
+
+def rearrange(tensor: Tensor, pattern: str, **axes_lengths: int) -> Tensor:
     return reduce(tensor, pattern, reduction="rearrange", **axes_lengths)
 
 
