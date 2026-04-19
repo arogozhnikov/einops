@@ -1,0 +1,1427 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://einops.rocks/">
+      
+      
+      
+        <link rel="next" href="1-einops-basics/">
+      
+      
+      <link rel="icon" href="images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.50">
+    
+    
+      
+        <title>Einops</title>
+      
+    
+    
+      <link rel="stylesheet" href="assets/stylesheets/main.a40c8224.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="css/mkdocs.css">
+    
+      <link rel="stylesheet" href="css/codehilite.css">
+    
+    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#einops" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="." title="Einops" class="md-header__button md-logo" aria-label="Einops" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M0 241.1C0 161 65 96 145.1 96c38.5 0 75.4 15.3 102.6 42.5l72.3 72.2 72.2-72.2C419.5 111.3 456.4 96 494.9 96 575 96 640 161 640 241.1v29.7C640 351 575 416 494.9 416c-38.5 0-75.4-15.3-102.6-42.5L320 301.3l-72.2 72.2c-27.3 27.2-64.2 42.5-102.7 42.5C65 416 0 351 0 270.9v-29.7zM274.7 256l-72.2-72.2c-15.2-15.2-35.9-23.8-57.4-23.8-44.8 0-81.1 36.3-81.1 81.1v29.7c0 44.8 36.3 81.1 81.1 81.1 21.5 0 42.2-8.5 57.4-23.8zm90.5 0 72.2 72.2c15.2 15.2 35.9 23.8 57.4 23.8 44.8 0 81.1-36.3 81.1-81.1v-29.7c0-44.8-36.3-81.1-81.1-81.1-21.5 0-42.2 8.5-57.4 23.8L365.3 256z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Einops
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Introduction
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/arogozhnikov/einops" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M8 0c4.42 0 8 3.58 8 8a8.01 8.01 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27s-1.36.09-2 .27c-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8"/></svg>
+  </div>
+  <div class="md-source__repository">
+    arogozhnikov/einops
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="." title="Einops" class="md-nav__button md-logo" aria-label="Einops" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M0 241.1C0 161 65 96 145.1 96c38.5 0 75.4 15.3 102.6 42.5l72.3 72.2 72.2-72.2C419.5 111.3 456.4 96 494.9 96 575 96 640 161 640 241.1v29.7C640 351 575 416 494.9 416c-38.5 0-75.4-15.3-102.6-42.5L320 301.3l-72.2 72.2c-27.3 27.2-64.2 42.5-102.7 42.5C65 416 0 351 0 270.9v-29.7zM274.7 256l-72.2-72.2c-15.2-15.2-35.9-23.8-57.4-23.8-44.8 0-81.1 36.3-81.1 81.1v29.7c0 44.8 36.3 81.1 81.1 81.1 21.5 0 42.2-8.5 57.4-23.8zm90.5 0 72.2 72.2c15.2 15.2 35.9 23.8 57.4 23.8 44.8 0 81.1-36.3 81.1-81.1v-29.7c0-44.8-36.3-81.1-81.1-81.1-21.5 0-42.2 8.5-57.4 23.8L365.3 256z"/></svg>
+
+    </a>
+    Einops
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/arogozhnikov/einops" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M8 0c4.42 0 8 3.58 8 8a8.01 8.01 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27s-1.36.09-2 .27c-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8"/></svg>
+  </div>
+  <div class="md-source__repository">
+    arogozhnikov/einops
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Introduction
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="." class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Introduction
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#recent-updates" class="md-nav__link">
+    <span class="md-ellipsis">
+      Recent updates:
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tweets" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tweets
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      Contents
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Installation
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tutorials" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tutorials
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#api" class="md-nav__link">
+    <span class="md-ellipsis">
+      API
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="API">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#einmix" class="md-nav__link">
+    <span class="md-ellipsis">
+      EinMix
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#layers" class="md-nav__link">
+    <span class="md-ellipsis">
+      Layers
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#naming" class="md-nav__link">
+    <span class="md-ellipsis">
+      Naming
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#why-use-einops-notation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Why use einops notation?!
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Why use einops notation?!">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#semantic-information-being-verbose-in-expectations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Semantic information (being verbose in expectations)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#convenient-checks" class="md-nav__link">
+    <span class="md-ellipsis">
+      Convenient checks
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#result-is-strictly-determined" class="md-nav__link">
+    <span class="md-ellipsis">
+      Result is strictly determined
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#uniformity" class="md-nav__link">
+    <span class="md-ellipsis">
+      Uniformity
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#framework-independent-behavior" class="md-nav__link">
+    <span class="md-ellipsis">
+      Framework independent behavior
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#independence-of-framework-terminology" class="md-nav__link">
+    <span class="md-ellipsis">
+      Independence of framework terminology
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#supported-frameworks" class="md-nav__link">
+    <span class="md-ellipsis">
+      Supported frameworks
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#development" class="md-nav__link">
+    <span class="md-ellipsis">
+      Development
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#citing-einops" class="md-nav__link">
+    <span class="md-ellipsis">
+      Citing einops
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#supported-python-versions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Supported python versions
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Tutorials
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Tutorials
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="1-einops-basics/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Einops tutorial, part 1: basics
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="2-einops-for-deep-learning/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Einops tutorial, part 2: deep learning
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="4-pack-and-unpack/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    einops.pack and einops.unpack
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="3-einmix-layer/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    EinMix: universal toolkit for advanced MLP architectures
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="pytorch-examples.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Pytorch
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    API Reference
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            API Reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api/asnumpy/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    asnumpy
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api/parse_shape/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    parse_shape
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api/rearrange/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    rearrange
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api/reduce/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    reduce
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api/repeat/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    repeat
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api/einsum/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    einsum
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api/pack_unpack/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    pack and unpack
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="pages/testimonials/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Testimonials
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="pages/projects/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Community/Ecosystem
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#recent-updates" class="md-nav__link">
+    <span class="md-ellipsis">
+      Recent updates:
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tweets" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tweets
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      Contents
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Installation
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tutorials" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tutorials
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#api" class="md-nav__link">
+    <span class="md-ellipsis">
+      API
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="API">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#einmix" class="md-nav__link">
+    <span class="md-ellipsis">
+      EinMix
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#layers" class="md-nav__link">
+    <span class="md-ellipsis">
+      Layers
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#naming" class="md-nav__link">
+    <span class="md-ellipsis">
+      Naming
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#why-use-einops-notation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Why use einops notation?!
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Why use einops notation?!">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#semantic-information-being-verbose-in-expectations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Semantic information (being verbose in expectations)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#convenient-checks" class="md-nav__link">
+    <span class="md-ellipsis">
+      Convenient checks
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#result-is-strictly-determined" class="md-nav__link">
+    <span class="md-ellipsis">
+      Result is strictly determined
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#uniformity" class="md-nav__link">
+    <span class="md-ellipsis">
+      Uniformity
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#framework-independent-behavior" class="md-nav__link">
+    <span class="md-ellipsis">
+      Framework independent behavior
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#independence-of-framework-terminology" class="md-nav__link">
+    <span class="md-ellipsis">
+      Independence of framework terminology
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#supported-frameworks" class="md-nav__link">
+    <span class="md-ellipsis">
+      Supported frameworks
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#development" class="md-nav__link">
+    <span class="md-ellipsis">
+      Development
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#citing-einops" class="md-nav__link">
+    <span class="md-ellipsis">
+      Citing einops
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#supported-python-versions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Supported python versions
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+<!--
+<a href='http://arogozhnikov.github.io/images/einops/einops_video.mp4' >
+<div align="center">
+  <img src="http://arogozhnikov.github.io/images/einops/einops_video.gif" alt="einops package examples" />
+  <br>
+  <small><a href='http://arogozhnikov.github.io/images/einops/einops_video.mp4'>This video in high quality (mp4)</a></small>
+  <br><br>
+</div>
+</a>
+-->
+
+<!-- this link magically rendered as video on github readme, unfortunately not in docs -->
+
+<h1 id="einops">einops</h1>
+<p><a href="https://github.com/arogozhnikov/einops/actions/workflows/run_tests.yml"><img alt="Run tests" src="https://github.com/arogozhnikov/einops/actions/workflows/run_tests.yml/badge.svg" /></a>
+<a href="https://badge.fury.io/py/einops"><img alt="PyPI version" src="https://badge.fury.io/py/einops.svg" /></a>
+<a href="https://einops.rocks/"><img alt="Documentation" src="https://img.shields.io/badge/documentation-link-blue.svg" /></a>
+<img alt="Supported python versions" src="https://raw.githubusercontent.com/arogozhnikov/einops/main/docs/resources/python_badge.svg" /></p>
+<p>Flexible and powerful tensor operations for readable and reliable code. <br />
+Supports numpy, pytorch, jax, mlx and <a href="#supported-frameworks">others</a>.</p>
+<h2 id="recent-updates">Recent updates:</h2>
+<ul>
+<li><a href="https://arogozhnikov.github.io/jupyterlite/lab/index.html?download_github_folder=arogozhnikov/einops/docs">einops playground</a> can run 2 of 4 example notebooks right in your browser</li>
+<li>0.8.2: MLX backend added</li>
+<li>0.8.0: tinygrad backend added, small fixes</li>
+<li>0.7.0: no-hassle <code>torch.compile</code>, support of <a href="https://data-apis.org/array-api/latest/API_specification/index.html">array api standard</a> and more</li>
+<li>10'000🎉: github reports that more than 10k project use einops</li>
+<li>einops 0.6.1: paddle backend added</li>
+<li>einops 0.6 introduces <a href="https://github.com/arogozhnikov/einops/blob/main/docs/4-pack-and-unpack.ipynb">packing and unpacking</a></li>
+<li>einops 0.5: einsum is now a part of einops</li>
+<li><a href="https://openreview.net/pdf?id=oapKSVM2bcj">Einops paper</a> is accepted for oral presentation at ICLR 2022 (yes, it worth reading).
+  Talk recordings are <a href="https://iclr.cc/virtual/2022/oral/6603">available</a></li>
+</ul>
+<details>
+<summary>Previous updates</summary>
+<ul>
+<li>flax and oneflow backend added</li>
+<li>torch.jit.script is supported for pytorch layers</li>
+<li>powerful EinMix added to einops. <a href="https://github.com/arogozhnikov/einops/blob/main/docs/3-einmix-layer.ipynb">Einmix tutorial notebook</a> </li>
+</ul>
+</details>
+<!--<div align="center">
+  <img src="http://arogozhnikov.github.io/images/einops/einops_logo_350x350.png" 
+  alt="einops package logo" width="250" height="250" />
+  <br><br>
+</div> -->
+
+<h2 id="tweets">Tweets</h2>
+<blockquote>
+<p>In case you need convincing arguments for setting aside time to learn about einsum and einops...
+<a href="https://twitter.com/_rockt/status/1230818967205425152">Tim Rocktäschel</a></p>
+<p>Writing better code with PyTorch and einops 👌
+<a href="https://twitter.com/karpathy/status/1290826075916779520">Andrej Karpathy</a></p>
+<p>Slowly but surely, einops is seeping in to every nook and cranny of my code. If you find yourself shuffling around bazillion dimensional tensors, this might change your life
+<a href="https://twitter.com/nasim_rahaman/status/1216022614755463169">Nasim Rahaman</a></p>
+</blockquote>
+<p><a href="https://einops.rocks/pages/testimonials/">More testimonials</a></p>
+<h2 id="contents">Contents</h2>
+<ul>
+<li><a href="#Installation">Installation</a></li>
+<li><a href="https://einops.rocks/">Documentation</a></li>
+<li><a href="#Tutorials">Tutorial</a></li>
+<li><a href="#API">API micro-reference</a></li>
+<li><a href="#Why-use-einops-notation">Why use einops</a></li>
+<li><a href="#Supported-frameworks">Supported frameworks</a></li>
+<li><a href="#Citing">Citing</a></li>
+<li><a href="https://github.com/arogozhnikov/einops">Repository</a> and <a href="https://github.com/arogozhnikov/einops/discussions">discussions</a></li>
+</ul>
+<h2 id="installation">Installation  <a name="Installation"></a></h2>
+<p>Plain and simple:</p>
+<div class="codehilite"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>einops
+</code></pre></div>
+
+<p>(<code>uv pip install einops</code> works as well)</p>
+<h2 id="tutorials">Tutorials <a name="Tutorials"></a></h2>
+<p>Tutorials are the most convenient way to see <code>einops</code> in action</p>
+<ul>
+<li>part 1: <a href="https://github.com/arogozhnikov/einops/blob/main/docs/1-einops-basics.ipynb">einops fundamentals</a></li>
+<li>part 2: <a href="https://github.com/arogozhnikov/einops/blob/main/docs/2-einops-for-deep-learning.ipynb">einops for deep learning</a></li>
+<li>part 3: <a href="https://github.com/arogozhnikov/einops/blob/main/docs/4-pack-and-unpack.ipynb">packing and unpacking</a></li>
+<li>part 4: <a href="http://einops.rocks/pytorch-examples.html">improve pytorch code with einops</a></li>
+</ul>
+<p>Kapil Sachdeva recorded a small <a href="https://www.youtube.com/watch?v=xGy75Pjsqzo">intro to einops</a>.</p>
+<h2 id="api">API <a name="API"></a></h2>
+<p><code>einops</code> has a minimalistic yet powerful API.</p>
+<p>Three core operations provided (<a href="https://github.com/arogozhnikov/einops/blob/main/docs/">einops tutorial</a>
+shows those cover stacking, reshape, transposition, squeeze/unsqueeze, repeat, tile, concatenate, view and numerous reductions)</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">einops</span> <span class="kn">import</span> <span class="n">rearrange</span><span class="p">,</span> <span class="n">reduce</span><span class="p">,</span> <span class="n">repeat</span>
+<span class="c1"># rearrange elements according to the pattern</span>
+<span class="n">output_tensor</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span><span class="n">input_tensor</span><span class="p">,</span> <span class="s1">&#39;t b c -&gt; b c t&#39;</span><span class="p">)</span>
+<span class="c1"># combine rearrangement and reduction</span>
+<span class="n">output_tensor</span> <span class="o">=</span> <span class="n">reduce</span><span class="p">(</span><span class="n">input_tensor</span><span class="p">,</span> <span class="s1">&#39;b c (h h2) (w w2) -&gt; b h w c&#39;</span><span class="p">,</span> <span class="s1">&#39;mean&#39;</span><span class="p">,</span> <span class="n">h2</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">w2</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="c1"># copy along a new axis</span>
+<span class="n">output_tensor</span> <span class="o">=</span> <span class="n">repeat</span><span class="p">(</span><span class="n">input_tensor</span><span class="p">,</span> <span class="s1">&#39;h w -&gt; h w c&#39;</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+</code></pre></div>
+
+<p>Later additions to the family are <code>pack</code> and <code>unpack</code> functions (better than stack/split/concatenate):</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">einops</span> <span class="kn">import</span> <span class="n">pack</span><span class="p">,</span> <span class="n">unpack</span>
+<span class="c1"># pack and unpack allow reversibly &#39;packing&#39; multiple tensors into one.</span>
+<span class="c1"># Packed tensors may be of different dimensionality:</span>
+<span class="n">packed</span><span class="p">,</span>  <span class="n">ps</span> <span class="o">=</span> <span class="n">pack</span><span class="p">([</span><span class="n">class_token_bc</span><span class="p">,</span> <span class="n">image_tokens_bhwc</span><span class="p">,</span> <span class="n">text_tokens_btc</span><span class="p">],</span> <span class="s1">&#39;b * c&#39;</span><span class="p">)</span>
+<span class="n">class_emb_bc</span><span class="p">,</span> <span class="n">image_emb_bhwc</span><span class="p">,</span> <span class="n">text_emb_btc</span> <span class="o">=</span> <span class="n">unpack</span><span class="p">(</span><span class="n">transformer</span><span class="p">(</span><span class="n">packed</span><span class="p">),</span> <span class="n">ps</span><span class="p">,</span> <span class="s1">&#39;b * c&#39;</span><span class="p">)</span>
+</code></pre></div>
+
+<p>Finally, einops provides einsum with a support of multi-lettered names:</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">einops</span> <span class="kn">import</span> <span class="n">einsum</span><span class="p">,</span> <span class="n">pack</span><span class="p">,</span> <span class="n">unpack</span>
+<span class="c1"># einsum is like ... einsum, generic and flexible dot-product</span>
+<span class="c1"># but 1) axes can be multi-lettered  2) pattern goes last 3) works with multiple frameworks</span>
+<span class="n">C</span> <span class="o">=</span> <span class="n">einsum</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="s1">&#39;b t1 head c, b t2 head c -&gt; b head t1 t2&#39;</span><span class="p">)</span>
+</code></pre></div>
+
+<h3 id="einmix">EinMix</h3>
+<p><code>EinMix</code> is a generic linear layer, perfect for MLP Mixers and similar architectures.</p>
+<h3 id="layers">Layers</h3>
+<p>Einops provides layers (<code>einops</code> keeps a separate version for each framework) that reflect corresponding functions</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">einops.layers.torch</span>      <span class="kn">import</span> <span class="n">Rearrange</span><span class="p">,</span> <span class="n">Reduce</span>
+<span class="kn">from</span> <span class="nn">einops.layers.tensorflow</span> <span class="kn">import</span> <span class="n">Rearrange</span><span class="p">,</span> <span class="n">Reduce</span>
+<span class="kn">from</span> <span class="nn">einops.layers.flax</span>       <span class="kn">import</span> <span class="n">Rearrange</span><span class="p">,</span> <span class="n">Reduce</span>
+<span class="kn">from</span> <span class="nn">einops.layers.paddle</span>     <span class="kn">import</span> <span class="n">Rearrange</span><span class="p">,</span> <span class="n">Reduce</span>
+</code></pre></div>
+
+<details>
+<summary>Example of using layers within a pytorch model</summary>
+<p>Example given for pytorch, but code in other frameworks is almost identical</p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">torch.nn</span> <span class="kn">import</span> <span class="n">Sequential</span><span class="p">,</span> <span class="n">Conv2d</span><span class="p">,</span> <span class="n">MaxPool2d</span><span class="p">,</span> <span class="n">Linear</span><span class="p">,</span> <span class="n">ReLU</span>
+<span class="kn">from</span> <span class="nn">einops.layers.torch</span> <span class="kn">import</span> <span class="n">Rearrange</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">Sequential</span><span class="p">(</span>
+    <span class="o">...</span><span class="p">,</span>
+    <span class="n">Conv2d</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">5</span><span class="p">),</span>
+    <span class="n">MaxPool2d</span><span class="p">(</span><span class="n">kernel_size</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span>
+    <span class="c1"># flattening without need to write forward</span>
+    <span class="n">Rearrange</span><span class="p">(</span><span class="s1">&#39;b c h w -&gt; b (c h w)&#39;</span><span class="p">),</span>
+    <span class="n">Linear</span><span class="p">(</span><span class="mi">16</span><span class="o">*</span><span class="mi">5</span><span class="o">*</span><span class="mi">5</span><span class="p">,</span> <span class="mi">120</span><span class="p">),</span>
+    <span class="n">ReLU</span><span class="p">(),</span>
+    <span class="n">Linear</span><span class="p">(</span><span class="mi">120</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
+<span class="p">)</span>
+</code></pre></div>
+
+<p>No more flatten needed!</p>
+<p>Additionally, torch layers as those are script-able and compile-able.
+Operations <a href="https://github.com/arogozhnikov/einops/wiki/Using-torch.compile-with-einops">are torch.compile-able</a>,
+ but not script-able due to limitations of torch.jit.script.</p>
+</details>
+<h2 id="naming">Naming <a name="Naming"></a></h2>
+<p><code>einops</code> stands for Einstein-Inspired Notation for operations 
+(though "Einstein operations" is more attractive and easier to remember).</p>
+<p>Notation was loosely inspired by Einstein summation (in particular by <code>numpy.einsum</code> operation).</p>
+<h2 id="why-use-einops-notation">Why use <code>einops</code> notation?! <a name="Why-use-einops-notation"></a></h2>
+<h3 id="semantic-information-being-verbose-in-expectations">Semantic information (being verbose in expectations)</h3>
+<div class="codehilite"><pre><span></span><code><span class="n">y</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s1">&#39;b c h w -&gt; b (c h w)&#39;</span><span class="p">)</span>
+</code></pre></div>
+
+<p>While these two lines are doing the same job in <em>some</em> context,
+the second one provides information about the input and output.
+In other words, <code>einops</code> focuses on interface: <em>what is the input and output</em>, not <em>how</em> the output is computed.</p>
+<p>The next operation looks similar:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">y</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s1">&#39;time c h w -&gt; time (c h w)&#39;</span><span class="p">)</span>
+</code></pre></div>
+
+<p>but it gives the reader a hint:
+this is not an independent batch of images we are processing,
+but rather a sequence (video).</p>
+<p>Semantic information makes the code easier to read and maintain.</p>
+<h3 id="convenient-checks">Convenient checks</h3>
+<p>Reconsider the same example:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">y</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="c1"># x: (batch, 256, 19, 19)</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s1">&#39;b c h w -&gt; b (c h w)&#39;</span><span class="p">)</span>
+</code></pre></div>
+
+<p>The second line checks that the input has four dimensions,
+but you can also specify particular dimensions.
+That's opposed to just writing comments about shapes since comments don't prevent mistakes,
+not tested, and without code review tend to be outdated</p>
+<div class="codehilite"><pre><span></span><code><span class="n">y</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="c1"># x: (batch, 256, 19, 19)</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s1">&#39;b c h w -&gt; b (c h w)&#39;</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span> <span class="n">h</span><span class="o">=</span><span class="mi">19</span><span class="p">,</span> <span class="n">w</span><span class="o">=</span><span class="mi">19</span><span class="p">)</span>
+</code></pre></div>
+
+<h3 id="result-is-strictly-determined">Result is strictly determined</h3>
+<p>Below we have at least two ways to define the depth-to-space operation</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># depth-to-space</span>
+<span class="n">rearrange</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s1">&#39;b c (h h2) (w w2) -&gt; b (c h2 w2) h w&#39;</span><span class="p">,</span> <span class="n">h2</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">w2</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">rearrange</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s1">&#39;b c (h h2) (w w2) -&gt; b (h2 w2 c) h w&#39;</span><span class="p">,</span> <span class="n">h2</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">w2</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div>
+
+<p>There are at least four more ways to do it. Which one is used by the framework?</p>
+<p>These details are ignored, since <em>usually</em> it makes no difference,
+but it can make a big difference (e.g. if you use grouped convolutions in the next stage),
+and you'd like to specify this in your code.</p>
+<h3 id="uniformity">Uniformity</h3>
+<div class="codehilite"><pre><span></span><code><span class="n">reduce</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s1">&#39;b c (x dx) -&gt; b c x&#39;</span><span class="p">,</span> <span class="s1">&#39;max&#39;</span><span class="p">,</span> <span class="n">dx</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">reduce</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s1">&#39;b c (x dx) (y dy) -&gt; b c x y&#39;</span><span class="p">,</span> <span class="s1">&#39;max&#39;</span><span class="p">,</span> <span class="n">dx</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">dy</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">reduce</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s1">&#39;b c (x dx) (y dy) (z dz) -&gt; b c x y z&#39;</span><span class="p">,</span> <span class="s1">&#39;max&#39;</span><span class="p">,</span> <span class="n">dx</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">dy</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">dz</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+</code></pre></div>
+
+<p>These examples demonstrated that we don't use separate operations for 1d/2d/3d pooling,
+those are all defined in a uniform way.</p>
+<p>Space-to-depth and depth-to space are defined in many frameworks but how about width-to-height? Here you go:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">rearrange</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s1">&#39;b c h (w w2) -&gt; b c (h w2) w&#39;</span><span class="p">,</span> <span class="n">w2</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div>
+
+<h3 id="framework-independent-behavior">Framework independent behavior</h3>
+<p>Even simple functions are defined differently by different frameworks</p>
+<div class="codehilite"><pre><span></span><code><span class="n">y</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span> <span class="c1"># or flatten(x)</span>
+</code></pre></div>
+
+<p>Suppose <code>x</code>'s shape was <code>(3, 4, 5)</code>, then <code>y</code> has shape ...</p>
+<ul>
+<li>numpy, pytorch, cupy, chainer, jax: <code>(60,)</code></li>
+<li>keras, tensorflow.layers, gluon: <code>(3, 20)</code></li>
+</ul>
+<p><code>einops</code> works the same way in all frameworks.</p>
+<h3 id="independence-of-framework-terminology">Independence of framework terminology</h3>
+<p>Example: <code>tile</code> vs <code>repeat</code> causes lots of confusion. To copy image along width:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>    <span class="c1"># in numpy</span>
+<span class="n">image</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>        <span class="c1"># pytorch&#39;s repeat ~ numpy&#39;s tile</span>
+</code></pre></div>
+
+<p>With einops you don't need to decipher which axis was repeated:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">repeat</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="s1">&#39;h w -&gt; h (tile w)&#39;</span><span class="p">,</span> <span class="n">tile</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>  <span class="c1"># in numpy</span>
+<span class="n">repeat</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="s1">&#39;h w -&gt; h (tile w)&#39;</span><span class="p">,</span> <span class="n">tile</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>  <span class="c1"># in pytorch</span>
+<span class="n">repeat</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="s1">&#39;h w -&gt; h (tile w)&#39;</span><span class="p">,</span> <span class="n">tile</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>  <span class="c1"># in tf</span>
+<span class="n">repeat</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="s1">&#39;h w -&gt; h (tile w)&#39;</span><span class="p">,</span> <span class="n">tile</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>  <span class="c1"># in jax</span>
+<span class="n">repeat</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="s1">&#39;h w -&gt; h (tile w)&#39;</span><span class="p">,</span> <span class="n">tile</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>  <span class="c1"># in cupy</span>
+<span class="o">...</span> <span class="p">(</span><span class="n">etc</span><span class="o">.</span><span class="p">)</span>
+</code></pre></div>
+
+<p><a href="https://einops.rocks/pages/testimonials/">Testimonials</a> provide users' perspective on the same question.</p>
+<h2 id="supported-frameworks">Supported frameworks <a name="Supported-frameworks"></a></h2>
+<p>Einops works with ...</p>
+<ul>
+<li><a href="http://www.numpy.org/">numpy</a></li>
+<li><a href="https://pytorch.org/">pytorch</a></li>
+<li><a href="https://www.tensorflow.org/">tensorflow</a></li>
+<li><a href="https://github.com/google/jax">jax</a></li>
+<li><a href="https://github.com/cupy/cupy">cupy</a></li>
+<li><a href="https://github.com/google/flax">flax</a> (community)</li>
+<li><a href="https://github.com/PaddlePaddle/Paddle">paddle</a> (community)</li>
+<li><a href="https://github.com/Oneflow-Inc/oneflow">oneflow</a> (community)</li>
+<li><a href="https://github.com/tinygrad/tinygrad">tinygrad</a> (community)</li>
+<li><a href="https://github.com/pymc-devs/pytensor">pytensor</a> (community)</li>
+</ul>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">einops</span> <span class="kn">import</span> <span class="n">rearrange</span>  
+<span class="o">=&gt;</span> <span class="kn">from</span> <span class="nn">einops.array_api</span> <span class="kn">import</span> <span class="n">rearrange</span>
+</code></pre></div>
+
+<p>But actually it is even better: einops can be used with <em>any</em> framework that supports
+<a href="https://data-apis.org/array-api/latest/API_specification/index.html">Python array API standard</a>,
+to name a few:</p>
+<ul>
+<li>numpy &gt;= 2.0</li>
+<li><a href="https://github.com/ml-explore/mlx">MLX</a>  # yes, einops works with apple's framework</li>
+<li><a href="https://github.com/pydata/sparse">pydata/sparse</a> &gt;= 0.15 # and works with sparse tensors</li>
+<li><a href="https://github.com/cubed-dev/cubed">cubed</a> # and with distributed tensors too</li>
+<li><a href="https://github.com/Quantco/ndonnx">quantco/ndonnx</a></li>
+<li>jax</li>
+<li>cupy</li>
+<li>dask is supported via <a href="https://github.com/data-apis/array-api-compat">array-api-compat</a></li>
+</ul>
+<h2 id="development">Development</h2>
+<p>Devcontainer is provided, this environment can be used locally, or on your server,
+or within github codespaces. 
+To start with devcontainers in vs code, clone repo, and click 'Reopen in Devcontainer'. </p>
+<p>Starting from einops 0.8.1, einops distributes tests as a part of package.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># pip install einops pytest</span>
+python<span class="w"> </span>-m<span class="w"> </span>einops.tests.run_tests<span class="w"> </span>numpy<span class="w"> </span>pytorch<span class="w"> </span>jax<span class="w"> </span>--pip-install
+</code></pre></div>
+
+<p><code>numpy pytorch jax</code> is an <em>example</em>, any subset of testable frameworks can be provided.
+Every framework is tested against numpy, so it is a requirement for tests.</p>
+<p>Specifying <code>--pip-install</code> will install requirements in current virtualenv,
+and should be omitted if dependencies are installed locally.</p>
+<p>To build/test docs:</p>
+<div class="codehilite"><pre><span></span><code>hatch<span class="w"> </span>run<span class="w"> </span>docs:serve<span class="w">  </span><span class="c1"># Serving on http://localhost:8000/</span>
+</code></pre></div>
+
+<h2 id="citing-einops">Citing einops <a name="Citing"></a></h2>
+<p>Please use the following bibtex record</p>
+<div class="codehilite"><pre><span></span><code>@inproceedings{
+    rogozhnikov2022einops,
+    title={Einops: Clear and Reliable Tensor Manipulations with Einstein-like Notation},
+    author={Alex Rogozhnikov},
+    booktitle={International Conference on Learning Representations},
+    year={2022},
+    url={https://openreview.net/forum?id=oapKSVM2bcj}
+}
+</code></pre></div>
+
+<h2 id="supported-python-versions">Supported python versions</h2>
+<p><code>einops</code> works with python 3.10 or later.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": ".", "features": [], "search": "assets/javascripts/workers/search.f8cc74c7.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="assets/javascripts/bundle.60a45f97.min.js"></script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+      
+    
+  </body>
+</html>
