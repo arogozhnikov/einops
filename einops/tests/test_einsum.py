@@ -269,7 +269,7 @@ def test_functional_errors():
 
     rstate = np.random.RandomState(0)
 
-    def create_tensor(*shape):
+    def create_tensor(*shape) -> np.ndarray:
         return rstate.uniform(size=shape).astype("float32")
 
     # raise NotImplementedError("Singleton () axes are not yet supported in einsum.")
@@ -336,22 +336,15 @@ def test_functional_errors():
     # " representing the einsum pattern."
     # )
     with pytest.raises(ValueError, match=r"^The last argument"):
-        einsum(
-            "i j k -> i",
-            create_tensor(5, 4, 3),
-        )
+        einsum("i j k -> i", create_tensor(5, 4, 3))  # type: ignore
 
     # raise ValueError(
     #     "`einops.einsum` takes at minimum two arguments: the tensors,"
     #     " followed by the pattern."
     # )
     with pytest.raises(ValueError, match=r"^`einops.einsum` takes"):
-        einsum(
-            "i j k -> i",
-        )
+        einsum("i j k -> i")  # type: ignore
     with pytest.raises(ValueError, match=r"^`einops.einsum` takes"):
-        einsum(
-            create_tensor(5, 1),
-        )
+        einsum(create_tensor(5, 1))  # type: ignore
 
     # TODO: Include check for giving normal einsum pattern rather than einops.

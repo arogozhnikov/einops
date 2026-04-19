@@ -5,10 +5,6 @@ import typing
 from collections import OrderedDict
 from typing import Any, Protocol, TypeAlias, TypeVar, cast, overload
 
-if typing.TYPE_CHECKING:
-    # for docstrings in pycharm
-    import numpy as np  # noqa E401
-
 from . import EinopsError
 from ._backends import get_backend
 from .parsing import AnonymousAxis, ParsedExpression, _ellipsis
@@ -18,6 +14,8 @@ Tensor = TypeVar("Tensor")
 
 class ReductionCallable(Protocol):
     def __call__(self, tensor: Tensor, axes: tuple[int, ...], /) -> Tensor: ...
+    # demand hashability for lru_caching
+    def __hash__(self) -> int: ...
 
 
 Reduction = str | ReductionCallable
@@ -183,8 +181,8 @@ def _reconstruct_from_shape_uncached(
             continue
 
         known_product = 1
-        for axis in known_axes:
-            known_product *= axes_lengths[axis]
+        for axis_len in known_axes:
+            known_product *= axes_lengths[axis_len]
 
         if len(unknown_axes) == 0:
             if isinstance(length, int) and isinstance(known_product, int) and length != known_product:

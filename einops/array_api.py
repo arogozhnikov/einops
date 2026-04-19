@@ -1,8 +1,42 @@
 from collections.abc import Sequence
-from typing import TypeAlias
+from types import ModuleType
+from typing import TYPE_CHECKING, Protocol, TypeAlias, TypeVar, overload
 
-from .einops import EinopsError, Reduction, Tensor, _apply_recipe_array_api, _prepare_transformation_recipe
+from .einops import EinopsError, Reduction, _apply_recipe_array_api, _prepare_transformation_recipe
 from .packing import analyze_pattern, prod
+
+if TYPE_CHECKING:
+    from typing_extensions import CapsuleType  # avoid runtime dependency
+
+    class ArrayAPITensor(Protocol):
+        def __array_namespace__(self, /) -> ModuleType: ...
+        @property
+        def shape(self, /) -> tuple[int, ...]: ...
+        @property
+        def ndim(self, /) -> int: ...
+        def __getitem__(self, arg) -> "ArrayAPITensor": ...
+        # additional
+        def __dlpack__(self, /, *, stream: None = ...) -> CapsuleType: ...
+else:
+
+    class ArrayAPITensor(Protocol):
+        def __array_namespace__(self, /) -> ModuleType: ...
+        @property
+        def shape(self, /) -> tuple[int, ...]: ...
+        @property
+        def ndim(self, /) -> int: ...
+        def __getitem__(self, arg) -> "ArrayAPITensor": ...
+
+
+Tensor = TypeVar("Tensor", bound=ArrayAPITensor)
+
+
+@overload
+def reduce(tensor: list[Tensor], pattern: str, reduction: Reduction, **axes_lengths: int) -> Tensor: ...
+
+
+@overload
+def reduce(tensor: Tensor, pattern: str, reduction: Reduction, **axes_lengths: int) -> Tensor: ...
 
 
 def reduce(tensor: Tensor, pattern: str, reduction: Reduction, **axes_lengths: int) -> Tensor:
@@ -33,11 +67,27 @@ def reduce(tensor: Tensor, pattern: str, reduction: Reduction, **axes_lengths: i
         raise EinopsError(message + f"\n {e}") from None
 
 
-def repeat(tensor: Tensor, pattern: str, **axes_lengths) -> Tensor:
+@overload
+def repeat(tensor: list[Tensor], pattern: str, **axes_lengths: int) -> Tensor: ...
+
+
+@overload
+def repeat(tensor: Tensor, pattern: str, **axes_lengths: int) -> Tensor: ...
+
+
+def repeat(tensor: Tensor, pattern: str, **axes_lengths: int) -> Tensor:
     return reduce(tensor, pattern, reduction="repeat", **axes_lengths)
 
 
-def rearrange(tensor: Tensor, pattern: str, **axes_lengths) -> Tensor:
+@overload
+def rearrange(tensor: list[Tensor], pattern: str, **axes_lengths: int) -> Tensor: ...
+
+
+@overload
+def rearrange(tensor: Tensor, pattern: str, **axes_lengths: int) -> Tensor: ...
+
+
+def rearrange(tensor: Tensor, pattern: str, **axes_lengths: int) -> Tensor:
     return reduce(tensor, pattern, reduction="rearrange", **axes_lengths)
 
 
@@ -70,7 +120,7 @@ def pack(tensors: Sequence[Tensor], pattern: str) -> tuple[Tensor, list[Shape]]:
     return xp.concat(reshaped_tensors, axis=n_axes_before), packed_shapes
 
 
-def unpack(tensor: Tensor, packed_shapes: list[Shape], pattern: str) -> list[Tensor]:
+def unpack(tensor: Tensor, packed_shapes: list[Shape | list], pattern: str) -> list[Tensor]:
     xp = tensor.__array_namespace__()
     n_axes_before, n_axes_after, min_axes = analyze_pattern(pattern, opname="unpack")
 
