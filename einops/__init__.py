@@ -15,3 +15,9 @@ __all__ = ["EinopsError", "asnumpy", "einsum", "pack", "parse_shape", "rearrange
 
 from .einops import asnumpy, einsum, parse_shape, rearrange, reduce, repeat
 from .packing import pack, unpack
+
+try:
+    import torch  # noqa: F401
+    from einops import _torch_specific  # noqa: F401
+except ImportError:
+    pass
