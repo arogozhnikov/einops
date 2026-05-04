@@ -27,7 +27,14 @@ class ParsedExpression:
     and keeps some information important for downstream
     """
 
+    # Maximum pattern length to prevent DoS via extremely long strings
+    _max_pattern_length: int = 10000
+    # Maximum number of composition elements to prevent excessive memory usage
+    _max_composition_elements: int = 1000
+
     def __init__(self, expression: str, *, allow_underscore: bool = False, allow_duplicates: bool = False):
+        if len(expression) > self._max_pattern_length:
+            raise EinopsError(f"Pattern string too long (max {self._max_pattern_length} characters)")
         self.has_ellipsis: bool = False
         self.has_ellipsis_parenthesized: bool | None = None
         self.identifiers: set[str] = set()
@@ -90,6 +97,8 @@ class ParsedExpression:
                 if char == "(":
                     if bracket_group is not None:
                         raise EinopsError("Axis composition is one-level (brackets inside brackets not allowed)")
+                    if len(self.composition) >= self._max_composition_elements:
+                        raise EinopsError(f"Pattern too complex (max {self._max_composition_elements} composition elements)")
                     bracket_group = []
                 elif char == ")":
                     if bracket_group is None:
