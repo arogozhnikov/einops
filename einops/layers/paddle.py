@@ -9,12 +9,12 @@ __author__ = "PaddlePaddle"
 
 
 class Rearrange(RearrangeMixin, paddle.nn.Layer):
-    def forward(self, input):
+    def forward(self, input: paddle.Tensor) -> paddle.Tensor:
         return self._apply_recipe(input)
 
 
 class Reduce(ReduceMixin, paddle.nn.Layer):
-    def forward(self, input):
+    def forward(self, input: paddle.Tensor) -> paddle.Tensor:
         return self._apply_recipe(input)
 
 
@@ -24,6 +24,7 @@ class EinMix(_EinmixMixin, paddle.nn.Layer):
             weight_shape, default_initializer=paddle.nn.initializer.Uniform(-weight_bound, weight_bound)
         )
 
+        self.bias: paddle.Tensor | None
         if bias_shape is not None:
             self.bias = self.create_parameter(
                 bias_shape, default_initializer=paddle.nn.initializer.Uniform(-bias_bound, bias_bound)
@@ -46,11 +47,13 @@ class EinMix(_EinmixMixin, paddle.nn.Layer):
         if post_reshape_pattern is not None:
             self.post_rearrange = Rearrange(post_reshape_pattern, **cast(dict, post_reshape_lengths))
 
-    def forward(self, input):
+    def forward(self, input: paddle.Tensor) -> paddle.Tensor:
         if self.pre_rearrange is not None:
             input = self.pre_rearrange(input)
 
         result = paddle.einsum(self.einsum_pattern, input, self.weight)
+        assert result is not None  # for type checker
+
         if self.bias is not None:
             result += self.bias
         if self.post_rearrange is not None:
