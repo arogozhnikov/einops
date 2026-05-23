@@ -1,5 +1,6 @@
 import keyword
 import warnings
+from collections.abc import Sequence
 
 from einops import EinopsError
 
@@ -8,6 +9,8 @@ _ellipsis: str = "…"  # NB, this is a single unicode symbol. String is used as
 
 class AnonymousAxis:
     """Important thing: all instances of this class are not equal to each other"""
+
+    value: int
 
     def __init__(self, value: str):
         self.value = int(value)
@@ -30,11 +33,11 @@ class ParsedExpression:
     def __init__(self, expression: str, *, allow_underscore: bool = False, allow_duplicates: bool = False):
         self.has_ellipsis: bool = False
         self.has_ellipsis_parenthesized: bool | None = None
-        self.identifiers: set[str] = set()
+        self.identifiers: set[str | AnonymousAxis] = set()
         # that's axes like 2, 3, 4 or 5. Axes with size 1 are exceptional and replaced with empty composition
         self.has_non_unitary_anonymous_axes: bool = False
         # composition keeps structure of composite axes, see how different corner cases are handled in tests
-        self.composition: list[list[str] | str] = []
+        self.composition: list[Sequence[str | AnonymousAxis] | str] = []
         if "." in expression:
             if "..." not in expression:
                 raise EinopsError("Expression may contain dots only inside ellipsis (...)")
@@ -45,9 +48,9 @@ class ParsedExpression:
             expression = expression.replace("...", _ellipsis)
             self.has_ellipsis = True
 
-        bracket_group: list[str] | None = None
+        bracket_group: list[str | AnonymousAxis] | None = None
 
-        def add_axis_name(x):
+        def add_axis_name(x: str) -> None:
             if x in self.identifiers:
                 if not (allow_underscore and x == "_") and not allow_duplicates:
                     raise EinopsError(f'Indexing expression contains duplicate dimension "{x}"')
@@ -109,8 +112,8 @@ class ParsedExpression:
         if current_identifier is not None:
             add_axis_name(current_identifier)
 
-    def flat_axes_order(self) -> list:
-        result = []
+    def flat_axes_order(self) -> list[str]:
+        result: list[str] = []
         for composed_axis in self.composition:
             assert isinstance(composed_axis, list), "does not work with ellipsis"
             for axis in composed_axis:
