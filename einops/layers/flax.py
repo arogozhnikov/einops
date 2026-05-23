@@ -1,5 +1,5 @@
 from dataclasses import field
-from typing import cast
+from typing import Any, cast
 
 import flax.linen as nn
 import jax
@@ -14,23 +14,23 @@ __author__ = "Alex Rogozhnikov"
 class Reduce(nn.Module):
     pattern: str
     reduction: str
-    sizes: dict = field(default_factory=dict)
+    sizes: dict[str, Any] = field(default_factory=dict)
 
-    def setup(self):
+    def setup(self) -> None:
         self.reducer = ReduceMixin(self.pattern, self.reduction, **self.sizes)
 
-    def __call__(self, input):
+    def __call__(self, input: jax.Array) -> jax.Array:
         return self.reducer._apply_recipe(input)
 
 
 class Rearrange(nn.Module):
     pattern: str
-    sizes: dict = field(default_factory=dict)
+    sizes: dict[str, Any] = field(default_factory=dict)
 
-    def setup(self):
+    def setup(self) -> None:
         self.rearranger = RearrangeMixin(self.pattern, **self.sizes)
 
-    def __call__(self, input):
+    def __call__(self, input: jax.Array) -> jax.Array:
         return self.rearranger._apply_recipe(input)
 
 
@@ -38,9 +38,9 @@ class EinMix(nn.Module, _EinmixMixin):
     pattern: str
     weight_shape: str
     bias_shape: str | None = None
-    sizes: dict = field(default_factory=dict)
+    sizes: dict[str, Any] = field(default_factory=dict)
 
-    def setup(self):
+    def setup(self) -> None:
         self.initialize_einmix(
             pattern=self.pattern,
             weight_shape=self.weight_shape,
@@ -51,6 +51,7 @@ class EinMix(nn.Module, _EinmixMixin):
     def _create_parameters(self, weight_shape, weight_bound, bias_shape, bias_bound):
         self.weight = self.param("weight", jax.nn.initializers.uniform(weight_bound), weight_shape)
 
+        self.bias: jax.Array | None
         if bias_shape is not None:
             self.bias = self.param("bias", jax.nn.initializers.uniform(bias_bound), bias_shape)
         else:
@@ -59,9 +60,9 @@ class EinMix(nn.Module, _EinmixMixin):
     def _create_rearrange_layers(
         self,
         pre_reshape_pattern: str | None,
-        pre_reshape_lengths: dict | None,
+        pre_reshape_lengths: dict[str, Any] | None,
         post_reshape_pattern: str | None,
-        post_reshape_lengths: dict | None,
+        post_reshape_lengths: dict[str, Any] | None,
     ):
         self.pre_rearrange = None
         if pre_reshape_pattern is not None:
@@ -71,7 +72,7 @@ class EinMix(nn.Module, _EinmixMixin):
         if post_reshape_pattern is not None:
             self.post_rearrange = Rearrange(post_reshape_pattern, sizes=cast(dict, post_reshape_lengths))
 
-    def __call__(self, input):
+    def __call__(self, input: jax.Array) -> jax.Array:
         if self.pre_rearrange is not None:
             input = self.pre_rearrange(input)
         result = jnp.einsum(self.einsum_pattern, input, self.weight)
