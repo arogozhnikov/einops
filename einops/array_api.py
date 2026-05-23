@@ -6,7 +6,9 @@ from .einops import EinopsError, Reduction, _apply_recipe_array_api, _prepare_tr
 from .packing import analyze_pattern, prod
 
 if TYPE_CHECKING:
-    from typing_extensions import CapsuleType  # avoid runtime dependency
+    # avoid runtime dependencies
+    import numpy as np
+    from typing_extensions import CapsuleType
 
     class ArrayAPITensor(Protocol):
         def __array_namespace__(self, /) -> ModuleType: ...
@@ -67,7 +69,7 @@ def rearrange(tensor: Tensor | list[Tensor], pattern: str, **axes_lengths: int) 
     return reduce(tensor, pattern, reduction="rearrange", **axes_lengths)
 
 
-def asnumpy(tensor: Tensor):
+def asnumpy(tensor: Tensor) -> "np.ndarray":
     import numpy as np
 
     return np.from_dlpack(tensor)
