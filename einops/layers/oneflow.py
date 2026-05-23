@@ -9,12 +9,12 @@ __author__ = "Tianhe Ren & Depeng Liang"
 
 
 class Rearrange(RearrangeMixin, flow.nn.Module):
-    def forward(self, input):
+    def forward(self, input: flow.Tensor) -> flow.Tensor:
         return self._apply_recipe(input)
 
 
 class Reduce(ReduceMixin, flow.nn.Module):
-    def forward(self, input):
+    def forward(self, input: flow.Tensor) -> flow.Tensor:
         return self._apply_recipe(input)
 
 
@@ -43,7 +43,7 @@ class EinMix(_EinmixMixin, flow.nn.Module):
         if post_reshape_pattern is not None:
             self.post_rearrange = Rearrange(post_reshape_pattern, **cast(dict, post_reshape_lengths))
 
-    def forward(self, input):
+    def forward(self, input: flow.Tensor) -> flow.Tensor:
         if self.pre_rearrange is not None:
             input = self.pre_rearrange(input)
         result = flow.einsum(self.einsum_pattern, input, self.weight)
