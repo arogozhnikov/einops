@@ -219,7 +219,7 @@ def test_functional():
                 if do_manual_call:
                     out_array = backend.einsum(predicted_pattern, *in_arrays_framework)
                 else:
-                    out_array = einsum(*in_arrays_framework, einops_pattern)
+                    out_array = einsum(*in_arrays_framework, einops_pattern)  # type: ignore
 
                 # Check shape:
                 if tuple(out_array.shape) != out_shape:
@@ -252,7 +252,7 @@ def test_functional_symbolic():
                 if do_manual_call:
                     predicted_out_symbol = backend.einsum(predicted_pattern, *in_syms)
                 else:
-                    predicted_out_symbol = einsum(*in_syms, einops_pattern)
+                    predicted_out_symbol = einsum(*in_syms, einops_pattern)  # type: ignore
 
                 predicted_out_data = backend.eval_symbol(
                     predicted_out_symbol,

@@ -9,14 +9,6 @@ from einops.tests import collect_test_backends
 rng = np.random.default_rng()
 
 
-def pack_unpack(xs, pattern):
-    x, ps = pack(xs, pattern)
-    unpacked = unpack(xs, ps, pattern)
-    assert len(unpacked) == len(xs)
-    for a, b in zip(unpacked, xs, strict=True):
-        assert np.allclose(asnumpy(a), asnumpy(b))
-
-
 def unpack_and_pack(x, ps, pattern: str):
     unpacked = unpack(x, ps, pattern)
     packed, ps2 = pack(unpacked, pattern=pattern)

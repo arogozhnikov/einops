@@ -98,7 +98,7 @@ def pack(tensors: Sequence[Tensor], pattern: str) -> tuple[Tensor, list[Shape]]:
     return xp.concat(reshaped_tensors, axis=n_axes_before), packed_shapes
 
 
-def unpack(tensor: Tensor, packed_shapes: list[Shape | list], pattern: str) -> list[Tensor]:
+def unpack(tensor: Tensor, packed_shapes: Sequence[Shape | list], pattern: str) -> list[Tensor]:
     xp = tensor.__array_namespace__()
     n_axes_before, n_axes_after, min_axes = analyze_pattern(pattern, opname="unpack")
 

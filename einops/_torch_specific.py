@@ -127,8 +127,8 @@ def allow_ops_in_compiled_graph():
     allow_in_graph(unpack)
 
     # CF: https://github.com/pytorch/pytorch/blob/2df939aacac68e9621fbd5d876c78d86e72b41e2/torch/_dynamo/__init__.py#L222
-    global _ops_were_registered_in_torchdynamo
-    _ops_were_registered_in_torchdynamo = True
+    global _ops_were_registered_in_torchdynamo  # type: ignore
+    _ops_were_registered_in_torchdynamo = True  # type: ignore
 
 
 # module import automatically registers ops in torchdynamo

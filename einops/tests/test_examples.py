@@ -214,15 +214,14 @@ def test_pytorch_yolo_fragment():
         pred_cls = torch.sigmoid(prediction[..., 5:])  # Cls pred.
 
         # https://github.com/BobLiu20/YOLOv3_PyTorch/blob/c6b483743598b5f64d520d81e7e5f47ba936d4c9/nets/yolo_loss.py#L70-L92
-        FloatTensor = torch.cuda.FloatTensor if x.is_cuda else torch.FloatTensor
-        LongTensor = torch.cuda.LongTensor if x.is_cuda else torch.LongTensor
+        # revisited for better typing
         # Calculate offsets for each grid
         grid_x = (
             torch.linspace(0, in_w - 1, in_w)
             .repeat(in_w, 1)
             .repeat(bs * num_anchors, 1, 1)
             .view(x.shape)
-            .type(FloatTensor)
+            .type(torch.float32)
         )
         grid_y = (
             torch.linspace(0, in_h - 1, in_h)
@@ -230,21 +229,21 @@ def test_pytorch_yolo_fragment():
             .t()
             .repeat(bs * num_anchors, 1, 1)
             .view(y.shape)
-            .type(FloatTensor)
+            .type(torch.float32)
         )
         # Calculate anchor w, h
-        anchor_w = FloatTensor(scaled_anchors).index_select(1, LongTensor([0]))
-        anchor_h = FloatTensor(scaled_anchors).index_select(1, LongTensor([1]))
+        anchor_w = torch.asarray(scaled_anchors, dtype=torch.float32).index_select(1, torch.asarray([0]))
+        anchor_h = torch.asarray(scaled_anchors, dtype=torch.float32).index_select(1, torch.asarray([1]))
         anchor_w = anchor_w.repeat(bs, 1).repeat(1, 1, in_h * in_w).view(w.shape)
         anchor_h = anchor_h.repeat(bs, 1).repeat(1, 1, in_h * in_w).view(h.shape)
         # Add offset and scale with anchors
-        pred_boxes = FloatTensor(prediction[..., :4].shape)
+        pred_boxes = torch.zeros_like(prediction[..., :4])
         pred_boxes[..., 0] = x.data + grid_x
         pred_boxes[..., 1] = y.data + grid_y
         pred_boxes[..., 2] = torch.exp(w.data) * anchor_w
         pred_boxes[..., 3] = torch.exp(h.data) * anchor_h
         # Results
-        _scale = torch.Tensor([stride_w, stride_h] * 2).type(FloatTensor)
+        _scale = torch.Tensor([stride_w, stride_h] * 2).type(torch.float32)
         output = torch.cat(
             (pred_boxes.view(bs, -1, 4) * _scale, conf.view(bs, -1, 1), pred_cls.view(bs, -1, num_classes)), -1
         )
@@ -253,7 +252,7 @@ def test_pytorch_yolo_fragment():
     def new_way(tensor, num_classes, num_anchors, anchors, stride_h, stride_w):
         raw_predictions = rearrange(tensor, " b (anchor prediction) h w -> prediction b anchor h w", anchor=num_anchors)
 
-        anchors = torch.FloatTensor(anchors).to(tensor.device)
+        anchors = torch.asarray(anchors, dtype=torch.float32).to(tensor.device)
         anchor_sizes = rearrange(anchors, "anchor dim -> dim () anchor () ()")
 
         _, _, _, in_h, in_w = raw_predictions.shape

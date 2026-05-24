@@ -90,6 +90,7 @@ dependencies = [
   "ruff",
   "mypy",
   "pytest",
+  "nbformat",
 ]
 
 [tool.hatch.envs.default.scripts]
@@ -176,5 +177,6 @@ module = [
     "cupy.*",
     "tinygrad.*",
     "pytensor.*",
+    "flax.*",
 ]
 ignore_missing_imports = true
