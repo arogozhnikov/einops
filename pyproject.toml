@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling>=1.10.0"]
+requires = ["hatchling>=1.28.0"]
 build-backend = "hatchling.build"
 
 [project]
@@ -80,7 +80,25 @@ deploy_force = "convert && mkdocs build --clean --strict && mkdocs gh-deploy --f
 deploy_test = "hatch build --clean && hatch publish -r test"
 deploy = "hatch build --clean && hatch publish"
 
+[tool.hatch.envs.default]
+installer = "uv"
+dependencies = [
+  "numpy",
+  "torch",
+  "jax",
+  "mlx",
+  "ruff",
+  "mypy",
+  "pytest",
+]
 
+[tool.hatch.envs.default.scripts]
+# hatch run check
+check = [
+  "ruff format {args:.}",
+  "ruff check --fix {args:.}",
+  "mypy {args:.}",
+]
 
 
 [tool.ruff]
@@ -118,7 +136,7 @@ select = [
     "RET502",
     "RET503",
 ]
-# this notebook is not really a notebook,
+
 # but a set of examples to be compared
 ignore = [
     "C408",    # rewrite dict as literal
@@ -128,6 +146,8 @@ ignore = [
     "PLC0415", # only top-level imports
     "RUF059",  # unpacked var never used. Likely worth returning.
 ]
+
+# this notebook is not really a notebook,
 exclude = ["*Pytorch.ipynb"]
 
 
@@ -154,5 +174,7 @@ module = [
     "paddle.*",
     "oneflow.*",
     "cupy.*",
+    "tinygrad.*",
+    "pytensor.*",
 ]
 ignore_missing_imports = true

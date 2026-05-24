@@ -16,7 +16,7 @@ class Rearrange(RearrangeMixin, torch.nn.Module):
         return apply_for_scriptable_torch(recipe, input, reduction_type="rearrange", axes_dims=self._axes_lengths)  # type: ignore[arg-type]
 
     def _apply_recipe(self, x):
-        # overriding parent method to prevent its scripting
+        # preventing scripting of parent method by overriding
         pass
 
 
@@ -26,7 +26,7 @@ class Reduce(ReduceMixin, torch.nn.Module):
         return apply_for_scriptable_torch(recipe, input, reduction_type=self.reduction, axes_dims=self._axes_lengths)  # type: ignore[arg-type]
 
     def _apply_recipe(self, x):
-        # overriding parent method to prevent its scripting
+        # preventing scripting of parent method by overriding
         pass
 
 
