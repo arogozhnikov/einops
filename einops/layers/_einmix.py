@@ -1,19 +1,25 @@
 import string
 import warnings
-from typing import Any
+from typing import cast
 
 from einops import EinopsError
 from einops.einops import _product
 from einops.parsing import ParsedExpression, _ellipsis
 
 
-def _report_axes(axes: set, report_message: str):
+def _report_axes(axes: set, report_message: str) -> None:
     if len(axes) > 0:
         raise EinopsError(report_message.format(axes))
 
 
 class _EinmixMixin:
-    def __init__(self, pattern: str, weight_shape: str, bias_shape: str | None = None, **axes_lengths: Any):
+    pattern: str
+    weight_shape: str
+    bias_shape: str | None
+    axes_lengths: dict[str, int]
+    einsum_pattern: str
+
+    def __init__(self, pattern: str, weight_shape: str, bias_shape: str | None = None, **axes_lengths: int) -> None:
         """
         EinMix - Einstein summation with automated tensor management and axis packing/unpacking.
 
@@ -64,7 +70,9 @@ class _EinmixMixin:
             pattern=pattern, weight_shape=weight_shape, bias_shape=bias_shape, axes_lengths=axes_lengths
         )
 
-    def initialize_einmix(self, pattern: str, weight_shape: str, bias_shape: str | None, axes_lengths: dict):
+    def initialize_einmix(
+        self, pattern: str, weight_shape: str, bias_shape: str | None, axes_lengths: dict[str, int]
+    ) -> None:
         left_pattern, right_pattern = pattern.split("->")
         left = ParsedExpression(left_pattern)
         right = ParsedExpression(right_pattern)
@@ -120,9 +128,10 @@ class _EinmixMixin:
         if len(weight.identifiers) == 0:
             warnings.warn("EinMix: weight has no dimensions (means multiplication by a number)", stacklevel=2)
 
-        _weight_shape = [axes_lengths[axis] for (axis,) in weight.composition]
+        _weight_composition = cast("list[list[str]]", weight.composition)
+        _weight_shape = [axes_lengths[axis] for (axis,) in _weight_composition]
         # single output element is a combination of fan_in input elements
-        _fan_in = _product([axes_lengths[axis] for (axis,) in weight.composition if axis not in right.identifiers])
+        _fan_in = _product([axes_lengths[axis] for (axis,) in _weight_composition if axis not in right.identifiers])
         if bias_shape is not None:
             # maybe I should put ellipsis in the beginning for simplicity?
             if not isinstance(bias_shape, str):
@@ -182,24 +191,24 @@ class _EinmixMixin:
                     result.append("...")
             return "".join(result)
 
-        self.einsum_pattern: str = (
-            f"{write_flat_remapped(left)},{write_flat_remapped(weight)}->{write_flat_remapped(right)}"
-        )
+        self.einsum_pattern = f"{write_flat_remapped(left)},{write_flat_remapped(weight)}->{write_flat_remapped(right)}"
 
     def _create_rearrange_layers(
         self,
         pre_reshape_pattern: str | None,
-        pre_reshape_lengths: dict | None,
+        pre_reshape_lengths: dict[str, int] | None,
         post_reshape_pattern: str | None,
-        post_reshape_lengths: dict | None,
-    ):
+        post_reshape_lengths: dict[str, int] | None,
+    ) -> None:
         raise NotImplementedError("Should be defined in framework implementations")
 
-    def _create_parameters(self, weight_shape, weight_bound, bias_shape, bias_bound):
+    def _create_parameters(
+        self, weight_shape: list[int], weight_bound: float, bias_shape: list[int] | None, bias_bound: float
+    ) -> None:
         """Shape and implementations"""
         raise NotImplementedError("Should be defined in framework implementations")
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         params = repr(self.pattern)
         params += f", '{self.weight_shape}'"
         if self.bias_shape is not None:
@@ -212,18 +221,28 @@ class _EinmixMixin:
 class _EinmixDebugger(_EinmixMixin):
     """Used only to test mixin"""
 
+    pre_reshape_pattern: str | None
+    pre_reshape_lengths: dict[str, int] | None
+    post_reshape_pattern: str | None
+    post_reshape_lengths: dict[str, int] | None
+
+    saved_weight_shape: list[int]
+    saved_bias_shape: list[int] | None
+
     def _create_rearrange_layers(
         self,
         pre_reshape_pattern: str | None,
-        pre_reshape_lengths: dict | None,
+        pre_reshape_lengths: dict[str, int] | None,
         post_reshape_pattern: str | None,
-        post_reshape_lengths: dict | None,
-    ):
+        post_reshape_lengths: dict[str, int] | None,
+    ) -> None:
         self.pre_reshape_pattern = pre_reshape_pattern
         self.pre_reshape_lengths = pre_reshape_lengths
         self.post_reshape_pattern = post_reshape_pattern
         self.post_reshape_lengths = post_reshape_lengths
 
-    def _create_parameters(self, weight_shape, weight_bound, bias_shape, bias_bound):
+    def _create_parameters(
+        self, weight_shape: list[int], weight_bound: float, bias_shape: list[int] | None, bias_bound: float
+    ) -> None:
         self.saved_weight_shape = weight_shape
         self.saved_bias_shape = bias_shape
