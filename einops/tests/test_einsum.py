@@ -46,10 +46,10 @@ test_layer_cases = [
     ),
 ]
 
-
+_Shape = tuple[int, ...]
 # Each of the form:
 # (Arguments, true_einsum_pattern, in_shapes, out_shape)
-test_functional_cases = [
+test_functional_cases: list[tuple[str, str, tuple[_Shape, ...], _Shape]] = [
     (
         # Basic:
         "b c h w, b w -> b h",
@@ -161,8 +161,8 @@ test_functional_cases = [
         # Basic summation:
         "index ->",
         "a->",
-        ((10,)),
-        (()),
+        ((10,),),
+        tuple(),
     ),
 ]
 

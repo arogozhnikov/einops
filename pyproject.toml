@@ -90,7 +90,11 @@ dependencies = [
   "ruff",
   "mypy",
   "pytest",
+  # supplementary scripts for notebooks
   "nbformat",
+  "nbconvert",
+  "ipython",
+  "pillow",
 ]
 
 [tool.hatch.envs.default.scripts]
