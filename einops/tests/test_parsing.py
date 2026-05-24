@@ -19,7 +19,7 @@ class AnonymousAxisPlaceholder:
 
 
 def test_anonymous_axes():
-    a, b = AnonymousAxis("2"), AnonymousAxis("2")
+    a, b = AnonymousAxis(2), AnonymousAxis(2)
     assert a != b
     assert hash(a) != hash(b), "this test may fail once in a lifetime"
     c, d = AnonymousAxisPlaceholder(2), AnonymousAxisPlaceholder(3)

@@ -2,12 +2,11 @@ import functools
 import itertools
 import string
 import typing
-from collections import OrderedDict
 from typing import Any, Protocol, TypeAlias, TypeVar, cast
 
 from . import EinopsError
 from ._backends import get_backend
-from .parsing import AnonymousAxis, ParsedExpression, _ellipsis
+from .parsing import AnonymousAxis, ParsedExpression, _Ellipsis, _ellipsis
 
 
 # typing helper, allows not using overloads
@@ -250,7 +249,12 @@ def _apply_recipe(
         )
     except TypeError:
         # shape or one of passed axes lengths is not hashable (i.e. they are symbols)
-        _result = _reconstruct_from_shape_uncached(recipe, backend.shape(tensor), axes_lengths)
+        _result = _reconstruct_from_shape_uncached(
+            recipe,
+            backend.shape(tensor),
+            axes_lengths,  # type: ignore
+            # ^ known mismatch in types because of torch.jit.script
+        )
         (init_shapes, axes_reordering, reduced_axes, added_axes, final_shapes, n_axes_w_added) = _result
     if init_shapes is not None:
         tensor = backend.reshape(tensor, init_shapes)
@@ -347,7 +351,7 @@ def _prepare_transformation_recipe(
             raise EinopsError(f"Wrong shape: expected >={n_other_dims} dims. Received {ndim}-dim tensor.")
         ellipsis_ndim = ndim - n_other_dims
         ell_axes = [_ellipsis + str(i) for i in range(ellipsis_ndim)]
-        left_composition = []
+        left_composition: list[list[str | AnonymousAxis] | _Ellipsis] = []
         for composite_axis in left.composition:
             if composite_axis == _ellipsis:
                 for axis in ell_axes:
@@ -355,7 +359,7 @@ def _prepare_transformation_recipe(
             else:
                 left_composition.append(composite_axis)
 
-        rght_composition = []
+        rght_composition: list[list[str | AnonymousAxis]] = []
         for composite_axis in rght.composition:
             if composite_axis == _ellipsis:
                 for axis in ell_axes:
@@ -363,10 +367,11 @@ def _prepare_transformation_recipe(
             else:
                 group = []
                 for axis in composite_axis:
-                    if axis == _ellipsis:
-                        group.extend(ell_axes)
-                    else:
+                    if axis != _ellipsis:
                         group.append(axis)
+                    else:
+                        group.extend(ell_axes)
+
                 rght_composition.append(group)
 
         left.identifiers.update(ell_axes)
@@ -375,13 +380,15 @@ def _prepare_transformation_recipe(
             rght.identifiers.update(ell_axes)
             rght.identifiers.remove(_ellipsis)
     else:
+        # no ellipsis, case is way simpler
         if ndim != len(left.composition):
             raise EinopsError(f"Wrong shape: expected {len(left.composition)} dims. Received {ndim}-dim tensor.")
         left_composition = left.composition
-        rght_composition = rght.composition
+        rght_composition = rght.composition  # type: ignore
 
-    # parsing all dimensions to find out lengths
-    axis_name2known_length: OrderedDict[str | AnonymousAxis, int] = OrderedDict()
+    # parsing all dimensions to find out lengths.
+    # we use fact that this dict is ordereddict
+    axis_name2known_length: dict[str | AnonymousAxis, int] = {}
     for composite_axis in left_composition:
         for axis_name in composite_axis:
             if isinstance(axis_name, AnonymousAxis):
@@ -413,8 +420,12 @@ def _prepare_transformation_recipe(
     input_axes_known_unknown = []
     # some shapes are inferred later - all information is prepared for faster inference
     for composite_axis in left_composition:
-        known: set[str] = {axis for axis in composite_axis if axis_name2known_length[axis] != _unknown_axis_length}
-        unknown: set[str] = {axis for axis in composite_axis if axis_name2known_length[axis] == _unknown_axis_length}
+        known: set[str | AnonymousAxis] = {
+            axis for axis in composite_axis if axis_name2known_length[axis] != _unknown_axis_length
+        }
+        unknown: set[str | AnonymousAxis] = {
+            axis for axis in composite_axis if axis_name2known_length[axis] == _unknown_axis_length
+        }
         if len(unknown) > 1:
             raise EinopsError(f"Could not infer sizes for {unknown}")
         assert len(unknown) + len(known) == len(composite_axis)
@@ -422,7 +433,7 @@ def _prepare_transformation_recipe(
             ([axis_name2position[axis] for axis in known], [axis_name2position[axis] for axis in unknown])
         )
 
-    axis_position_after_reduction: dict[str, int] = {}
+    axis_position_after_reduction: dict[str | AnonymousAxis, int] = {}
     for axis_name in itertools.chain(*left_composition):
         if axis_name in rght.identifiers:
             axis_position_after_reduction[axis_name] = len(axis_position_after_reduction)
@@ -700,10 +711,10 @@ def parse_shape(x: Tensor, pattern: str) -> dict:
         else:
             raise RuntimeError(f"Can't parse shape with different number of dimensions: {pattern} {shape}")
     if exp.has_ellipsis:
-        ellipsis_idx = exp.composition.index(_ellipsis)
+        ellipsis_idx = exp.composition.index(_ellipsis)  # type: ignore
         composition = (
             exp.composition[:ellipsis_idx]
-            + ["_"] * (len(shape) - len(exp.composition) + 1)
+            + [["_"]] * (len(shape) - len(exp.composition) + 1)
             + exp.composition[ellipsis_idx + 1 :]
         )
     else:
@@ -715,7 +726,8 @@ def parse_shape(x: Tensor, pattern: str) -> dict:
             if axis_length != 1:
                 raise RuntimeError(f"Length of axis is not 1: {pattern} {shape}")
         else:
-            [axis] = axes
+            [axis] = axes  # type: ignore
+            # ^ complains on ellipsis, but ellipsis is replaced
             if isinstance(axis, str):
                 if axis != "_":
                     result[axis] = axis_length

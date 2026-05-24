@@ -1,5 +1,5 @@
-import string
 import warnings
+from collections.abc import Iterable, Sequence
 from typing import Any
 
 from einops import EinopsError
@@ -10,6 +10,34 @@ from einops.parsing import ParsedExpression, _ellipsis
 def _report_axes(axes: set, report_message: str):
     if len(axes) > 0:
         raise EinopsError(report_message.format(axes))
+
+
+def assert_all_str(seq: Iterable) -> list[str]:
+    # exists more to satisfy typechecks.
+    # We don't actually need these checks, but we're fine to run them in init (and only in init!).
+    result: list[str] = []
+    for el in seq:
+        assert isinstance(el, str), type(el)
+        result.append(el)
+    return result
+
+
+def map_to_letters(identifiers: Sequence[str]) -> dict[str, str]:
+    assert len(identifiers) <= 26, f"too many identifiers: {identifiers}"
+    letter2identifier = {}
+    for identifier in sorted(identifiers, reverse=True, key=str.lower):
+        letter = "z"
+        for c in identifier.lower():
+            if "a" <= c <= "z":
+                letter = c
+                break
+        # pass
+        while letter in letter2identifier:
+            letter = "a" if letter == "z" else chr(ord(letter) + 1)
+
+        letter2identifier[letter] = identifier
+
+    return {ident: letter for letter, ident in letter2identifier.items()}
 
 
 class _EinmixMixin:
@@ -89,21 +117,21 @@ class _EinmixMixin:
         pre_reshape_lengths = None
         post_reshape_pattern = None
         if any(len(group) != 1 for group in left.composition):
-            names: list[str] = []
-            for group in left.composition:
-                names += group
-            names = [name if name != _ellipsis else "..." for name in names]
-            composition = " ".join(names)
+            names = assert_all_str(x for group in left.composition for x in group)
+
+            composition = " ".join(name if name != _ellipsis else "..." for name in names)
             pre_reshape_pattern = f"{left_pattern}-> {composition}"
             pre_reshape_lengths = {name: length for name, length in axes_lengths.items() if name in names}
 
+            assert all(isinstance(x, str) for x in names)  # FIXME
+
         if any(len(group) != 1 for group in right.composition) or right.has_ellipsis_parenthesized:
-            names = []
-            for group in right.composition:
-                names += group
-            names = [name if name != _ellipsis else "..." for name in names]
-            composition = " ".join(names)
+            names = assert_all_str(x for group in right.composition for x in group)
+
+            composition = " ".join(name if name != _ellipsis else "..." for name in names)
             post_reshape_pattern = f"{composition} ->{right_pattern}"
+
+            assert all(isinstance(x, str) for x in names)  # FIXME
 
         self._create_rearrange_layers(pre_reshape_pattern, pre_reshape_lengths, post_reshape_pattern, {})
 
@@ -120,9 +148,10 @@ class _EinmixMixin:
         if len(weight.identifiers) == 0:
             warnings.warn("EinMix: weight has no dimensions (means multiplication by a number)", stacklevel=2)
 
-        _weight_shape = [axes_lengths[axis] for (axis,) in weight.composition]
+        weight_composition_flat = assert_all_str(axis for [axis] in weight.composition)  # type: ignore
+        _weight_shape = [axes_lengths[axis] for axis in weight_composition_flat]
         # single output element is a combination of fan_in input elements
-        _fan_in = _product([axes_lengths[axis] for (axis,) in weight.composition if axis not in right.identifiers])
+        _fan_in = _product([axes_lengths[axis] for axis in weight_composition_flat if axis not in right.identifiers])
         if bias_shape is not None:
             # maybe I should put ellipsis in the beginning for simplicity?
             if not isinstance(bias_shape, str):
@@ -167,16 +196,14 @@ class _EinmixMixin:
         if _ellipsis in mapped_identifiers:
             mapped_identifiers.remove(_ellipsis)
 
-        mapping2letters = {
-            k: letter for letter, k in zip(string.ascii_lowercase, sorted(mapped_identifiers), strict=False)
-        }
+        mapping2letters = map_to_letters(assert_all_str(mapped_identifiers))
         mapping2letters[_ellipsis] = "..."  # preserve ellipsis
 
         def write_flat_remapped(axes: ParsedExpression):
             result = []
             for composed_axis in axes.composition:
                 if isinstance(composed_axis, list):
-                    result.extend([mapping2letters[axis] for axis in composed_axis])
+                    result.extend([mapping2letters[axis] for axis in assert_all_str(composed_axis)])
                 else:
                     assert composed_axis == _ellipsis
                     result.append("...")

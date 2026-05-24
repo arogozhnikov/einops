@@ -525,6 +525,7 @@ test_cases_repeat_anonymous = [
 def test_anonymous_axes():
     x = np.arange(1 * 2 * 4 * 6).reshape([1, 2, 4, 6])
     for pattern, axis_dimensions in test_cases_repeat_anonymous:
+        print(pattern)
         check_reversion(x, pattern, **axis_dimensions)
 
 

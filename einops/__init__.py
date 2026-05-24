@@ -6,7 +6,10 @@ __version__ = "0.9.0dev"
 
 
 class EinopsError(RuntimeError):
-    """Runtime error thrown by einops"""
+    """
+    Runtime error thrown by einops.
+    In virtually all cases reflects a programming error.
+    """
 
     pass  # noqa: PIE790
 

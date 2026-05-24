@@ -172,6 +172,10 @@ exclude = "./docs/utils/"
 check_untyped_defs = true
 local_partial_types = true
 allow_redefinition_new = true
+# strict mode works too poorly
+strict = false
+# point at specific part of line
+pretty = true
 
 [[tool.mypy.overrides]]
 module = [

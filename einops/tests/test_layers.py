@@ -474,3 +474,25 @@ def test_einmix_restrictions():
             weight_shape="a", a=1, # ellipsis on the right side after bias axis
             bias_shape="a",
         )  # fmt: off
+
+
+def test_map_to_letters():
+    from einops.layers._einmix import map_to_letters
+
+    def check(input: list[str], expected: dict[str, str]):
+        actual_result = map_to_letters(input)
+        assert actual_result == expected, actual_result
+
+    check(["a", "d", "b", "c"], {"c": "c", "b": "b", "a": "a", "d": "d"})
+    check(["a", "D", "b", "C"], {"C": "c", "b": "b", "a": "a", "D": "d"})
+
+    check(["abra", "dabra", "boba", "Cadabra"], {"dabra": "d", "Cadabra": "c", "boba": "b", "abra": "a"})
+
+    check(["foo", "Foo", "fine", "fail"], {"foo": "f", "Foo": "g", "fine": "h", "fail": "i"})
+
+    # confirm first letters are preserved in simple conflicts
+    check(["foo", "Foo", "fine", "fail", "hola"], {"hola": "h", "foo": "f", "Foo": "g", "fine": "i", "fail": "j"})
+    check(
+        ["foo", "Foo", "fine", "fail", "hola", "iodide"],
+        {"iodide": "i", "hola": "h", "foo": "f", "Foo": "g", "fine": "j", "fail": "k"},
+    )
