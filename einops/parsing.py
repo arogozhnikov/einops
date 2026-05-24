@@ -34,7 +34,7 @@ class ParsedExpression:
         self.has_ellipsis: bool = False
         self.has_ellipsis_parenthesized: bool | None = None
         self.identifiers: set[str | AnonymousAxis] = set()
-        # that's axes like 2, 3, 4 or 5. Axes with size 1 are exceptional and replaced with empty composition
+        # that's axes like 2, 3, 4, etc. Axes with size 1 are exceptional and replaced with empty composition
         self.has_non_unitary_anonymous_axes: bool = False
         # composition keeps structure of composite axes, see how different corner cases are handled in tests
         self.composition: list[Sequence[str | AnonymousAxis] | str] = []
@@ -111,14 +111,6 @@ class ParsedExpression:
             raise EinopsError(f'Imbalanced parentheses in expression: "{expression}"')
         if current_identifier is not None:
             add_axis_name(current_identifier)
-
-    def flat_axes_order(self) -> list[str]:
-        result: list[str] = []
-        for composed_axis in self.composition:
-            assert isinstance(composed_axis, list), "does not work with ellipsis"
-            for axis in composed_axis:
-                result.append(axis)
-        return result
 
     def has_composed_axes(self) -> bool:
         # this will ignore 1 inside brackets
