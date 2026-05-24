@@ -16,6 +16,9 @@ class RearrangeMixin:
     See einops.rearrange for source_examples.
     """
 
+    pattern: str
+    axes_lengths: dict[str, Any]
+
     def __init__(self, pattern: str, **axes_lengths: Any) -> None:
         super().__init__()
         self.pattern = pattern
@@ -48,11 +51,11 @@ class RearrangeMixin:
             axes_lengths=self._axes_lengths,
         )
 
-    def __getstate__(self):
+    def __getstate__(self) -> dict[str, Any]:
         return {"pattern": self.pattern, "axes_lengths": self.axes_lengths}
 
-    def __setstate__(self, state):
-        self.__init__(pattern=state["pattern"], **state["axes_lengths"])
+    def __setstate__(self, state: dict[str, Any]) -> None:
+        self.__init__(pattern=state["pattern"], **state["axes_lengths"])  # type: ignore[misc]
 
 
 class ReduceMixin:
@@ -66,7 +69,11 @@ class ReduceMixin:
     See einops.reduce for source_examples.
     """
 
-    def __init__(self, pattern: str, reduction: str, **axes_lengths: Any):
+    pattern: str
+    reduction: str
+    axes_lengths: dict[str, Any]
+
+    def __init__(self, pattern: str, reduction: str, **axes_lengths: Any) -> None:
         super().__init__()
         self.pattern = pattern
         self.reduction = reduction
@@ -74,7 +81,7 @@ class ReduceMixin:
         self._multirecipe = self.multirecipe()
         self._axes_lengths = tuple(self.axes_lengths.items())
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         params = f"{self.pattern!r}, {self.reduction!r}"
         for axis, length in self.axes_lengths.items():
             params += f", {axis}={length}"
@@ -98,8 +105,8 @@ class ReduceMixin:
             axes_lengths=self._axes_lengths,
         )
 
-    def __getstate__(self):
+    def __getstate__(self) -> dict[str, Any]:
         return {"pattern": self.pattern, "reduction": self.reduction, "axes_lengths": self.axes_lengths}
 
-    def __setstate__(self, state):
-        self.__init__(pattern=state["pattern"], reduction=state["reduction"], **state["axes_lengths"])
+    def __setstate__(self, state: dict[str, Any]) -> None:
+        self.__init__(pattern=state["pattern"], reduction=state["reduction"], **state["axes_lengths"])  # type: ignore[misc]
