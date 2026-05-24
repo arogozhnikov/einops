@@ -131,6 +131,7 @@ def test_repeating():
 
 def test_ellipsis():
     for backend in _IMPERATIVE_BACKENDS:
+        expected: dict[str, int]
         for shape, pattern, expected in [
             ([10, 20], "...", dict()),
             ([10], "... a", dict(a=10)),

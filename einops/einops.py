@@ -3,13 +3,21 @@ import itertools
 import string
 import typing
 from collections import OrderedDict
-from typing import Any, Protocol, TypeAlias, TypeVar, cast, overload
+from typing import Any, Protocol, TypeAlias, TypeVar, cast
 
 from . import EinopsError
 from ._backends import get_backend
 from .parsing import AnonymousAxis, ParsedExpression, _ellipsis
 
-Tensor = TypeVar("Tensor")
+
+# typing helper, allows not using overloads
+class _TensorLike(Protocol):
+    @property
+    def shape(self, /) -> typing.Any: ...
+    def __getitem__(self, arg) -> typing.Any: ...
+
+
+Tensor = TypeVar("Tensor", bound=_TensorLike)
 
 
 class ReductionCallable(Protocol):
@@ -68,7 +76,7 @@ def _optimize_transformation(init_shapes, reduced_axes, axes_reordering, final_s
 
     # removing axes that are moved together during reshape
     def build_mapping():
-        init_to_final = {}
+        init_to_final: dict[int, None | int] = {}
         for axis in range(len(init_shapes)):
             if axis in reduced_axes:
                 init_to_final[axis] = None
@@ -462,14 +470,6 @@ def _prepare_recipes_for_all_dims(
     return {ndim: _prepare_transformation_recipe(pattern, operation, axes_names, ndim=ndim) for ndim in dims}
 
 
-@overload
-def reduce(tensor: list[Tensor], pattern: str, reduction: Reduction, **axes_lengths: Size) -> Tensor: ...
-
-
-@overload
-def reduce(tensor: Tensor, pattern: str, reduction: Reduction, **axes_lengths: Size) -> Tensor: ...
-
-
 def reduce(tensor: Tensor | list[Tensor], pattern: str, reduction: Reduction, **axes_lengths: Size) -> Tensor:
     """
     einops.reduce combines rearrangement and reduction using reader-friendly notation.
@@ -555,14 +555,6 @@ def reduce(tensor: Tensor | list[Tensor], pattern: str, reduction: Reduction, **
         raise EinopsError(message + f"\n {e}") from None
 
 
-@overload
-def rearrange(tensor: list[Tensor], pattern: str, **axes_lengths: Size) -> Tensor: ...
-
-
-@overload
-def rearrange(tensor: Tensor, pattern: str, **axes_lengths: Size) -> Tensor: ...
-
-
 def rearrange(tensor: Tensor | list[Tensor], pattern: str, **axes_lengths: Size) -> Tensor:
     """
     einops.rearrange is a reader-friendly smart element reordering for multidimensional tensors.
@@ -619,14 +611,6 @@ def rearrange(tensor: Tensor | list[Tensor], pattern: str, **axes_lengths: Size)
 
     """
     return reduce(tensor, pattern, reduction="rearrange", **axes_lengths)
-
-
-@overload
-def repeat(tensor: list[Tensor], pattern: str, **axes_lengths: Size) -> Tensor: ...
-
-
-@overload
-def repeat(tensor: Tensor, pattern: str, **axes_lengths: Size) -> Tensor: ...
 
 
 def repeat(tensor: Tensor | list[Tensor], pattern: str, **axes_lengths: Size) -> Tensor:

@@ -355,7 +355,8 @@ def test_reduction_with_callable_imperatives():
 def test_enumerating_directions():
     for backend in imp_op_backends:
         print("testing directions for", backend.framework_name)
-        for shape in [[], [1], [1, 1, 1], [2, 3, 5, 7]]:
+        shapes: list[list[int]] = [[], [1], [1, 1, 1], [2, 3, 5, 7]]
+        for shape in shapes:
             x = np.arange(np.prod(shape)).reshape(shape)
             axes1 = _enumerate_directions(x)
             axes2 = _enumerate_directions(backend.from_numpy(x))

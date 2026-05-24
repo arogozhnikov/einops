@@ -104,13 +104,15 @@ def test_parse_expression():
     aap = AnonymousAxisPlaceholder
 
     parsed = ParsedExpression("5 (3 4)")
-    assert len(parsed.identifiers) == 3 and {i.value for i in parsed.identifiers} == {3, 4, 5}
+    assert len(parsed.identifiers) == 3
+    assert {i.value for i in parsed.identifiers} == {3, 4, 5}  # type: ignore
     assert parsed.composition == [[aap(5)], [aap(3), aap(4)]]
     assert parsed.has_non_unitary_anonymous_axes
     assert not parsed.has_ellipsis
 
     parsed = ParsedExpression("5 1 (1 4) 1")
-    assert len(parsed.identifiers) == 2 and {i.value for i in parsed.identifiers} == {4, 5}
+    assert len(parsed.identifiers) == 2
+    assert {i.value for i in parsed.identifiers} == {4, 5}  # type: ignore
     assert parsed.composition == [[aap(5)], [], [aap(4)], []]
 
     parsed = ParsedExpression("name1 ... a1 12 (name2 14)")
