@@ -3,18 +3,22 @@ import itertools
 import string
 import typing
 from collections import OrderedDict
-from typing import Any, Protocol, TypeAlias, TypeVar, cast
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Protocol, TypeAlias, TypeVar, cast
 
 from . import EinopsError
 from ._backends import get_backend
 from .parsing import AnonymousAxis, ParsedExpression, _ellipsis
+
+if TYPE_CHECKING:
+    import numpy as np
 
 
 # typing helper, allows not using overloads
 class _TensorLike(Protocol):
     @property
     def shape(self, /) -> typing.Any: ...
-    def __getitem__(self, arg) -> typing.Any: ...
+    def __getitem__(self, arg, /) -> typing.Any: ...
 
 
 Tensor = TypeVar("Tensor", bound=_TensorLike)
@@ -26,7 +30,7 @@ class ReductionCallable(Protocol):
     def __hash__(self) -> int: ...
 
 
-Reduction = str | ReductionCallable
+Reduction: TypeAlias = str | ReductionCallable
 Size: TypeAlias = typing.Any
 
 
@@ -299,6 +303,9 @@ def _apply_recipe_array_api(
     return tensor
 
 
+_Axis: TypeAlias = str | AnonymousAxis
+
+
 @functools.lru_cache(256)
 def _prepare_transformation_recipe(
     pattern: str,
@@ -347,7 +354,7 @@ def _prepare_transformation_recipe(
             raise EinopsError(f"Wrong shape: expected >={n_other_dims} dims. Received {ndim}-dim tensor.")
         ellipsis_ndim = ndim - n_other_dims
         ell_axes = [_ellipsis + str(i) for i in range(ellipsis_ndim)]
-        left_composition = []
+        left_composition: list[Sequence[_Axis]] = []
         for composite_axis in left.composition:
             if composite_axis == _ellipsis:
                 for axis in ell_axes:
@@ -355,13 +362,13 @@ def _prepare_transformation_recipe(
             else:
                 left_composition.append(composite_axis)
 
-        rght_composition = []
+        rght_composition: list[Sequence[_Axis]] = []
         for composite_axis in rght.composition:
             if composite_axis == _ellipsis:
                 for axis in ell_axes:
                     rght_composition.append([axis])
             else:
-                group = []
+                group: list[_Axis] = []
                 for axis in composite_axis:
                     if axis == _ellipsis:
                         group.extend(ell_axes)
@@ -381,7 +388,7 @@ def _prepare_transformation_recipe(
         rght_composition = rght.composition
 
     # parsing all dimensions to find out lengths
-    axis_name2known_length: OrderedDict[str | AnonymousAxis, int] = OrderedDict()
+    axis_name2known_length: OrderedDict[_Axis, int] = OrderedDict()
     for composite_axis in left_composition:
         for axis_name in composite_axis:
             if isinstance(axis_name, AnonymousAxis):
@@ -413,8 +420,8 @@ def _prepare_transformation_recipe(
     input_axes_known_unknown = []
     # some shapes are inferred later - all information is prepared for faster inference
     for composite_axis in left_composition:
-        known: set[str] = {axis for axis in composite_axis if axis_name2known_length[axis] != _unknown_axis_length}
-        unknown: set[str] = {axis for axis in composite_axis if axis_name2known_length[axis] == _unknown_axis_length}
+        known = {axis for axis in composite_axis if axis_name2known_length[axis] != _unknown_axis_length}
+        unknown = {axis for axis in composite_axis if axis_name2known_length[axis] == _unknown_axis_length}
         if len(unknown) > 1:
             raise EinopsError(f"Could not infer sizes for {unknown}")
         assert len(unknown) + len(known) == len(composite_axis)
@@ -422,7 +429,7 @@ def _prepare_transformation_recipe(
             ([axis_name2position[axis] for axis in known], [axis_name2position[axis] for axis in unknown])
         )
 
-    axis_position_after_reduction: dict[str, int] = {}
+    axis_position_after_reduction: dict[_Axis, int] = {}
     for axis_name in itertools.chain(*left_composition):
         if axis_name in rght.identifiers:
             axis_position_after_reduction[axis_name] = len(axis_position_after_reduction)
@@ -748,11 +755,7 @@ def _enumerate_directions(x):
     return result
 
 
-# to avoid importing numpy
-np_ndarray = Any
-
-
-def asnumpy(tensor: Tensor) -> np_ndarray:
+def asnumpy(tensor: Tensor) -> "np.ndarray":
     """
     Convert a tensor of an imperative framework (i.e. numpy/cupy/torch/jax/etc.) to `numpy.ndarray`
 
