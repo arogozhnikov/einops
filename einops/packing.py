@@ -68,7 +68,9 @@ def pack(tensors: Sequence[Tensor], pattern: str) -> tuple[Tensor, list[Shape]]:
     """
     n_axes_before, n_axes_after, min_axes = analyze_pattern(pattern, "pack")
 
-    # packing zero tensors is illegal
+    if len(tensors) == 0:
+        raise EinopsError("pack() requires at least one tensor, got empty list")
+
     backend = get_backend(tensors[0])
 
     reshaped_tensors: list[Tensor] = []
