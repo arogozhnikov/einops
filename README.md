@@ -105,7 +105,7 @@ Kapil Sachdeva recorded a small [intro to einops](https://www.youtube.com/watch?
 `einops` has a minimalistic yet powerful API.
 
 Three core operations provided ([einops tutorial](https://github.com/arogozhnikov/einops/blob/main/docs/)
-shows those cover stacking, reshape, transposition, squeeze/unsqueeze, repeat, tile, concatenate, view and numerous reductions)
+shows those cover stacking, reshape, transposition, squeeze/unsqueeze, repeat, tile, broadcast, concatenate, view and numerous reductions)
 
 ```python
 from einops import rearrange, reduce, repeat

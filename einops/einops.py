@@ -661,6 +661,13 @@ def repeat(tensor: Tensor | list[Tensor], pattern: str, **axes_lengths: Size) ->
     When composing axes, C-order enumeration used (consecutive elements have different last axis).
     Find more examples in einops tutorial.
 
+    einops.repeat can introduce axes that are not present in the input (for example
+    `c` in `'h w -> h w c'`), filling them by repeating the data. This covers the
+    expand/broadcast use cases (such as `numpy.broadcast_to` or `torch.expand`) in
+    addition to repeat and tile. Whether the repeated elements are a materialized copy
+    or a memory-sharing view depends on the backend (numpy returns a copy, some
+    frameworks return an expanded view), so treat the output as a new tensor.
+
     Parameters:
         tensor: tensor of any supported library (e.g. numpy.ndarray, tensorflow, pytorch).
             list of tensors is also accepted, those should be of the same type and shape
