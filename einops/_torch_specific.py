@@ -77,6 +77,23 @@ class TorchJitBackend:
 def apply_for_scriptable_torch(
     recipe: TransformRecipe, tensor: torch.Tensor, reduction_type: str, axes_dims: list[tuple[str, int]]
 ) -> torch.Tensor:
+    """
+    Apply an einops transformation recipe to a tensor using only torchscript-compatible operations.
+
+    This function mirrors ``einops.einops._apply_recipe`` but uses ``TorchJitBackend``
+    so that the result can be scripted with ``torch.jit.script``.
+
+    Args:
+        recipe: A parsed ``TransformRecipe`` describing the transformation.
+        tensor: Input tensor to transform.
+        reduction_type: Reduction operation name (e.g. ``'min'``, ``'max'``, ``'sum'``,
+            ``'mean'``, ``'prod'``).  Ignored when the recipe contains no reduced axes.
+        axes_dims: List of ``(axis_name, axis_length)`` pairs providing concrete
+            dimension sizes for named axes.
+
+    Returns:
+        Transformed tensor after reshape, transpose, reduction, and added-axes steps.
+    """
     backend = TorchJitBackend
     (
         init_shapes,
