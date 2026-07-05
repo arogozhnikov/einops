@@ -126,3 +126,5 @@ docs_src/index.md
 
 # macos system files
 .DS_Store
+
+.jj
