@@ -16,12 +16,14 @@ jobs:
               with:
                   python-version: "3.12"
 
-            - name: Install dependencies
-              run: |
-                  pip install . && pip install hatch
+            - name: Install uv
+              uses: astral-sh/setup-uv@v7
+              with:
+                  enable-cache: false
+
             - name: Publish einops to PyPi
               env:
-                  HATCH_INDEX_USER: "__token__"
-                  HATCH_INDEX_AUTH: ${{ secrets.PYPI_TOKEN }}
+                  UV_PUBLISH_TOKEN: ${{ secrets.PYPI_TOKEN }}
               run: |
-                  hatch run pypi:deploy
+                  uv build
+                  uv publish

@@ -79,8 +79,14 @@ dependencies = []
 
 [tool.hatch.envs.pypi.scripts]
 # hatch run pypi:deploy_test
-deploy_test = "hatch build --clean && hatch publish -r test"
-deploy = "hatch build --clean && hatch publish"
+deploy_test = "uv build && uv publish --index testpypi"
+deploy = "uv build && uv publish"
+
+[[tool.uv.index]]
+name = "testpypi"
+url = "https://test.pypi.org/simple/"
+publish-url = "https://test.pypi.org/legacy/"
+explicit = true
 
 [tool.hatch.envs.default]
 installer = "uv"
