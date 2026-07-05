@@ -74,6 +74,8 @@ deploy = "convert && mkdocs build --clean --strict && mkdocs gh-deploy"
 # when mkdocs deployed from github actions, it requires --force. Reason unclear.
 deploy_force = "convert && mkdocs build --clean --strict && mkdocs gh-deploy --force"
 
+[tool.hatch.envs.pypi]
+dependencies = []
 
 [tool.hatch.envs.pypi.scripts]
 # hatch run pypi:deploy_test
