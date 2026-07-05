@@ -16,7 +16,7 @@ from typing import cast
 import tensorflow as tf
 from tensorflow.keras.layers import Layer
 
-from . import RearrangeMixin, ReduceMixin
+from . import RearrangeMixin, ReduceMixin, RepeatMixin
 from ._einmix import _EinmixMixin
 
 __author__ = "Alex Rogozhnikov"
@@ -42,6 +42,17 @@ class Reduce(ReduceMixin, Layer):
 
     def get_config(self):
         return {"pattern": self.pattern, "reduction": self.reduction, **self.axes_lengths}
+
+
+class Repeat(RepeatMixin, Layer):
+    def build(self, input_shape):
+        pass  # layer does not have any parameters to be initialized
+
+    def call(self, inputs):
+        return self._apply_recipe(inputs)
+
+    def get_config(self):
+        return {"pattern": self.pattern, **self.axes_lengths}
 
 
 class EinMix(_EinmixMixin, Layer):

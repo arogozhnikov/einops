@@ -5,7 +5,7 @@ import flax.linen as nn
 import jax
 import jax.numpy as jnp
 
-from . import RearrangeMixin, ReduceMixin
+from . import RearrangeMixin, ReduceMixin, RepeatMixin
 from ._einmix import _EinmixMixin
 
 __author__ = "Alex Rogozhnikov"
@@ -21,6 +21,17 @@ class Reduce(nn.Module):
 
     def __call__(self, input: jax.Array) -> jax.Array:
         return self.reducer._apply_recipe(input)
+
+
+class Repeat(nn.Module):
+    pattern: str
+    sizes: dict[str, Any] = field(default_factory=dict)
+
+    def setup(self) -> None:
+        self.repeater = RepeatMixin(self.pattern, **self.sizes)
+
+    def __call__(self, input: jax.Array) -> jax.Array:
+        return self.repeater._apply_recipe(input)
 
 
 class Rearrange(nn.Module):

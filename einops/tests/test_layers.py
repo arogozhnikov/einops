@@ -4,7 +4,7 @@ from collections import namedtuple
 import numpy as np
 import pytest
 
-from einops import EinopsError, rearrange, reduce
+from einops import EinopsError, rearrange, reduce, repeat
 from einops.tests import FLOAT_REDUCTIONS as REDUCTIONS
 from einops.tests import collect_test_backends, is_backend_tested
 
@@ -174,6 +174,95 @@ def test_reduce_symbolic():
                     assert np.allclose(result1, result2)
 
 
+repeat_patterns = [
+    testcase(
+        "a b -> a b c",
+        dict(c=3),
+        (2, 4),
+        [(), (2,), (2, 4, 3)],
+    ),
+    testcase(
+        "b c -> (b copy) c",
+        dict(copy=3),
+        (4, 5),
+        [(), (4,), (4, 5, 1)],
+    ),
+    testcase(
+        "b 1 c -> b h c",
+        dict(h=4),
+        (2, 1, 5),
+        [(2, 3, 5), (2, 5)],
+    ),
+]
+
+
+def test_repeat_imperative():
+    for backend in collect_test_backends(symbolic=False, layers=True):
+        print("Test layer for ", backend.framework_name)
+        for pattern, axes_lengths, input_shape, wrong_shapes in repeat_patterns:
+            x = np.arange(1, 1 + np.prod(input_shape), dtype="float32").reshape(input_shape)
+            result_numpy = repeat(x, pattern, **axes_lengths)
+            layer = backend.layers().Repeat(pattern, **axes_lengths)
+            for shape in wrong_shapes:
+                try:
+                    layer(backend.from_numpy(np.zeros(shape, dtype="float32")))
+                except BaseException:
+                    pass
+                else:
+                    raise AssertionError("Failure expected")
+
+            # simple pickling / unpickling
+            layer2 = pickle.loads(pickle.dumps(layer))
+            result1 = backend.to_numpy(layer(backend.from_numpy(x)))
+            result2 = backend.to_numpy(layer2(backend.from_numpy(x)))
+            assert np.allclose(result_numpy, result1)
+            assert np.allclose(result1, result2)
+
+            just_sum = backend.layers().Reduce("...->", reduction="sum")
+
+            variable = backend.from_numpy(x)
+            result = just_sum(layer(variable))
+
+            result.backward()
+            grad = backend.to_numpy(variable.grad)
+            # every input element is copied at least once, so its gradient is positive
+            assert np.all(grad >= 1)
+
+
+def test_repeat_symbolic():
+    for backend in collect_test_backends(symbolic=True, layers=True):
+        print("Test layer for ", backend.framework_name)
+        for pattern, axes_lengths, input_shape, _wrong_shapes in repeat_patterns:
+            x = np.arange(1, 1 + np.prod(input_shape), dtype="float32").reshape(input_shape)
+            result_numpy = repeat(x, pattern, **axes_lengths)
+            layer = backend.layers().Repeat(pattern, **axes_lengths)
+            input_shape_of_nones = [None] * len(input_shape)
+            shapes = [input_shape, input_shape_of_nones]
+
+            for shape in shapes:
+                symbol = backend.create_symbol(shape)
+                eval_inputs = [(symbol, x)]
+
+                result_symbol1 = layer(symbol)
+                result1 = backend.eval_symbol(result_symbol1, eval_inputs)
+                assert np.allclose(result_numpy, result1)
+
+                layer2 = pickle.loads(pickle.dumps(layer))
+                result_symbol2 = layer2(symbol)
+                result2 = backend.eval_symbol(result_symbol2, eval_inputs)
+                assert np.allclose(result1, result2)
+
+
+def test_repeat_invalid_pattern():
+    backends = list(collect_test_backends(symbolic=False, layers=True))
+    if len(backends) == 0:
+        pytest.skip()
+    backend = backends[0]
+    with pytest.raises(EinopsError):
+        # new axis on the right without a size
+        backend.layers().Repeat("a b -> a b c")
+
+
 def create_torch_model(use_reduce=False, add_scripted_layer=False):
     if not is_backend_tested("torch"):
         pytest.skip()
@@ -239,6 +328,28 @@ def test_torch_layers_scripting():
             input = torch.randn([10, 3, 32, 32])
 
             torch.testing.assert_close(model1(input), model2(input), atol=1e-3, rtol=1e-3)
+
+
+def test_torch_repeat_scripting():
+    if not is_backend_tested("torch"):
+        pytest.skip()
+    else:
+        import torch
+        from torch.nn import Sequential
+
+        from einops.layers.torch import Rearrange, Repeat
+
+        model = Sequential(
+            Repeat("b c h w -> b (repeat c) h w", repeat=2),
+            Rearrange("b c h w -> b (c h w)"),
+        )
+        scripted = torch.jit.script(model)
+        input = torch.randn([10, 3, 8, 8])
+        torch.testing.assert_close(model(input), scripted(input), atol=1e-3, rtol=1e-3)
+
+        # eager output matches the functional einops.repeat
+        expected = repeat(input.numpy(), "b c h w -> b (repeat c) h w", repeat=2).reshape(10, -1)
+        torch.testing.assert_close(model(input), torch.from_numpy(expected), atol=1e-3, rtol=1e-3)
 
 
 def test_keras_layer():

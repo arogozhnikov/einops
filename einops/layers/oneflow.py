@@ -2,7 +2,7 @@ from typing import cast
 
 import oneflow as flow
 
-from . import RearrangeMixin, ReduceMixin
+from . import RearrangeMixin, ReduceMixin, RepeatMixin
 from ._einmix import _EinmixMixin
 
 __author__ = "Tianhe Ren & Depeng Liang"
@@ -14,6 +14,11 @@ class Rearrange(RearrangeMixin, flow.nn.Module):
 
 
 class Reduce(ReduceMixin, flow.nn.Module):
+    def forward(self, input: flow.Tensor) -> flow.Tensor:
+        return self._apply_recipe(input)
+
+
+class Repeat(RepeatMixin, flow.nn.Module):
     def forward(self, input: flow.Tensor) -> flow.Tensor:
         return self._apply_recipe(input)
 

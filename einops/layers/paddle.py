@@ -2,7 +2,7 @@ from typing import cast
 
 import paddle
 
-from . import RearrangeMixin, ReduceMixin
+from . import RearrangeMixin, ReduceMixin, RepeatMixin
 from ._einmix import _EinmixMixin
 
 __author__ = "PaddlePaddle"
@@ -14,6 +14,11 @@ class Rearrange(RearrangeMixin, paddle.nn.Layer):
 
 
 class Reduce(ReduceMixin, paddle.nn.Layer):
+    def forward(self, input: paddle.Tensor) -> paddle.Tensor:
+        return self._apply_recipe(input)
+
+
+class Repeat(RepeatMixin, paddle.nn.Layer):
     def forward(self, input: paddle.Tensor) -> paddle.Tensor:
         return self._apply_recipe(input)
 
