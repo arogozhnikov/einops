@@ -38,13 +38,11 @@ class EinMix(_EinmixMixin, torch.nn.Module):
             torch.zeros(weight_shape).uniform_(-weight_bound, weight_bound), requires_grad=True
         )
 
-        self.bias: torch.nn.Parameter | None
-        if bias_shape is not None:
-            self.bias = torch.nn.Parameter(
-                torch.zeros(bias_shape).uniform_(-bias_bound, bias_bound), requires_grad=True
-            )
-        else:
-            self.bias = None
+        self.bias = (
+            None
+            if bias_shape is None
+            else torch.nn.Parameter(torch.zeros(bias_shape).uniform_(-bias_bound, bias_bound), requires_grad=True)
+        )
 
     def _create_rearrange_layers(
         self,

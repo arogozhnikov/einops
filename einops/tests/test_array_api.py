@@ -39,7 +39,7 @@ def test_reduce_array_api():
             assert np.array_equal(AA.asnumpy(np.asarray(result + 0)), expected)
 
 
-def test_reductions_any_all_for_array_api(): 
+def test_reductions_any_all_for_array_api():
     import numpy as xp
 
     from einops import array_api as AA
