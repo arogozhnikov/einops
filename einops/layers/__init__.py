@@ -63,7 +63,7 @@ class ReduceMixin:
     Reduce layer behaves identically to einops.reduce operation.
 
     :param pattern: str, rearrangement pattern
-    :param reduction: one of available reductions ('min', 'max', 'sum', 'mean', 'prod'), case-sensitive
+    :param reduction: one of available reductions ('min', 'max', 'sum', 'mean', 'prod', 'any', 'all'), case-sensitive
     :param axes_lengths: any additional specification of dimensions
 
     See einops.reduce for source_examples.

@@ -173,9 +173,7 @@ model = Sequential(
 
 No more flatten needed!
 
-Additionally, torch layers as those are script-able and compile-able.
-Operations [are torch.compile-able](https://github.com/arogozhnikov/einops/wiki/Using-torch.compile-with-einops),
- but not script-able due to limitations of torch.jit.script.
+Operations and layers can be `torch.compile`d.
 </details>
 
 

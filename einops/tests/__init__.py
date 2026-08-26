@@ -95,7 +95,7 @@ def collect_test_backends(symbolic=False, layers=False) -> list[_backends.Abstra
             ]
 
     backend_names_to_test = parse_backends_to_test()
-    result = []
+    result: list[_backends.AbstractBackend] = []
     for backend_type in backend_types:
         if backend_type.framework_name not in backend_names_to_test:
             continue

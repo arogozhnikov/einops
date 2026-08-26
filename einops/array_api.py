@@ -34,6 +34,9 @@ Tensor = TypeVar("Tensor", bound=ArrayAPITensor)
 
 
 def reduce(tensor: Tensor | list[Tensor], pattern: str, reduction: Reduction, **axes_lengths: int) -> Tensor:
+    """Same as einops.repeat, restricted to array-api-compliant tensors. See einops.repeat for details.
+    Supported reductions: "min", "max", "sum", "mean", "prod", "any", "all"
+    """
     if isinstance(tensor, list):
         if len(tensor) == 0:
             raise TypeError("Einops can't be applied to an empty list")
@@ -62,10 +65,12 @@ def reduce(tensor: Tensor | list[Tensor], pattern: str, reduction: Reduction, **
 
 
 def repeat(tensor: Tensor | list[Tensor], pattern: str, **axes_lengths: int) -> Tensor:
+    """Same as einops.repeat, restricted to array-api-compliant tensors. See einops.repeat for details."""
     return reduce(tensor, pattern, reduction="repeat", **axes_lengths)
 
 
 def rearrange(tensor: Tensor | list[Tensor], pattern: str, **axes_lengths: int) -> Tensor:
+    """Same as einops.rearrange, restricted to array-api-compliant tensors. See einops.rearrange for details."""
     return reduce(tensor, pattern, reduction="rearrange", **axes_lengths)
 
 
@@ -79,6 +84,7 @@ Shape: TypeAlias = tuple
 
 
 def pack(tensors: Sequence[Tensor], pattern: str) -> tuple[Tensor, list[Shape]]:
+    """Same as einops.pack, restricted to array-api-compliant tensors. See einops.pack for details."""
     n_axes_before, n_axes_after, min_axes = analyze_pattern(pattern, "pack")
     xp = tensors[0].__array_namespace__()
 
@@ -99,6 +105,7 @@ def pack(tensors: Sequence[Tensor], pattern: str) -> tuple[Tensor, list[Shape]]:
 
 
 def unpack(tensor: Tensor, packed_shapes: Sequence[Shape | list], pattern: str) -> list[Tensor]:
+    """Same as einops.unpack, restricted to array-api-compliant tensors. See einops.unpack for details."""
     xp = tensor.__array_namespace__()
     n_axes_before, n_axes_after, min_axes = analyze_pattern(pattern, opname="unpack")
 

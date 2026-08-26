@@ -39,6 +39,23 @@ def test_reduce_array_api():
             assert np.array_equal(AA.asnumpy(np.asarray(result + 0)), expected)
 
 
+def test_reductions_any_all_for_array_api():
+    import numpy as xp
+
+    from einops import array_api as AA
+
+    if xp.__version__ < "2.0.0":
+        pytest.skip()
+
+    rng = np.random.default_rng(0)
+    x = rng.random([2, 3, 4, 1, 2]) > 0.5
+    for pattern in itertools.chain(*equivalent_reduction_patterns):
+        for reduction in ["any", "all"]:
+            expected = reduce(x, pattern, reduction=reduction)
+            result = AA.reduce(xp.from_dlpack(x), pattern, reduction=reduction)
+            assert np.array_equal(AA.asnumpy(np.asarray(result)), expected)
+
+
 def test_repeat_array_api():
     import numpy as xp
 
