@@ -73,14 +73,14 @@ class _EinmixMixin:
         - next-gen MLPs (follow tutorial link above to learn more!)
         - in general, any time you want to combine linear layer and einops.rearrange
 
-        Uniform He initialization is applied to weight tensor.
+        Uniform Lecun initialization is applied to weight tensor.
         This accounts for the number of elements mixed and produced.
 
         Parameters
         :param pattern: transformation pattern, left side - dimensions of input, right side - dimensions of output
         :param weight_shape: axes of weight. A tensor of this shape is created, stored, and optimized in a layer
-               If bias_shape is not specified, bias is not created.
-        :param bias_shape: axes of bias added to output. Weights of this shape are created and stored. If `None` (the default), no bias is added.
+        :param bias_shape: axes of bias added to output, also trainable.
+               If `None` (the default), no bias is added, and corresponding field is None.
         :param axes_lengths: dimensions of weight tensor
         """
         super().__init__()
