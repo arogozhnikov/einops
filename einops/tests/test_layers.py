@@ -241,6 +241,32 @@ def test_torch_layers_scripting():
             torch.testing.assert_close(model1(input), model2(input), atol=1e-3, rtol=1e-3)
 
 
+def test_torch_layer_any_all():
+    """
+    Check that we can script the layer with any/all.
+    """
+    if not is_backend_tested("torch"):
+        pytest.skip()
+    else:
+        import torch
+
+        from einops.layers.torch import Reduce
+
+        rng = np.random.default_rng(0)
+        x_np = rng.random([2, 3, 4, 2]) > 0.5
+        pattern = "a b c d -> a b"
+
+        for reduction in ["any", "all"]:
+            expected = getattr(np, reduction)(x_np, axis=(2, 3))
+
+            layer = Reduce(pattern, reduction)
+            scripted_layer = torch.jit.script(layer)
+
+            x = torch.from_numpy(x_np)
+            assert np.array_equal(expected, layer(x).numpy())
+            assert np.array_equal(expected, scripted_layer(x).numpy())
+
+
 def test_keras_layer():
     rng = np.random.default_rng()
     if not is_backend_tested("tensorflow"):

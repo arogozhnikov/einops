@@ -33,6 +33,10 @@ class TorchJitBackend:
             return x.sum(dim=reduced_axes)
         elif operation == "mean":
             return x.mean(dim=reduced_axes)
+        elif operation == "any":
+            return x.any(dim=reduced_axes)
+        elif operation == "all":
+            return x.all(dim=reduced_axes)
         elif operation == "prod":
             for i in sorted(reduced_axes)[::-1]:
                 x = x.prod(dim=i)
