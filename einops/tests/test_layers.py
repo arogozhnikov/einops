@@ -502,6 +502,7 @@ def test_einmix_ellipsis_equivalence():
                     if model_ellipsis.bias is None:
                         assert model_explicit.bias is None
                     else:
+                        assert model_explicit.bias is not None
                         model_explicit.bias[:] = model_ellipsis.bias.squeeze(0)
 
                 left_pattern = pattern.split("->")[0].strip().replace("...", " ".join(extra_axes))
