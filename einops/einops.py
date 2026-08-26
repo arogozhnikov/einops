@@ -670,6 +670,21 @@ def repeat(tensor: Tensor | list[Tensor], pattern: str, **axes_lengths: Size) ->
     Returns:
         Tensor of the same type as input. If possible, a view to the original tensor is returned.
 
+    Important: in torch, einops creates a "view" to existing tensor to minimize memory consumption,
+    similar to torch.expand. Clone tensor first if you perform inline modifications.
+
+    ```python
+    import torch
+    from einops import repeat
+
+    x = torch.zeros([3])
+    y = repeat(x, 'i -> 5 i') # actually view to x
+
+    y[0, 0] = 1
+    print(x) # original value is changed to [1, 0, 0]
+    print(y) # first element of each row is 1
+    ```
+
     """
     return reduce(tensor, pattern, reduction="repeat", **axes_lengths)
 
