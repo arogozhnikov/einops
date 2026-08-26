@@ -29,20 +29,20 @@ Supports numpy, pytorch, jax, mlx and [others](#supported-frameworks).
 
 ## Recent updates:
 
+- 0.9.0: overhaul of typing in einops
 - [einops playground](https://arogozhnikov.github.io/jupyterlite/lab/index.html?download_github_folder=arogozhnikov/einops/docs) can run 2 of 4 example notebooks right in your browser
 - 0.8.2: MLX backend added
 - 0.8.0: tinygrad backend added, small fixes
 - 0.7.0: no-hassle `torch.compile`, support of [array api standard](https://data-apis.org/array-api/latest/API_specification/index.html) and more
 - 10'000🎉: github reports that more than 10k project use einops
-- einops 0.6.1: paddle backend added
 - einops 0.6 introduces [packing and unpacking](https://github.com/arogozhnikov/einops/blob/main/docs/4-pack-and-unpack.ipynb)
-- einops 0.5: einsum is now a part of einops
-- [Einops paper](https://openreview.net/pdf?id=oapKSVM2bcj) is accepted for oral presentation at ICLR 2022 (yes, it worth reading).
-  Talk recordings are [available](https://iclr.cc/virtual/2022/oral/6603)
 
 
 <details markdown="1">
 <summary>Previous updates</summary>
+- einops 0.5: einsum is now a part of einops
+- [Einops paper](https://openreview.net/pdf?id=oapKSVM2bcj) is accepted for oral presentation at ICLR 2022 (yes, it worth reading).
+  Talk recordings are [available](https://iclr.cc/virtual/2022/oral/6603)
 - flax and oneflow backend added
 - torch.jit.script is supported for pytorch layers
 - powerful EinMix added to einops. [Einmix tutorial notebook](https://github.com/arogozhnikov/einops/blob/main/docs/3-einmix-layer.ipynb) 
