@@ -468,6 +468,53 @@ def test_einmix_decomposition():
     assert mixin7.saved_bias_shape == [1, 4, 2]  # (a) d b, ellipsis does not participate
 
 
+def test_einmix_ellipsis_equivalence():
+    """Cross-check pattern with/without ellipsis"""
+    if not is_backend_tested("torch"):
+        pytest.skip()
+    else:
+        import torch
+
+        from einops.layers.torch import EinMix
+
+        templates = [
+            ("... cin -> ... cout", "cin cout", "cout", dict(cin=3, cout=4)),
+            ("b ... cin -> b ... cout", "cin cout", None, dict(b=2, cin=3, cout=4)),
+            ("b cin ... -> (b ...) cout", "cin cout", "cout", dict(b=2, cin=3, cout=4)),
+            ("b cin ... -> (b ...) cout", "b cin cout", "cout", dict(b=2, cin=3, cout=4)),
+            ("... c d -> ... c d", "c d", "c d", dict(c=3, d=4)),
+        ]
+        extra_sizes = [2, 3, 5]
+
+        for pattern, weight_shape, bias_shape, axes_lengths in templates:
+            for ndim in [0, 1, 2, 3]:
+                # e.g. for ndim=3, "..." is replaced everywhere with "c1 c2 c3"
+                extra_axes = [f"c{i + 1}" for i in range(ndim)]
+                pattern_explicit = pattern.replace("...", " ".join(extra_axes))
+
+                model_ellipsis = EinMix(pattern, weight_shape=weight_shape, bias_shape=bias_shape, **axes_lengths)
+                model_explicit = EinMix(
+                    pattern_explicit, weight_shape=weight_shape, bias_shape=bias_shape, **axes_lengths
+                )
+                with torch.no_grad():
+                    # ensure weights are identical
+                    model_explicit.weight[:] = model_ellipsis.weight[:]
+                    if model_ellipsis.bias is None:
+                        assert model_explicit.bias is None
+                    else:
+                        model_explicit.bias[:] = model_ellipsis.bias.squeeze(0)
+
+                left_pattern = pattern.split("->")[0].strip().replace("...", " ".join(extra_axes))
+                name2size = {**dict(zip(extra_axes, extra_sizes[:ndim], strict=True)), **axes_lengths}
+                input_shape = [name2size[tok] for tok in left_pattern.replace("(", "").replace(")", "").split()]
+                x = torch.randn(input_shape)
+
+                out_ellipsis = model_ellipsis(x)
+                out_explicit = model_explicit(x)
+                assert out_ellipsis.shape == out_explicit.shape, (pattern, ndim)
+                torch.testing.assert_close(out_ellipsis, out_explicit)
+
+
 def test_einmix_restrictions():
     """
     Testing different cases
