@@ -130,7 +130,7 @@ class ParsedExpression:
         elif name[0] == "_" or name[-1] == "_":
             if name == "_" and allow_underscore:
                 return True, ""
-            return False, "axis name should should not start or end with underscore"
+            return False, "axis name should not start or end with underscore"
         else:
             if keyword.iskeyword(name):
                 warnings.warn(
