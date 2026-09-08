@@ -52,6 +52,22 @@ def test_collapsed_ellipsis_errors_out():
         rearrange(x, "(...) -> (...)")
 
 
+@pytest.mark.parametrize("length", [0, 1])
+def test_infer_axis_from_zero_product_errors_out(length):
+    x = np.empty([length])
+    for backend in imp_op_backends:
+        with pytest.raises(EinopsError, match="known product of zero"):
+            rearrange(backend.from_numpy(x), "(a b) -> a b", a=0)
+
+
+def test_zero_length_composite_axis_with_determined_shape():
+    x = np.empty([0])
+    for backend in imp_op_backends:
+        backend_x = backend.from_numpy(x)
+        assert rearrange(backend_x, "(a b) -> a b", a=1).shape == (1, 0)
+        assert rearrange(backend_x, "(a b) -> a b", a=0, b=2).shape == (0, 2)
+
+
 def test_ellipsis_ops_numpy():
     x = np.arange(2 * 3 * 4 * 5 * 6).reshape([2, 3, 4, 5, 6])
     for pattern in identity_patterns:

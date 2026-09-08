@@ -196,6 +196,8 @@ def _reconstruct_from_shape_uncached(
                 raise EinopsError(f"Shape mismatch, {length} != {known_product}")
         else:
             # assert len(unknown_axes) == 1, 'this is enforced when recipe is created, so commented out'
+            if isinstance(known_product, int) and known_product == 0:
+                raise EinopsError("Shape mismatch, can't infer axis length from a known product of zero")
             if isinstance(length, int) and isinstance(known_product, int) and length % known_product != 0:
                 raise EinopsError(f"Shape mismatch, can't divide axis of length {length} in chunks of {known_product}")
 
