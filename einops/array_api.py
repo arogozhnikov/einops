@@ -99,7 +99,9 @@ def pack(tensors: Sequence[Tensor], pattern: str) -> tuple[Tensor, list[Shape]]:
             )
         axis_after_packed_axes = len(shape) - n_axes_after
         packed_shapes.append(shape[n_axes_before:axis_after_packed_axes])
-        reshaped_tensors.append(xp.reshape(tensor, (*shape[:n_axes_before], -1, *shape[axis_after_packed_axes:])))
+        reshaped_tensors.append(
+            xp.reshape(tensor, (*shape[:n_axes_before], prod(packed_shapes[-1]), *shape[axis_after_packed_axes:]))
+        )
 
     return xp.concat(reshaped_tensors, axis=n_axes_before), packed_shapes
 

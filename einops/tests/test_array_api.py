@@ -71,3 +71,32 @@ def test_repeat_array_api():
 
         result = AA.repeat(xp.from_dlpack(x), pattern, **axis_dimensions)
         assert np.array_equal(AA.asnumpy(result + 0), expected)
+
+
+@pytest.mark.parametrize(
+    ("shapes", "pattern", "packed_shape", "packed_shapes"),
+    [
+        ([(0, 3), (0, 2)], "b *", (0, 5), [(3,), (2,)]),
+        ([(3, 0), (2, 0)], "* b", (5, 0), [(3,), (2,)]),
+        ([(2, 0, 3), (2, 0, 2)], "a b *", (2, 0, 5), [(3,), (2,)]),
+        ([(2, 3, 0), (2, 2, 0)], "a * b", (2, 5, 0), [(3,), (2,)]),
+        ([(0, 2, 3), (0, 4)], "b *", (0, 10), [(2, 3), (4,)]),
+        ([(0,), (0, 2)], "b *", (0, 3), [(), (2,)]),
+        ([(0, 0), (0, 3)], "b *", (0, 3), [(0,), (3,)]),
+        ([(2, 0), (2, 3)], "b *", (2, 3), [(0,), (3,)]),
+        ([(2, 2, 3), (2, 4)], "b *", (2, 10), [(2, 3), (4,)]),
+    ],
+)
+def test_pack_shared_zero_axes_array_api(shapes, pattern, packed_shape, packed_shapes):
+    from einops import array_api as AA
+
+    if np.__version__ < "2.0.0":
+        pytest.skip()
+
+    arrays = [np.zeros(shape) for shape in shapes]
+    packed, ps = AA.pack(arrays, pattern)
+    assert packed.shape == packed_shape
+    assert ps == packed_shapes
+    restored = AA.unpack(packed, ps, pattern)
+    for tensor, array in zip(restored, arrays, strict=True):
+        np.testing.assert_array_equal(tensor, array)

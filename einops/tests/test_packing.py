@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from einops import EinopsError, asnumpy, pack, unpack
-from einops.tests import collect_test_backends
+from einops.tests import collect_test_backends, is_backend_tested
 
 rng = np.random.default_rng()
 
@@ -109,6 +109,74 @@ def test_numpy_trivial(H=13, W=17):
         pack([r, g, b, embeddings], "h h *")
     # capital and non-capital are different
     pack([r, g, b, embeddings], "h H *")
+
+
+@pytest.mark.parametrize(
+    ("shapes", "pattern", "packed_shape", "packed_shapes"),
+    [
+        ([(0, 3), (0, 2)], "b *", (0, 5), [(3,), (2,)]),
+        ([(3, 0), (2, 0)], "* b", (5, 0), [(3,), (2,)]),
+        ([(2, 0, 3), (2, 0, 2)], "a b *", (2, 0, 5), [(3,), (2,)]),
+        ([(2, 3, 0), (2, 2, 0)], "a * b", (2, 5, 0), [(3,), (2,)]),
+        ([(0, 2, 3), (0, 4)], "b *", (0, 10), [(2, 3), (4,)]),
+        ([(0,), (0, 2)], "b *", (0, 3), [(), (2,)]),
+        ([(0, 0), (0, 3)], "b *", (0, 3), [(0,), (3,)]),
+        ([(2, 0), (2, 3)], "b *", (2, 3), [(0,), (3,)]),
+        ([(2, 2, 3), (2, 4)], "b *", (2, 10), [(2, 3), (4,)]),
+    ],
+)
+def test_pack_shared_zero_axes(shapes, pattern, packed_shape, packed_shapes):
+    for backend in collect_test_backends(symbolic=False, layers=False):
+        arrays = [rng.random(shape).astype(np.float32) for shape in shapes]
+        tensors = [backend.from_numpy(array) for array in arrays]
+        packed, ps = pack(tensors, pattern)
+        assert tuple(packed.shape) == packed_shape
+        assert ps == packed_shapes
+        restored = unpack(packed, ps, pattern)
+        for tensor, array in zip(restored, arrays, strict=True):
+            np.testing.assert_array_equal(asnumpy(tensor), array)
+
+
+@pytest.mark.parametrize("batch", [0, 2])
+def test_pack_shared_zero_axes_torch_gradient(batch):
+    if not is_backend_tested("torch"):
+        pytest.skip()
+
+    import torch
+
+    tensors = [torch.ones((batch, width), requires_grad=True) for width in (3, 2)]
+    packed, _ = pack(tensors, "b *")
+    packed.sum().backward()
+    for tensor in tensors:
+        assert tensor.grad is not None
+        torch.testing.assert_close(tensor.grad, torch.ones_like(tensor))
+
+
+def test_pack_shared_zero_axes_torch_compile():
+    if not is_backend_tested("torch"):
+        pytest.skip()
+
+    import torch
+
+    def concatenate_features(x, y):
+        return pack([x, y], "b *")[0]
+
+    compiled = torch.compile(concatenate_features, fullgraph=True, dynamic=True)
+    for batch, width in [(0, 3), (2, 3), (0, 5), (2, 5)]:
+        x = torch.ones((batch, width))
+        y = torch.ones((batch, 2))
+        torch.testing.assert_close(compiled(x, y), torch.cat([x, y], dim=1))
+
+
+def test_pack_shared_zero_axes_symbolic():
+    for backend in collect_test_backends(symbolic=True, layers=False):
+        x = backend.create_symbol(shape=[None, None])
+        y = backend.create_symbol(shape=[None, None])
+        packed, _ = pack([x, y], "b *")
+        for batch in [0, 2]:
+            arrays = [np.ones((batch, width)) for width in (3, 2)]
+            result = backend.eval_symbol(packed, [(x, arrays[0]), (y, arrays[1])])
+            np.testing.assert_array_equal(result, np.concatenate(arrays, axis=1))
 
 
 @dataclasses.dataclass
