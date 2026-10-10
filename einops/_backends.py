@@ -187,7 +187,7 @@ class NumpyBackend(AbstractBackend):
         return self.np.concatenate(tensors, axis=axis)
 
     def is_float_type(self, x):
-        return x.dtype in ("float16", "float32", "float64", "float128", "bfloat16")
+        return x.dtype.name in ("float16", "float32", "float64", "float128", "bfloat16")
 
     def add_axis(self, x, new_position):
         return self.np.expand_dims(x, new_position)

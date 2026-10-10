@@ -1,3 +1,4 @@
+import io
 import itertools
 
 import numpy as np
@@ -12,6 +13,26 @@ imp_op_backends = collect_test_backends(symbolic=False, layers=False)
 sym_op_backends = collect_test_backends(symbolic=True, layers=False)
 
 rng = np.random.default_rng()
+
+
+@pytest.mark.parametrize("dtype", ["<f2", ">f2", "<f4", ">f4", "<f8", ">f8"])
+@pytest.mark.parametrize("pattern, axes", [("b c d -> b d", 1), ("... ->", None)])
+def test_mean_numpy_byteorder(dtype, pattern, axes):
+    stream = io.BytesIO()
+    np.save(stream, np.arange(24).reshape(2, 3, 4).astype(dtype), allow_pickle=False)
+    stream.seek(0)
+    tensor = np.load(stream, allow_pickle=False)
+    assert tensor.dtype == np.dtype(dtype)
+
+    result = reduce(tensor, pattern, "mean")
+    np.testing.assert_array_equal(result, tensor.mean(axis=axes))
+
+
+@pytest.mark.parametrize("dtype", ["int16", "int32", "int64", "bool", "complex64"])
+def test_mean_numpy_non_floating(dtype):
+    with pytest.raises(NotImplementedError, match="non-floating"):
+        reduce(np.ones((2, 3), dtype=dtype), "a b -> a", "mean")
+
 
 identity_patterns = [
     "...->...",
