@@ -153,6 +153,9 @@ class TransformRecipe:
         # ids of axes as they appear in result, again pointers to elementary_axes_lengths,
         # only used to infer result dimensions
         output_composite_axes: list[list[int]],
+        # Only the layer's one-axis ellipsis template records these positions.
+        ellipsis_input_axis: int = -1,
+        ellipsis_output_axis: int = -1,
     ):
         self.elementary_axes_lengths: list[int] = elementary_axes_lengths
         self.axis_name2elementary_axis: dict[str, int] = axis_name2elementary_axis
@@ -162,6 +165,91 @@ class TransformRecipe:
         self.first_reduced_axis: int = first_reduced_axis
         self.added_axes: dict[int, int] = added_axes
         self.output_composite_axes: list[list[int]] = output_composite_axes
+        self.ellipsis_input_axis: int = ellipsis_input_axis
+        self.ellipsis_output_axis: int = ellipsis_output_axis
+
+
+def _expand_ellipsis_axes(axes: list[int], ellipsis_axis: int, ellipsis_ndim: int) -> list[int]:
+    result: list[int] = []
+    for axis in axes:
+        if axis == ellipsis_axis:
+            result.extend(list(range(ellipsis_axis, ellipsis_axis + ellipsis_ndim)))
+        else:
+            result.append(axis if axis < ellipsis_axis else axis + ellipsis_ndim - 1)
+    return result
+
+
+def _expand_layer_recipe(recipe: TransformRecipe, ndim: int) -> TransformRecipe:
+    """Expand a one-axis ellipsis template without parsing or changing the template."""
+    n_other_dims = len(recipe.input_composition_known_unknown) - 1
+    ellipsis_ndim = ndim - n_other_dims
+    if ellipsis_ndim < 0:
+        raise EinopsError(f"Wrong shape: expected >={n_other_dims} dims. Received {ndim}-dim tensor.")
+    ellipsis_axis = recipe.input_composition_known_unknown[recipe.ellipsis_input_axis][1][0]
+    delta = ellipsis_ndim - 1
+    lengths = (
+        recipe.elementary_axes_lengths[:ellipsis_axis]
+        + [recipe.elementary_axes_lengths[ellipsis_axis]] * ellipsis_ndim
+        + recipe.elementary_axes_lengths[ellipsis_axis + 1 :]
+    )
+    names = {
+        name: axis if axis < ellipsis_axis else axis + delta for name, axis in recipe.axis_name2elementary_axis.items()
+    }
+    input_composition: list[tuple[list[int], list[int]]] = []
+    for input_axis, (known, unknown) in enumerate(recipe.input_composition_known_unknown):
+        if input_axis == recipe.ellipsis_input_axis:
+            for axis in range(ellipsis_axis, ellipsis_axis + ellipsis_ndim):
+                known_axes: list[int] = []
+                input_composition.append((known_axes, [axis]))
+        else:
+            input_composition.append(
+                (
+                    _expand_ellipsis_axes(known, ellipsis_axis, ellipsis_ndim),
+                    _expand_ellipsis_axes(unknown, ellipsis_axis, ellipsis_ndim),
+                )
+            )
+    first_reduced_axis = recipe.first_reduced_axis
+    if ellipsis_axis in recipe.axes_permutation[:first_reduced_axis]:
+        first_reduced_axis += delta
+    output_composition: list[list[int]] = []
+    ellipsis_output_position = -1
+    position = 0
+    for output_axis, group in enumerate(recipe.output_composite_axes):
+        for axis in group:
+            if axis == ellipsis_axis:
+                ellipsis_output_position = position
+            position += 1
+        if output_axis == recipe.ellipsis_output_axis:
+            for axis in range(ellipsis_axis, ellipsis_axis + ellipsis_ndim):
+                output_composition.append([axis])
+        else:
+            output_composition.append(_expand_ellipsis_axes(group, ellipsis_axis, ellipsis_ndim))
+    added_axes = {
+        position + delta if position > ellipsis_output_position else position: axis + delta
+        for position, axis in recipe.added_axes.items()
+    }
+    return TransformRecipe(
+        lengths,
+        names,
+        input_composition,
+        _expand_ellipsis_axes(recipe.axes_permutation, ellipsis_axis, ellipsis_ndim),
+        first_reduced_axis,
+        added_axes,
+        output_composition,
+    )
+
+
+def _get_layer_recipe(recipes: dict[int, TransformRecipe], ndim: int) -> TransformRecipe:
+    """Use common-rank recipes or expand a local recipe, leaving the cache unchanged."""
+    if ndim in recipes:
+        return recipes[ndim]
+    for recipe in recipes.values():
+        if recipe.ellipsis_input_axis >= 0:
+            return _expand_layer_recipe(recipe, ndim)
+        if len(recipes) == 1:
+            expected_ndim = len(recipe.input_composition_known_unknown)
+            raise EinopsError(f"Wrong shape: expected {expected_ndim} dims. Received {ndim}-dim tensor.")
+    raise EinopsError("Could not find an ellipsis template")
 
 
 def _reconstruct_from_shape_uncached(
@@ -471,14 +559,33 @@ def _prepare_recipes_for_all_dims(
 ) -> dict[int, TransformRecipe]:
     """
     Internal function, used in layers.
-    Layer makes all recipe creation when it is initialized, thus to keep recipes simple we pre-compute for all dims
+    Pre-compute common ranks and record a one-axis ellipsis template for other ranks.
+    The template can be expanded without parsing, including when a layer is scripted.
     """
     left_str, rght_str = pattern.split("->")
     left = ParsedExpression(left_str)
     dims = [len(left.composition)]
     if left.has_ellipsis:
         dims = [len(left.composition) - 1 + ellipsis_dims for ellipsis_dims in range(8)]
-    return {ndim: _prepare_transformation_recipe(pattern, operation, axes_names, ndim=ndim) for ndim in dims}
+    recipes = {ndim: _prepare_transformation_recipe(pattern, operation, axes_names, ndim=ndim) for ndim in dims}
+    if left.has_ellipsis:
+        right = ParsedExpression(rght_str)
+        input_axis = left.composition.index(cast(_Ellipsis, _ellipsis))
+        output_axis = right.composition.index(cast(_Ellipsis, _ellipsis)) if _ellipsis in right.composition else -1
+        template_ndim = len(left.composition)
+        template = recipes[template_ndim]
+        recipes[template_ndim] = TransformRecipe(
+            template.elementary_axes_lengths,
+            template.axis_name2elementary_axis,
+            template.input_composition_known_unknown,
+            template.axes_permutation,
+            template.first_reduced_axis,
+            template.added_axes,
+            template.output_composite_axes,
+            ellipsis_input_axis=input_axis,
+            ellipsis_output_axis=output_axis,
+        )
+    return recipes
 
 
 def reduce(tensor: Tensor | list[Tensor], pattern: str, reduction: Reduction, **axes_lengths: Size) -> Tensor:

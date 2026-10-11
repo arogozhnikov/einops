@@ -3,7 +3,7 @@ __author__ = "Alex Rogozhnikov"
 from typing import Any
 
 from einops import EinopsError
-from einops.einops import TransformRecipe, _apply_recipe, _prepare_recipes_for_all_dims, get_backend
+from einops.einops import TransformRecipe, _apply_recipe, _get_layer_recipe, _prepare_recipes_for_all_dims, get_backend
 
 
 class RearrangeMixin:
@@ -45,7 +45,7 @@ class RearrangeMixin:
         backend = get_backend(x)
         return _apply_recipe(
             backend=backend,
-            recipe=self._multirecipe[len(x.shape)],
+            recipe=_get_layer_recipe(self._multirecipe, len(x.shape)),
             tensor=x,
             reduction_type="rearrange",
             axes_lengths=self._axes_lengths,
@@ -99,7 +99,7 @@ class ReduceMixin:
         backend = get_backend(x)
         return _apply_recipe(
             backend=backend,
-            recipe=self._multirecipe[len(x.shape)],
+            recipe=_get_layer_recipe(self._multirecipe, len(x.shape)),
             tensor=x,
             reduction_type=self.reduction,
             axes_lengths=self._axes_lengths,

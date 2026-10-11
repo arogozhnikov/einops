@@ -3,6 +3,7 @@ from typing import cast
 import torch
 
 from einops._torch_specific import apply_for_scriptable_torch
+from einops.einops import _get_layer_recipe
 
 from . import RearrangeMixin, ReduceMixin
 from ._einmix import _EinmixMixin
@@ -12,7 +13,7 @@ __author__ = "Alex Rogozhnikov"
 
 class Rearrange(RearrangeMixin, torch.nn.Module):
     def forward(self, input: torch.Tensor) -> torch.Tensor:
-        recipe = self._multirecipe[input.ndim]
+        recipe = _get_layer_recipe(self._multirecipe, input.ndim)
         return apply_for_scriptable_torch(recipe, input, reduction_type="rearrange", axes_dims=self._axes_lengths)  # type: ignore[arg-type]
 
     def _apply_recipe(self, x):
@@ -22,7 +23,7 @@ class Rearrange(RearrangeMixin, torch.nn.Module):
 
 class Reduce(ReduceMixin, torch.nn.Module):
     def forward(self, input: torch.Tensor) -> torch.Tensor:
-        recipe = self._multirecipe[input.ndim]
+        recipe = _get_layer_recipe(self._multirecipe, input.ndim)
         return apply_for_scriptable_torch(recipe, input, reduction_type=self.reduction, axes_dims=self._axes_lengths)  # type: ignore[arg-type]
 
     def _apply_recipe(self, x):

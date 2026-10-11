@@ -4,7 +4,7 @@ from collections import namedtuple
 import numpy as np
 import pytest
 
-from einops import EinopsError, rearrange, reduce
+from einops import EinopsError, rearrange, reduce, repeat
 from einops.tests import FLOAT_REDUCTIONS as REDUCTIONS
 from einops.tests import collect_test_backends, is_backend_tested
 
@@ -64,6 +64,84 @@ def test_rearrange_imperative():
 
             result.backward()
             assert np.allclose(backend.to_numpy(variable.grad), 1)
+
+
+@pytest.mark.parametrize("ellipsis_ndim", [8, 9])
+@pytest.mark.parametrize(
+    "pattern,operation,axes_lengths,prefix,suffix",
+    [
+        ("... -> (...)", "rearrange", {}, (), ()),
+        ("b ... c -> c ... b", "rearrange", {}, (2,), (3,)),
+        ("(a b) ... (c d) -> (... a c) b d", "rearrange", {"b": 2, "d": 3}, (4,), (6,)),
+        ("1 a ... b 1 -> b ... a", "rearrange", {}, (1, 2), (3, 1)),
+        *[("b ... c -> c", reduction, {}, (2,), (3,)) for reduction in (*REDUCTIONS, "any", "all")],
+        ("(a 2 3) ... b -> ... (a b)", "sum", {}, (12,), (2,)),
+        ("... -> left ... 2 right", "repeat", {"left": 2, "right": 3}, (), ()),
+        ("... a -> new (a ...) more", "repeat", {"new": 2, "more": 3}, (), (3,)),
+        ("a ... b -> (... a new) b 3", "repeat", {"new": 2}, (2,), (3,)),
+    ],
+)
+def test_layers_with_many_ellipsis_axes(ellipsis_ndim, pattern, operation, axes_lengths, prefix, suffix):
+    shape = (*prefix, 2, *(1 for _ in range(ellipsis_ndim - 1)), *suffix)
+    x = (np.arange(np.prod(shape), dtype="float64") + 1).reshape(shape)
+    if operation == "rearrange":
+        expected = rearrange(x, pattern, **axes_lengths)
+    elif operation == "repeat":
+        expected = repeat(x, pattern, **axes_lengths)
+    else:
+        expected = reduce(x, pattern, operation, **axes_lengths)
+    for backend in collect_test_backends(symbolic=False, layers=True):
+        layers = backend.layers()
+        layer = (
+            layers.Rearrange(pattern, **axes_lengths)
+            if operation == "rearrange"
+            else layers.Reduce(pattern, operation, **axes_lengths)
+        )
+        tensor = backend.from_numpy(x)
+        np.testing.assert_allclose(backend.to_numpy(layer(tensor)), expected)
+        if backend.framework_name == "torch":
+            import torch
+
+            np.testing.assert_allclose(torch.jit.script(layer)(tensor).detach().numpy(), expected)
+
+
+@pytest.mark.parametrize("ndim", [65, 1000])
+def test_torch_ellipsis_layer_without_rank_cap(ndim):
+    if not is_backend_tested("torch"):
+        pytest.skip()
+    import torch
+
+    from einops.layers.torch import Rearrange
+
+    x = torch.arange(2.0).reshape(*(1 for _ in range(ndim - 1)), 2)
+    layer = Rearrange("... -> (...)")
+    expected = rearrange(x, layer.pattern)
+    torch.testing.assert_close(layer(x), expected)
+    torch.testing.assert_close(torch.jit.script(layer)(x), expected)
+
+
+def test_torch_ellipsis_layer_serialization(tmp_path):
+    if not is_backend_tested("torch"):
+        pytest.skip()
+    import torch
+
+    from einops.layers.torch import Rearrange
+
+    layer = Rearrange("a ... b -> b (... a)")
+    recipes_before = pickle.dumps(layer._multirecipe)
+    values = torch.arange(12.0, requires_grad=True)
+    x = values.reshape(2, 2, *(1 for _ in range(7)), 3)
+    expected = rearrange(x, layer.pattern)
+    restored = pickle.loads(pickle.dumps(layer))
+    restored.load_state_dict(layer.state_dict(), strict=True)
+    torch.testing.assert_close(restored(x), expected)
+    filename = str(tmp_path / "layer.pt")
+    torch.jit.save(torch.jit.script(layer), filename)
+    torch.testing.assert_close(torch.jit.load(filename)(x), expected)
+    layer(x).square().sum().backward()
+    torch.testing.assert_close(values.grad, 2 * values.detach())
+    assert len(layer._multirecipe) == 8
+    assert pickle.dumps(layer._multirecipe) == recipes_before
 
 
 def test_rearrange_symbolic():
