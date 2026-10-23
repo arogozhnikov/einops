@@ -3,7 +3,7 @@ from types import ModuleType
 from typing import TYPE_CHECKING, Protocol, TypeAlias, TypeVar, cast
 
 from .einops import EinopsError, Reduction, _apply_recipe_array_api, _prepare_transformation_recipe
-from .packing import analyze_pattern, prod
+from .packing import _unpack_shape, analyze_pattern, prod
 
 if TYPE_CHECKING:
     # avoid runtime dependencies
@@ -145,14 +145,12 @@ def unpack(tensor: Tensor, packed_shapes: Sequence[Shape | list], pattern: str) 
     shape_end = input_shape[unpacked_axis + 1 :]
     slice_filler = (slice(None, None),) * unpacked_axis
     try:
-        return [
-            xp.reshape(
-                # shortest way slice arbitrary axis
-                tensor[(*slice_filler, slice(split_positions[i], split_positions[i + 1]), ...)],
-                (*shape_start, *element_shape, *shape_end),
-            )
-            for i, element_shape in enumerate(packed_shapes)
-        ]
+        result = []
+        for i, element_shape in enumerate(packed_shapes):
+            sliced = tensor[(*slice_filler, slice(split_positions[i], split_positions[i + 1]), ...)]
+            inferred_shape = _unpack_shape(element_shape, sliced.shape[unpacked_axis])
+            result.append(xp.reshape(sliced, (*shape_start, *inferred_shape, *shape_end)))
+        return result
     except Exception as e:
         # this hits if there is an error during reshapes, which means passed shapes were incorrect
         raise RuntimeError(

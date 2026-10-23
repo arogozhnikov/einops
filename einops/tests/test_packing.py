@@ -301,3 +301,47 @@ def test_pack_unpack_array_api():
         ]:
             with pytest.raises(EinopsError):
                 unpack(x_np, ps, pattern)
+
+
+@pytest.mark.parametrize("array_api", [False, True])
+@pytest.mark.parametrize(
+    "shape, pattern, packed_shapes, expected_shapes",
+    [
+        ((0, 8), "batch *", [(2,), (-1, 3)], [(0, 2), (0, 2, 3)]),
+        ((8, 0), "* channel", [(-1, 2), (2,)], [(3, 2, 0), (2, 0)]),
+        ((2, 8, 0), "batch * channel", [(2,), (-1, 3)], [(2, 2, 0), (2, 2, 3, 0)]),
+        ((0, 2), "batch *", [(2,), (-1,)], [(0, 2), (0, 0)]),
+    ],
+)
+def test_unpack_infers_shape_with_empty_shared_axis(array_api, shape, pattern, packed_shapes, expected_shapes):
+    x_np = np.zeros(shape)
+    if array_api:
+        if np.__version__ < "2.0.0":
+            pytest.skip("NumPy Array API requires NumPy 2")
+        from einops.array_api import unpack as unpack_array_api
+
+        results = [unpack_array_api(x_np, packed_shapes, pattern)]
+    else:
+        results = [
+            unpack(backend.from_numpy(x_np), packed_shapes, pattern)
+            for backend in collect_test_backends(symbolic=False, layers=False)
+        ]
+    for result in results:
+        assert [tensor.shape for tensor in result] == expected_shapes
+
+
+@pytest.mark.parametrize("array_api", [False, True])
+@pytest.mark.parametrize("packed_shapes", [[(1,), (-1, 3)], [(0, -1)], [(-1, -1)]])
+def test_unpack_invalid_inferred_shape_with_empty_shared_axis(array_api, packed_shapes):
+    x_np = np.zeros((0, 8))
+    if array_api:
+        if np.__version__ < "2.0.0":
+            pytest.skip("NumPy Array API requires NumPy 2")
+        from einops.array_api import unpack as unpack_array_api
+
+        with pytest.raises((EinopsError, RuntimeError)):
+            unpack_array_api(x_np, packed_shapes, "batch *")
+    else:
+        for backend in collect_test_backends(symbolic=False, layers=False):
+            with pytest.raises(EinopsError):
+                unpack(backend.from_numpy(x_np), packed_shapes, "batch *")

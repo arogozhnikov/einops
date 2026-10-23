@@ -1,5 +1,6 @@
 from collections.abc import Sequence
 from functools import lru_cache
+from numbers import Integral
 from typing import TypeAlias
 
 from einops import EinopsError
@@ -94,6 +95,19 @@ def prod(x: Shape) -> int:
     return result
 
 
+def _unpack_shape(shape: Shape, axis_length: int) -> Shape:
+    if list(shape).count(-1) != 1:
+        return shape
+    known_size = -prod(shape)
+    if not isinstance(known_size, Integral) or not isinstance(axis_length, Integral):
+        return shape
+    if known_size <= 0 or axis_length % known_size:
+        raise EinopsError(f"Cannot infer unpacked shape {shape} from an axis of size {axis_length}")
+    # Infer from the packed axis alone: a zero-sized shared axis makes backend
+    # reshape inference ambiguous, even when the packed axis determines the size.
+    return tuple(axis_length // known_size if dim == -1 else dim for dim in shape)
+
+
 def unpack(tensor: Tensor, packed_shapes: Sequence[Shape], pattern: str) -> list[Tensor]:
     """
     Unpacks a single tensor into several by splitting over a selected axes.
@@ -173,14 +187,12 @@ def unpack(tensor: Tensor, packed_shapes: Sequence[Shape], pattern: str) -> list
     shape_end = input_shape[unpacked_axis + 1 :]
     slice_filler = (slice(None, None),) * unpacked_axis
     try:
-        return [
-            backend.reshape(
-                # shortest way slice arbitrary axis
-                tensor[(*slice_filler, slice(split_positions[i], split_positions[i + 1]))],
-                (*shape_start, *element_shape, *shape_end),
-            )
-            for i, element_shape in enumerate(packed_shapes)
-        ]
+        result = []
+        for i, element_shape in enumerate(packed_shapes):
+            sliced = tensor[(*slice_filler, slice(split_positions[i], split_positions[i + 1]))]
+            inferred_shape = _unpack_shape(element_shape, backend.shape(sliced)[unpacked_axis])
+            result.append(backend.reshape(sliced, (*shape_start, *inferred_shape, *shape_end)))
+        return result
     except Exception as e:
         # this hits if there is an error during reshapes, which means passed shapes were incorrect
         raise EinopsError(
