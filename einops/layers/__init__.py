@@ -110,3 +110,29 @@ class ReduceMixin:
 
     def __setstate__(self, state: dict[str, Any]) -> None:
         self.__init__(pattern=state["pattern"], reduction=state["reduction"], **state["axes_lengths"])  # type: ignore[misc]
+
+
+class RepeatMixin(ReduceMixin):
+    """
+    Repeat layer behaves identically to einops.repeat operation.
+
+    :param pattern: str, repeat pattern
+    :param axes_lengths: any additional specification of dimensions
+
+    See einops.repeat for source_examples.
+    """
+
+    def __init__(self, pattern: str, **axes_lengths: Any) -> None:
+        super().__init__(pattern, "repeat", **axes_lengths)
+
+    def __repr__(self) -> str:
+        params = repr(self.pattern)
+        for axis, length in self.axes_lengths.items():
+            params += f", {axis}={length}"
+        return f"{self.__class__.__name__}({params})"
+
+    def __getstate__(self) -> dict[str, Any]:
+        return {"pattern": self.pattern, "axes_lengths": self.axes_lengths}
+
+    def __setstate__(self, state: dict[str, Any]) -> None:
+        self.__init__(pattern=state["pattern"], **state["axes_lengths"])  # type: ignore[misc]
