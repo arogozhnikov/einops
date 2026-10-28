@@ -3,7 +3,7 @@ from types import ModuleType
 from typing import TYPE_CHECKING, Protocol, TypeAlias, TypeVar, cast
 
 from .einops import EinopsError, Reduction, _apply_recipe_array_api, _prepare_transformation_recipe
-from .packing import analyze_pattern, prod
+from .packing import _unpack_split_positions, analyze_pattern
 
 if TYPE_CHECKING:
     # avoid runtime dependencies
@@ -116,30 +116,7 @@ def unpack(tensor: Tensor, packed_shapes: Sequence[Shape | list], pattern: str) 
 
     unpacked_axis: int = n_axes_before
 
-    lengths_of_composed_axes: list[int] = [-1 if -1 in p_shape else prod(p_shape) for p_shape in packed_shapes]
-
-    n_unknown_composed_axes = sum(x == -1 for x in lengths_of_composed_axes)
-    if n_unknown_composed_axes > 1:
-        raise EinopsError(
-            f"unpack(..., {pattern}) received more than one -1 in {packed_shapes} and can't infer dimensions"
-        )
-
-    # following manipulations allow to skip some shape verifications
-    # and leave it to backends
-
-    # [[], [2, 3], [4], [-1, 5], [6]] < examples of packed_axis
-    # split positions when computed should be
-    # [0,   1,      7,   11,      N-6 , N ], where N = length of axis
-    split_positions = [0] * len(packed_shapes) + [input_shape[unpacked_axis]]
-    if n_unknown_composed_axes == 0:
-        for i, x in enumerate(lengths_of_composed_axes[:-1]):
-            split_positions[i + 1] = split_positions[i] + x
-    else:
-        unknown_composed_axis: int = lengths_of_composed_axes.index(-1)
-        for i in range(unknown_composed_axis):
-            split_positions[i + 1] = split_positions[i] + lengths_of_composed_axes[i]
-        for j in range(unknown_composed_axis + 1, len(lengths_of_composed_axes))[::-1]:
-            split_positions[j] = split_positions[j + 1] - lengths_of_composed_axes[j]
+    split_positions = _unpack_split_positions(packed_shapes, input_shape[unpacked_axis], pattern)
 
     shape_start = input_shape[:unpacked_axis]
     shape_end = input_shape[unpacked_axis + 1 :]
@@ -155,7 +132,7 @@ def unpack(tensor: Tensor, packed_shapes: Sequence[Shape | list], pattern: str) 
         ]
     except Exception as e:
         # this hits if there is an error during reshapes, which means passed shapes were incorrect
-        raise RuntimeError(
+        raise EinopsError(
             f'Error during unpack(..., "{pattern}"): could not split axis of size {split_positions[-1]}'
             f" into requested {packed_shapes}"
         ) from e

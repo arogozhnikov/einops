@@ -1,5 +1,6 @@
 from collections.abc import Sequence
 from functools import lru_cache
+from numbers import Integral
 from typing import TypeAlias
 
 from einops import EinopsError
@@ -94,6 +95,56 @@ def prod(x: Shape) -> int:
     return result
 
 
+def _unpack_split_positions(packed_shapes: Sequence[Shape], axis_length: int, pattern: str) -> list[int]:
+    if len(packed_shapes) == 0:
+        raise EinopsError(f'Error during unpack(..., "{pattern}"): packed_shapes must be non-empty')
+
+    lengths_of_composed_axes: list[int] = []
+    n_unknown_axes = 0
+    for p_shape in packed_shapes:
+        n_unknown_axes_in_shape = 0
+        for axis_length_in_shape in p_shape:
+            if isinstance(axis_length_in_shape, Integral):
+                if axis_length_in_shape < -1:
+                    raise EinopsError(
+                        f'Error during unpack(..., "{pattern}"): received invalid axis length '
+                        f"{axis_length_in_shape} in {packed_shapes}"
+                    )
+                n_unknown_axes_in_shape += int(axis_length_in_shape == -1)
+        n_unknown_axes += n_unknown_axes_in_shape
+        lengths_of_composed_axes.append(-1 if n_unknown_axes_in_shape else prod(p_shape))
+
+    if n_unknown_axes > 1:
+        raise EinopsError(
+            f"unpack(..., {pattern}) received more than one -1 in {packed_shapes} and can't infer dimensions"
+        )
+
+    if isinstance(axis_length, Integral) and all(isinstance(length, Integral) for length in lengths_of_composed_axes):
+        known_axes_length = sum(length for length in lengths_of_composed_axes if length != -1)
+        if (n_unknown_axes == 0 and known_axes_length != axis_length) or (
+            n_unknown_axes == 1 and known_axes_length > axis_length
+        ):
+            raise EinopsError(
+                f'Error during unpack(..., "{pattern}"): could not split axis of size {axis_length}'
+                f" into requested {packed_shapes}"
+            )
+
+    # [[], [2, 3], [4], [-1, 5], [6]] < examples of packed_axis
+    # split positions when computed should be
+    # [0,   1,      7,   11,      N-6 , N ], where N = length of axis
+    split_positions = [0] * len(packed_shapes) + [axis_length]
+    if n_unknown_axes == 0:
+        for i, length in enumerate(lengths_of_composed_axes[:-1]):
+            split_positions[i + 1] = split_positions[i] + length
+    else:
+        unknown_composed_axis = lengths_of_composed_axes.index(-1)
+        for i in range(unknown_composed_axis):
+            split_positions[i + 1] = split_positions[i] + lengths_of_composed_axes[i]
+        for j in range(unknown_composed_axis + 1, len(lengths_of_composed_axes))[::-1]:
+            split_positions[j] = split_positions[j + 1] - lengths_of_composed_axes[j]
+    return split_positions
+
+
 def unpack(tensor: Tensor, packed_shapes: Sequence[Shape], pattern: str) -> list[Tensor]:
     """
     Unpacks a single tensor into several by splitting over a selected axes.
@@ -144,30 +195,7 @@ def unpack(tensor: Tensor, packed_shapes: Sequence[Shape], pattern: str) -> list
 
     unpacked_axis: int = n_axes_before
 
-    lengths_of_composed_axes: list[int] = [-1 if -1 in p_shape else prod(p_shape) for p_shape in packed_shapes]
-
-    n_unknown_composed_axes = sum(int(x == -1) for x in lengths_of_composed_axes)
-    if n_unknown_composed_axes > 1:
-        raise EinopsError(
-            f"unpack(..., {pattern}) received more than one -1 in {packed_shapes} and can't infer dimensions"
-        )
-
-    # following manipulations allow to skip some shape verifications
-    # and leave it to backends
-
-    # [[], [2, 3], [4], [-1, 5], [6]] < examples of packed_axis
-    # split positions when computed should be
-    # [0,   1,      7,   11,      N-6 , N ], where N = length of axis
-    split_positions = [0] * len(packed_shapes) + [input_shape[unpacked_axis]]
-    if n_unknown_composed_axes == 0:
-        for i, x in enumerate(lengths_of_composed_axes[:-1]):
-            split_positions[i + 1] = split_positions[i] + x
-    else:
-        unknown_composed_axis: int = lengths_of_composed_axes.index(-1)
-        for i in range(unknown_composed_axis):
-            split_positions[i + 1] = split_positions[i] + lengths_of_composed_axes[i]
-        for j in range(unknown_composed_axis + 1, len(lengths_of_composed_axes))[::-1]:
-            split_positions[j] = split_positions[j + 1] - lengths_of_composed_axes[j]
+    split_positions = _unpack_split_positions(packed_shapes, input_shape[unpacked_axis], pattern)
 
     shape_start = input_shape[:unpacked_axis]
     shape_end = input_shape[unpacked_axis + 1 :]
