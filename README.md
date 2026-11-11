@@ -147,8 +147,19 @@ Einops provides layers (`einops` keeps a separate version for each framework) th
 ```python
 from einops.layers.torch      import Rearrange, Reduce
 from einops.layers.tensorflow import Rearrange, Reduce
-from einops.layers.flax       import Rearrange, Reduce
+from einops.layers.flax       import Rearrange, Reduce  # Flax Linen
+from einops.layers.flax_nnx   import Rearrange, Reduce  # Flax NNX
 from einops.layers.paddle     import Rearrange, Reduce
+```
+
+For Flax NNX, layers take axis lengths as keyword arguments. `EinMix` also takes
+`rngs` to initialize its trainable parameters:
+
+```python
+from flax import nnx
+from einops.layers.flax_nnx import EinMix
+
+layer = EinMix('b c -> b out', 'c out', 'out', c=4, out=8, rngs=nnx.Rngs(0))
 ```
 
 <details markdown="1">
