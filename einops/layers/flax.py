@@ -11,6 +11,14 @@ from ._einmix import _EinmixMixin
 __author__ = "Alex Rogozhnikov"
 
 
+def _symmetric_uniform(bound: float):
+    # jax.nn.initializers.uniform samples from [0, scale), while EinMix expects [-bound, bound)
+    def init(key: jax.Array, shape, dtype=float) -> jax.Array:
+        return jax.random.uniform(key, shape, dtype, minval=-bound, maxval=bound)
+
+    return init
+
+
 class Reduce(nn.Module):
     pattern: str
     reduction: str
@@ -49,11 +57,11 @@ class EinMix(nn.Module, _EinmixMixin):
         )
 
     def _create_parameters(self, weight_shape, weight_bound, bias_shape, bias_bound):
-        self.weight = self.param("weight", jax.nn.initializers.uniform(weight_bound), weight_shape)
+        self.weight = self.param("weight", _symmetric_uniform(weight_bound), weight_shape)
 
         self.bias: jax.Array | None
         if bias_shape is not None:
-            self.bias = self.param("bias", jax.nn.initializers.uniform(bias_bound), bias_shape)
+            self.bias = self.param("bias", _symmetric_uniform(bias_bound), bias_shape)
         else:
             self.bias = None
 
