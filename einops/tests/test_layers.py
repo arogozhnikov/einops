@@ -378,6 +378,24 @@ def test_flax_layers():
         _loaded = flax.serialization.from_bytes(params, fbytes)
 
 
+def test_flax_einmix_initialization_is_symmetric():
+    if not is_backend_tested("jax"):
+        pytest.skip()
+
+    import jax
+    import jax.numpy as jnp
+
+    from einops.layers.flax import EinMix
+
+    layer = EinMix("b cin -> b cout", "cin cout", "cout", sizes=dict(cin=16, cout=64))
+    params = layer.init(jax.random.PRNGKey(0), jnp.zeros([2, 16]))["params"]
+    # same uniform bounds as EinMix in other frameworks: weight sqrt(3 / fan_in), bias sqrt(1 / fan_in)
+    for name, bound in [("weight", (3 / 16) ** 0.5), ("bias", (1 / 16) ** 0.5)]:
+        values = params[name]
+        assert -bound <= values.min() < -bound / 2, (name, values.min())
+        assert bound / 2 < values.max() <= bound, (name, values.max())
+
+
 def test_einmix_decomposition():
     """
     Testing that einmix correctly decomposes into smaller transformations.
