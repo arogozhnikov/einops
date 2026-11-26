@@ -166,7 +166,7 @@ class NumpyBackend(AbstractBackend):
         self.np = numpy
 
     def is_appropriate_type(self, tensor):
-        return isinstance(tensor, self.np.ndarray)
+        return isinstance(tensor, (self.np.ndarray, self.np.generic))
 
     def from_numpy(self, x):
         return x
@@ -206,6 +206,9 @@ class JaxBackend(NumpyBackend):
         import jax.numpy
 
         self.np = jax.numpy
+
+    def is_appropriate_type(self, tensor):
+        return isinstance(tensor, self.np.ndarray)
 
     def from_numpy(self, x):
         return self.np.asarray(x)
